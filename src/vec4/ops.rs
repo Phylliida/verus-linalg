@@ -3,6 +3,8 @@ use verus_algebra::traits::*;
 use verus_algebra::lemmas::additive_commutative_monoid_lemmas;
 use verus_algebra::lemmas::additive_group_lemmas;
 use verus_algebra::lemmas::ring_lemmas;
+use verus_algebra::lemmas::ordered_ring_lemmas;
+use verus_algebra::inequalities;
 use super::Vec4;
 
 verus! {
@@ -17,6 +19,10 @@ pub open spec fn scale<T: Ring>(s: T, v: Vec4<T>) -> Vec4<T> {
 
 pub open spec fn dot<T: Ring>(a: Vec4<T>, b: Vec4<T>) -> T {
     a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z)).add(a.w.mul(b.w))
+}
+
+pub open spec fn norm_sq<T: Ring>(v: Vec4<T>) -> T {
+    dot(v, v)
 }
 
 // ---------------------------------------------------------------------------
@@ -537,6 +543,223 @@ pub proof fn lemma_dot_scale_right<T: Ring>(s: T, a: Vec4<T>, b: Vec4<T>)
         s.mul(dot(b, a)),
         s.mul(dot(a, b)),
     );
+}
+
+// ---------------------------------------------------------------------------
+// Dot congruence and neg
+// ---------------------------------------------------------------------------
+
+/// a1 ≡ a2, b1 ≡ b2 implies dot(a1, b1) ≡ dot(a2, b2)
+pub proof fn lemma_dot_congruence<T: Ring>(a1: Vec4<T>, a2: Vec4<T>, b1: Vec4<T>, b2: Vec4<T>)
+    requires
+        a1.eqv(a2),
+        b1.eqv(b2),
+    ensures
+        dot(a1, b1).eqv(dot(a2, b2)),
+{
+    ring_lemmas::lemma_mul_congruence::<T>(a1.x, a2.x, b1.x, b2.x);
+    ring_lemmas::lemma_mul_congruence::<T>(a1.y, a2.y, b1.y, b2.y);
+    ring_lemmas::lemma_mul_congruence::<T>(a1.z, a2.z, b1.z, b2.z);
+    ring_lemmas::lemma_mul_congruence::<T>(a1.w, a2.w, b1.w, b2.w);
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a1.x.mul(b1.x), a2.x.mul(b2.x),
+        a1.y.mul(b1.y), a2.y.mul(b2.y),
+    );
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a1.x.mul(b1.x).add(a1.y.mul(b1.y)),
+        a2.x.mul(b2.x).add(a2.y.mul(b2.y)),
+        a1.z.mul(b1.z),
+        a2.z.mul(b2.z),
+    );
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a1.x.mul(b1.x).add(a1.y.mul(b1.y)).add(a1.z.mul(b1.z)),
+        a2.x.mul(b2.x).add(a2.y.mul(b2.y)).add(a2.z.mul(b2.z)),
+        a1.w.mul(b1.w),
+        a2.w.mul(b2.w),
+    );
+}
+
+/// dot(a, -b) ≡ -dot(a, b)
+pub proof fn lemma_dot_neg_right<T: Ring>(a: Vec4<T>, b: Vec4<T>)
+    ensures
+        dot(a, b.neg()).eqv(dot(a, b).neg()),
+{
+    ring_lemmas::lemma_mul_neg_right::<T>(a.x, b.x);
+    ring_lemmas::lemma_mul_neg_right::<T>(a.y, b.y);
+    ring_lemmas::lemma_mul_neg_right::<T>(a.z, b.z);
+    ring_lemmas::lemma_mul_neg_right::<T>(a.w, b.w);
+    // LHS ≡ -(ax*bx) + -(ay*by) + -(az*bz) + -(aw*bw)
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a.x.mul(b.x.neg()), a.x.mul(b.x).neg(),
+        a.y.mul(b.y.neg()), a.y.mul(b.y).neg(),
+    );
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a.x.mul(b.x.neg()).add(a.y.mul(b.y.neg())),
+        a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()),
+        a.z.mul(b.z.neg()),
+        a.z.mul(b.z).neg(),
+    );
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a.x.mul(b.x.neg()).add(a.y.mul(b.y.neg())).add(a.z.mul(b.z.neg())),
+        a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()).add(a.z.mul(b.z).neg()),
+        a.w.mul(b.w.neg()),
+        a.w.mul(b.w).neg(),
+    );
+    // -(ax*bx) + -(ay*by) ≡ -(ax*bx + ay*by)
+    additive_group_lemmas::lemma_neg_add::<T>(a.x.mul(b.x), a.y.mul(b.y));
+    T::axiom_eqv_symmetric(
+        a.x.mul(b.x).add(a.y.mul(b.y)).neg(),
+        a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()),
+    );
+    // -(xy) + -(xz) ≡ -(xy+xz)
+    T::axiom_add_congruence_left(
+        a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()),
+        a.x.mul(b.x).add(a.y.mul(b.y)).neg(),
+        a.z.mul(b.z).neg(),
+    );
+    additive_group_lemmas::lemma_neg_add::<T>(a.x.mul(b.x).add(a.y.mul(b.y)), a.z.mul(b.z));
+    T::axiom_eqv_symmetric(
+        a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z)).neg(),
+        a.x.mul(b.x).add(a.y.mul(b.y)).neg().add(a.z.mul(b.z).neg()),
+    );
+    T::axiom_eqv_transitive(
+        a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()).add(a.z.mul(b.z).neg()),
+        a.x.mul(b.x).add(a.y.mul(b.y)).neg().add(a.z.mul(b.z).neg()),
+        a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z)).neg(),
+    );
+    // -(xyz) + -(aw*bw) ≡ -(xyz + aw*bw)
+    T::axiom_add_congruence_left(
+        a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()).add(a.z.mul(b.z).neg()),
+        a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z)).neg(),
+        a.w.mul(b.w).neg(),
+    );
+    additive_group_lemmas::lemma_neg_add::<T>(
+        a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z)),
+        a.w.mul(b.w),
+    );
+    T::axiom_eqv_symmetric(
+        a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z)).add(a.w.mul(b.w)).neg(),
+        a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z)).neg().add(a.w.mul(b.w).neg()),
+    );
+    // Chain from LHS to RHS
+    T::axiom_eqv_transitive(
+        dot(a, b.neg()),
+        a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()).add(a.z.mul(b.z).neg()).add(a.w.mul(b.w).neg()),
+        a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z)).neg().add(a.w.mul(b.w).neg()),
+    );
+    T::axiom_eqv_transitive(
+        dot(a, b.neg()),
+        a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z)).neg().add(a.w.mul(b.w).neg()),
+        dot(a, b).neg(),
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Norm-squared lemmas
+// ---------------------------------------------------------------------------
+
+/// a ≡ b implies norm_sq(a) ≡ norm_sq(b)
+pub proof fn lemma_norm_sq_congruence<T: Ring>(a: Vec4<T>, b: Vec4<T>)
+    requires
+        a.eqv(b),
+    ensures
+        norm_sq(a).eqv(norm_sq(b)),
+{
+    lemma_dot_congruence(a, b, a, b);
+}
+
+/// norm_sq(scale(s, v)) ≡ s*s * norm_sq(v)
+pub proof fn lemma_norm_sq_scale<T: Ring>(s: T, v: Vec4<T>)
+    ensures
+        norm_sq(scale(s, v)).eqv(s.mul(s).mul(norm_sq(v))),
+{
+    lemma_dot_scale_left(s, v, scale(s, v));
+    lemma_dot_scale_right(s, v, v);
+    ring_lemmas::lemma_mul_congruence_right::<T>(s, dot(v, scale(s, v)), s.mul(dot(v, v)));
+    T::axiom_eqv_transitive(
+        norm_sq(scale(s, v)),
+        s.mul(dot(v, scale(s, v))),
+        s.mul(s.mul(dot(v, v))),
+    );
+    T::axiom_mul_associative(s, s, dot(v, v));
+    T::axiom_eqv_symmetric(s.mul(s).mul(dot(v, v)), s.mul(s.mul(dot(v, v))));
+    T::axiom_eqv_transitive(
+        norm_sq(scale(s, v)),
+        s.mul(s.mul(dot(v, v))),
+        s.mul(s).mul(norm_sq(v)),
+    );
+}
+
+/// 0 ≤ norm_sq(v)
+pub proof fn lemma_norm_sq_nonneg<T: OrderedRing>(v: Vec4<T>)
+    ensures
+        T::zero().le(norm_sq(v)),
+{
+    // 0 ≤ x²+y²+z²
+    inequalities::lemma_sum_squares_nonneg_3d::<T>(v.x, v.y, v.z);
+    // 0 ≤ w²
+    ordered_ring_lemmas::lemma_square_nonneg::<T>(v.w);
+    // 0 ≤ (x²+y²+z²) + w²
+    inequalities::lemma_nonneg_add::<T>(
+        v.x.mul(v.x).add(v.y.mul(v.y)).add(v.z.mul(v.z)),
+        v.w.mul(v.w),
+    );
+}
+
+/// norm_sq(v) ≡ 0 implies v ≡ zero (for OrderedField)
+pub proof fn lemma_norm_sq_zero_implies_zero<T: OrderedField>(v: Vec4<T>)
+    requires
+        norm_sq(v).eqv(T::zero()),
+    ensures
+        v.eqv(Vec4 { x: T::zero(), y: T::zero(), z: T::zero(), w: T::zero() }),
+{
+    // norm_sq(v) = (x²+y²+z²) + w², which ≡ 0
+    // Both summands are non-negative
+    let sum3 = v.x.mul(v.x).add(v.y.mul(v.y)).add(v.z.mul(v.z));
+    let w2 = v.w.mul(v.w);
+    inequalities::lemma_sum_squares_nonneg_3d::<T>(v.x, v.y, v.z);
+    ordered_ring_lemmas::lemma_square_nonneg::<T>(v.w);
+
+    // 0 ≤ sum3, 0 ≤ w2, sum3 + w2 ≡ 0
+    // Need sum3 ≡ 0 and w2 ≡ 0
+    // If sum3 ≢ 0, then 0 < sum3, so sum3 + w2 > 0, contradicting ≡ 0
+    T::axiom_lt_iff_le_and_not_eqv(T::zero(), sum3);
+    T::axiom_eqv_symmetric(T::zero(), sum3);
+    if !sum3.eqv(T::zero()) {
+        ordered_ring_lemmas::lemma_add_pos_nonneg::<T>(sum3, w2);
+        T::axiom_lt_iff_le_and_not_eqv(T::zero(), sum3.add(w2));
+        T::axiom_eqv_symmetric(T::zero(), sum3.add(w2));
+    }
+    // sum3 ≡ 0
+    T::axiom_eqv_symmetric(sum3, T::zero());
+    inequalities::lemma_sum_squares_zero_3d::<T>(v.x, v.y, v.z);
+
+    // Similarly w² ≡ 0
+    T::axiom_lt_iff_le_and_not_eqv(T::zero(), w2);
+    T::axiom_eqv_symmetric(T::zero(), w2);
+    if !w2.eqv(T::zero()) {
+        ordered_ring_lemmas::lemma_add_nonneg_pos::<T>(sum3, w2);
+        T::axiom_lt_iff_le_and_not_eqv(T::zero(), sum3.add(w2));
+        T::axiom_eqv_symmetric(T::zero(), sum3.add(w2));
+    }
+    // w² ≡ 0, so w ≡ 0
+    T::axiom_eqv_symmetric(w2, T::zero());
+    if !v.w.eqv(T::zero()) {
+        verus_algebra::lemmas::field_lemmas::lemma_nonzero_product::<T>(v.w, v.w);
+    }
+}
+
+/// v ≡ zero implies norm_sq(v) ≡ 0
+pub proof fn lemma_norm_sq_zero_of_zero<T: Ring>(v: Vec4<T>)
+    requires
+        v.eqv(Vec4 { x: T::zero(), y: T::zero(), z: T::zero(), w: T::zero() }),
+    ensures
+        norm_sq(v).eqv(T::zero()),
+{
+    let z = Vec4 { x: T::zero(), y: T::zero(), z: T::zero(), w: T::zero() };
+    lemma_dot_congruence(v, z, v, z);
+    lemma_dot_zero_right(z);
+    T::axiom_eqv_transitive(norm_sq(v), dot(z, z), T::zero());
 }
 
 } // verus!

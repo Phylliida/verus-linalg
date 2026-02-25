@@ -3,6 +3,8 @@ use verus_algebra::traits::*;
 use verus_algebra::lemmas::additive_commutative_monoid_lemmas;
 use verus_algebra::lemmas::additive_group_lemmas;
 use verus_algebra::lemmas::ring_lemmas;
+use verus_algebra::lemmas::ordered_ring_lemmas;
+use verus_algebra::inequalities;
 use super::Vec3;
 
 verus! {
@@ -19,12 +21,20 @@ pub open spec fn dot<T: Ring>(a: Vec3<T>, b: Vec3<T>) -> T {
     a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z))
 }
 
+pub open spec fn norm_sq<T: Ring>(v: Vec3<T>) -> T {
+    dot(v, v)
+}
+
 pub open spec fn cross<T: Ring>(a: Vec3<T>, b: Vec3<T>) -> Vec3<T> {
     Vec3 {
         x: a.y.mul(b.z).sub(a.z.mul(b.y)),
         y: a.z.mul(b.x).sub(a.x.mul(b.z)),
         z: a.x.mul(b.y).sub(a.y.mul(b.x)),
     }
+}
+
+pub open spec fn triple<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>) -> T {
+    dot(a, cross(b, c))
 }
 
 // ---------------------------------------------------------------------------
@@ -1071,6 +1081,1038 @@ pub proof fn lemma_cross_orthogonal_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         a.y.mul(b.x).mul(b.z).sub(a.x.mul(b.z).mul(b.y)).add(a.x.mul(b.z).mul(b.y).sub(a.y.mul(b.x).mul(b.z))),
         T::zero(),
     );
+}
+
+// ---------------------------------------------------------------------------
+// Dot congruence and neg
+// ---------------------------------------------------------------------------
+
+/// a1 ≡ a2, b1 ≡ b2 implies dot(a1, b1) ≡ dot(a2, b2)
+pub proof fn lemma_dot_congruence<T: Ring>(a1: Vec3<T>, a2: Vec3<T>, b1: Vec3<T>, b2: Vec3<T>)
+    requires
+        a1.eqv(a2),
+        b1.eqv(b2),
+    ensures
+        dot(a1, b1).eqv(dot(a2, b2)),
+{
+    ring_lemmas::lemma_mul_congruence::<T>(a1.x, a2.x, b1.x, b2.x);
+    ring_lemmas::lemma_mul_congruence::<T>(a1.y, a2.y, b1.y, b2.y);
+    ring_lemmas::lemma_mul_congruence::<T>(a1.z, a2.z, b1.z, b2.z);
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a1.x.mul(b1.x), a2.x.mul(b2.x),
+        a1.y.mul(b1.y), a2.y.mul(b2.y),
+    );
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a1.x.mul(b1.x).add(a1.y.mul(b1.y)),
+        a2.x.mul(b2.x).add(a2.y.mul(b2.y)),
+        a1.z.mul(b1.z),
+        a2.z.mul(b2.z),
+    );
+}
+
+/// dot(a, -b) ≡ -dot(a, b)
+pub proof fn lemma_dot_neg_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
+    ensures
+        dot(a, b.neg()).eqv(dot(a, b).neg()),
+{
+    ring_lemmas::lemma_mul_neg_right::<T>(a.x, b.x);
+    ring_lemmas::lemma_mul_neg_right::<T>(a.y, b.y);
+    ring_lemmas::lemma_mul_neg_right::<T>(a.z, b.z);
+    // LHS ≡ -(ax*bx) + -(ay*by) + -(az*bz)
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a.x.mul(b.x.neg()), a.x.mul(b.x).neg(),
+        a.y.mul(b.y.neg()), a.y.mul(b.y).neg(),
+    );
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a.x.mul(b.x.neg()).add(a.y.mul(b.y.neg())),
+        a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()),
+        a.z.mul(b.z.neg()),
+        a.z.mul(b.z).neg(),
+    );
+    // -(ax*bx) + -(ay*by) ≡ -(ax*bx + ay*by)
+    additive_group_lemmas::lemma_neg_add::<T>(a.x.mul(b.x), a.y.mul(b.y));
+    T::axiom_eqv_symmetric(
+        a.x.mul(b.x).add(a.y.mul(b.y)).neg(),
+        a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()),
+    );
+    // -(ax*bx + ay*by) + -(az*bz) ≡ -((ax*bx + ay*by) + az*bz)
+    additive_group_lemmas::lemma_neg_add::<T>(a.x.mul(b.x).add(a.y.mul(b.y)), a.z.mul(b.z));
+    T::axiom_eqv_symmetric(
+        a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z)).neg(),
+        a.x.mul(b.x).add(a.y.mul(b.y)).neg().add(a.z.mul(b.z).neg()),
+    );
+    // Propagate: LHS ≡ -(xy) + -(yz) + -(xz) ≡ -(xy+yz) + -(xz) ≡ -(xy+yz+xz)
+    T::axiom_add_congruence_left(
+        a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()),
+        a.x.mul(b.x).add(a.y.mul(b.y)).neg(),
+        a.z.mul(b.z).neg(),
+    );
+    T::axiom_eqv_transitive(
+        dot(a, b.neg()),
+        a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()).add(a.z.mul(b.z).neg()),
+        a.x.mul(b.x).add(a.y.mul(b.y)).neg().add(a.z.mul(b.z).neg()),
+    );
+    T::axiom_eqv_transitive(
+        dot(a, b.neg()),
+        a.x.mul(b.x).add(a.y.mul(b.y)).neg().add(a.z.mul(b.z).neg()),
+        dot(a, b).neg(),
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Norm-squared lemmas
+// ---------------------------------------------------------------------------
+
+/// a ≡ b implies norm_sq(a) ≡ norm_sq(b)
+pub proof fn lemma_norm_sq_congruence<T: Ring>(a: Vec3<T>, b: Vec3<T>)
+    requires
+        a.eqv(b),
+    ensures
+        norm_sq(a).eqv(norm_sq(b)),
+{
+    lemma_dot_congruence(a, b, a, b);
+}
+
+/// norm_sq(scale(s, v)) ≡ s*s * norm_sq(v)
+pub proof fn lemma_norm_sq_scale<T: Ring>(s: T, v: Vec3<T>)
+    ensures
+        norm_sq(scale(s, v)).eqv(s.mul(s).mul(norm_sq(v))),
+{
+    lemma_dot_scale_left(s, v, scale(s, v));
+    lemma_dot_scale_right(s, v, v);
+    ring_lemmas::lemma_mul_congruence_right::<T>(s, dot(v, scale(s, v)), s.mul(dot(v, v)));
+    T::axiom_eqv_transitive(
+        norm_sq(scale(s, v)),
+        s.mul(dot(v, scale(s, v))),
+        s.mul(s.mul(dot(v, v))),
+    );
+    T::axiom_mul_associative(s, s, dot(v, v));
+    T::axiom_eqv_symmetric(s.mul(s).mul(dot(v, v)), s.mul(s.mul(dot(v, v))));
+    T::axiom_eqv_transitive(
+        norm_sq(scale(s, v)),
+        s.mul(s.mul(dot(v, v))),
+        s.mul(s).mul(norm_sq(v)),
+    );
+}
+
+/// 0 ≤ norm_sq(v)
+pub proof fn lemma_norm_sq_nonneg<T: OrderedRing>(v: Vec3<T>)
+    ensures
+        T::zero().le(norm_sq(v)),
+{
+    inequalities::lemma_sum_squares_nonneg_3d::<T>(v.x, v.y, v.z);
+}
+
+/// norm_sq(v) ≡ 0 implies v ≡ zero (for OrderedField)
+pub proof fn lemma_norm_sq_zero_implies_zero<T: OrderedField>(v: Vec3<T>)
+    requires
+        norm_sq(v).eqv(T::zero()),
+    ensures
+        v.eqv(Vec3 { x: T::zero(), y: T::zero(), z: T::zero() }),
+{
+    inequalities::lemma_sum_squares_zero_3d::<T>(v.x, v.y, v.z);
+}
+
+/// v ≡ zero implies norm_sq(v) ≡ 0
+pub proof fn lemma_norm_sq_zero_of_zero<T: Ring>(v: Vec3<T>)
+    requires
+        v.eqv(Vec3 { x: T::zero(), y: T::zero(), z: T::zero() }),
+    ensures
+        norm_sq(v).eqv(T::zero()),
+{
+    let z = Vec3 { x: T::zero(), y: T::zero(), z: T::zero() };
+    lemma_dot_congruence(v, z, v, z);
+    lemma_dot_zero_right(z);
+    T::axiom_eqv_transitive(norm_sq(v), dot(z, z), T::zero());
+}
+
+// ---------------------------------------------------------------------------
+// Triple product lemmas
+// ---------------------------------------------------------------------------
+
+/// triple(a, b, b) ≡ 0
+pub proof fn lemma_triple_self_zero_23<T: Ring>(a: Vec3<T>, b: Vec3<T>)
+    ensures
+        triple(a, b, b).eqv(T::zero()),
+{
+    // cross(b, b) ≡ zero
+    lemma_cross_self_zero(b);
+    let z = Vec3 { x: T::zero(), y: T::zero(), z: T::zero() };
+    // dot(a, cross(b,b)) ≡ dot(cross(b,b), a) ≡ dot(zero, a) ≡ 0
+    lemma_dot_commutative(a, cross(b, b));
+    // dot(cross(b,b), a): cross(b,b) ≡ zero, a ≡ a (need Vec3 reflexive)
+    // Use scale_congruence trick: just use dot_zero_left + congruence chain
+    // cross(b,b).eqv(z) so dot(cross(b,b), a) ≡ dot(z, a) via left congruence
+    lemma_dot_scale_left::<T>(T::one(), cross(b, b), a);
+    // dot(scale(1, cross(b,b)), a) ≡ 1 * dot(cross(b,b), a)
+    // scale(1, cross(b,b)) ≡ cross(b,b)
+    lemma_scale_identity(cross(b, b));
+    // Actually, simpler: dot(cross(b,b), a). We know cross(b,b) ≡ z.
+    // Use the congruence on individual components to propagate.
+    // dot(cross(b,b), a) = cross(b,b).x * a.x + cross(b,b).y * a.y + cross(b,b).z * a.z
+    // cross(b,b) ≡ z means each component is eqv to 0
+    // So each product ≡ 0, and the sum ≡ 0.
+    // This is just lemma_dot_zero_left applied to a, but with cross(b,b) instead of z.
+    // Let me just chain: dot(a, cross(b,b)) ≡ dot(cross(b,b), a) and then use congruence.
+    // Actually dot_congruence needs both sides eqv'd. Let me use a simpler approach.
+    // dot_scale_right with s=0: dot(a, scale(0, b')) ≡ 0 * dot(a, b') = 0... complex.
+    // Simplest: dot_distributes_right with c = -cross(b,b):
+    // Actually the SIMPLEST: note that triple(a,b,b) = dot(a, cross(b,b)).
+    // cross(b,b) ≡ zero, so each component of cross(b,b) is eqv to 0.
+    // Use component-level reasoning (like dot_zero_right but substituting cross(b,b) for zero).
+    // cross(b,b).x ≡ 0, cross(b,b).y ≡ 0, cross(b,b).z ≡ 0
+    // a.x * cross(b,b).x ≡ a.x * 0 ≡ 0 (by mul_congruence_right + mul_zero_right)
+    ring_lemmas::lemma_mul_congruence_right::<T>(a.x, cross(b, b).x, T::zero());
+    T::axiom_mul_zero_right(a.x);
+    T::axiom_eqv_transitive(a.x.mul(cross(b, b).x), a.x.mul(T::zero()), T::zero());
+
+    ring_lemmas::lemma_mul_congruence_right::<T>(a.y, cross(b, b).y, T::zero());
+    T::axiom_mul_zero_right(a.y);
+    T::axiom_eqv_transitive(a.y.mul(cross(b, b).y), a.y.mul(T::zero()), T::zero());
+
+    ring_lemmas::lemma_mul_congruence_right::<T>(a.z, cross(b, b).z, T::zero());
+    T::axiom_mul_zero_right(a.z);
+    T::axiom_eqv_transitive(a.z.mul(cross(b, b).z), a.z.mul(T::zero()), T::zero());
+
+    // 0 + 0 ≡ 0
+    T::axiom_add_zero_right(T::zero());
+    // ax*cx + ay*cy ≡ 0 + 0 ≡ 0
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a.x.mul(cross(b, b).x), T::zero(),
+        a.y.mul(cross(b, b).y), T::zero(),
+    );
+    T::axiom_eqv_transitive(
+        a.x.mul(cross(b, b).x).add(a.y.mul(cross(b, b).y)),
+        T::zero().add(T::zero()),
+        T::zero(),
+    );
+    // (ax*cx + ay*cy) + az*cz ≡ 0 + 0 ≡ 0
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a.x.mul(cross(b, b).x).add(a.y.mul(cross(b, b).y)), T::zero(),
+        a.z.mul(cross(b, b).z), T::zero(),
+    );
+    T::axiom_eqv_transitive(
+        triple(a, b, b),
+        T::zero().add(T::zero()),
+        T::zero(),
+    );
+}
+
+/// triple(a, a, b) ≡ 0
+pub proof fn lemma_triple_self_zero_12<T: Ring>(a: Vec3<T>, b: Vec3<T>)
+    ensures
+        triple(a, a, b).eqv(T::zero()),
+{
+    // triple(a, a, b) = dot(a, cross(a, b))
+    // dot(cross(a, b), a) ≡ 0  [cross_orthogonal_left]
+    lemma_cross_orthogonal_left(a, b);
+    // dot(a, cross(a, b)) ≡ dot(cross(a, b), a) ≡ 0
+    lemma_dot_commutative(a, cross(a, b));
+    T::axiom_eqv_transitive(triple(a, a, b), dot(cross(a, b), a), T::zero());
+}
+
+/// triple(a, b, a) ≡ 0
+pub proof fn lemma_triple_self_zero_13<T: Ring>(a: Vec3<T>, b: Vec3<T>)
+    ensures
+        triple(a, b, a).eqv(T::zero()),
+{
+    // triple(a, b, a) = dot(a, cross(b, a))
+    // dot(cross(b, a), a) = dot(cross(b, a), a)... hmm, need orthogonal_right
+    // cross_orthogonal_right(b, a): dot(cross(b, a), a) ≡ 0
+    lemma_cross_orthogonal_right(b, a);
+    lemma_dot_commutative(a, cross(b, a));
+    T::axiom_eqv_transitive(triple(a, b, a), dot(cross(b, a), a), T::zero());
+}
+
+/// triple(a + a2, b, c) ≡ triple(a, b, c) + triple(a2, b, c)
+pub proof fn lemma_triple_linear_first<T: Ring>(a: Vec3<T>, a2: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
+    ensures
+        triple(a.add(a2), b, c).eqv(triple(a, b, c).add(triple(a2, b, c))),
+{
+    lemma_dot_distributes_left(a, a2, cross(b, c));
+}
+
+/// triple(a, b, c) ≡ -triple(b, a, c) (swap first two)
+pub proof fn lemma_triple_swap_12<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
+    ensures
+        triple(a, b, c).eqv(triple(b, a, c).neg()),
+{
+    // Strategy from VerusCAD: use linearity + self-zero on (a+b)
+    // triple(a+b, a+b, c) ≡ 0  [self_zero_12]
+    lemma_triple_self_zero_12(a.add(b), c);
+    // triple(a+b, a+b, c) ≡ triple(a, a+b, c) + triple(b, a+b, c)  [linear_first]
+    lemma_triple_linear_first(a, b, a.add(b), c);
+    // So triple(a, a+b, c) + triple(b, a+b, c) ≡ 0
+
+    // Expand triple(a, a+b, c):
+    // cross(a+b, c) ≡ cross(a, c) + cross(b, c)  [cross_distributes_left]
+    // dot(a, cross(a+b, c)) ≡ dot(a, cross(a,c) + cross(b,c))
+    //   ≡ dot(a, cross(a,c)) + dot(a, cross(b,c))  [dot_distributes_right]
+    //   = triple(a,a,c) + triple(a,b,c)
+    //   ≡ 0 + triple(a,b,c) ≡ triple(a,b,c)
+
+    // Show triple(a, a+b, c) ≡ triple(a, b, c)
+    // cross(a+b, c) ≡ cross(a, c) + cross(b, c)
+    lemma_cross_distributes_left(a, b, c);
+    <Vec3<T> as Equivalence>::axiom_eqv_reflexive(a);
+    lemma_dot_congruence(a, a, cross(a.add(b), c), cross(a, c).add(cross(b, c)));
+    // dot(a, cross(a,c)+cross(b,c)) ≡ dot(a, cross(a,c)) + dot(a, cross(b,c))
+    lemma_dot_distributes_right(a, cross(a, c), cross(b, c));
+    T::axiom_eqv_transitive(
+        triple(a, a.add(b), c),
+        dot(a, cross(a, c).add(cross(b, c))),
+        triple(a, a, c).add(triple(a, b, c)),
+    );
+    // triple(a,a,c) ≡ 0
+    lemma_triple_self_zero_12(a, c);
+    additive_group_lemmas::lemma_add_zero_left::<T>(triple(a, b, c));
+    T::axiom_add_congruence_left(triple(a, a, c), T::zero(), triple(a, b, c));
+    T::axiom_eqv_transitive(
+        triple(a, a.add(b), c),
+        triple(a, a, c).add(triple(a, b, c)),
+        T::zero().add(triple(a, b, c)),
+    );
+    T::axiom_eqv_transitive(
+        triple(a, a.add(b), c),
+        T::zero().add(triple(a, b, c)),
+        triple(a, b, c),
+    );
+
+    // Similarly, show triple(b, a+b, c) ≡ triple(b, a, c)
+    <Vec3<T> as Equivalence>::axiom_eqv_reflexive(b);
+    lemma_dot_congruence(b, b, cross(a.add(b), c), cross(a, c).add(cross(b, c)));
+    lemma_dot_distributes_right(b, cross(a, c), cross(b, c));
+    T::axiom_eqv_transitive(
+        triple(b, a.add(b), c),
+        dot(b, cross(a, c).add(cross(b, c))),
+        triple(b, a, c).add(triple(b, b, c)),
+    );
+    lemma_triple_self_zero_23::<T>(b, b);
+    // Wait, triple(b, b, c) = dot(b, cross(b, c)) ≡ 0 by self_zero_12
+    lemma_triple_self_zero_12(b, c);
+    T::axiom_add_zero_right(triple(b, a, c));
+    additive_group_lemmas::lemma_add_congruence_right::<T>(
+        triple(b, a, c),
+        triple(b, b, c),
+        T::zero(),
+    );
+    T::axiom_eqv_transitive(
+        triple(b, a.add(b), c),
+        triple(b, a, c).add(triple(b, b, c)),
+        triple(b, a, c).add(T::zero()),
+    );
+    T::axiom_eqv_transitive(
+        triple(b, a.add(b), c),
+        triple(b, a, c).add(T::zero()),
+        triple(b, a, c),
+    );
+
+    // From linear_first: triple(a,a+b,c) + triple(b,a+b,c) ≡ triple(a+b,a+b,c) [reversed]
+    T::axiom_eqv_symmetric(
+        triple(a.add(b), a.add(b), c),
+        triple(a, a.add(b), c).add(triple(b, a.add(b), c)),
+    );
+    // triple(a+b,a+b,c) ≡ 0
+    // So triple(a,a+b,c) + triple(b,a+b,c) ≡ 0
+    T::axiom_eqv_transitive(
+        triple(a, a.add(b), c).add(triple(b, a.add(b), c)),
+        triple(a.add(b), a.add(b), c),
+        T::zero(),
+    );
+    // By congruence: triple(a,b,c) + triple(b,a,c) ≡ triple(a,a+b,c) + triple(b,a+b,c) ≡ 0
+    T::axiom_eqv_symmetric(triple(a, a.add(b), c), triple(a, b, c));
+    T::axiom_eqv_symmetric(triple(b, a.add(b), c), triple(b, a, c));
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        triple(a, b, c), triple(a, a.add(b), c),
+        triple(b, a, c), triple(b, a.add(b), c),
+    );
+    T::axiom_eqv_transitive(
+        triple(a, b, c).add(triple(b, a, c)),
+        triple(a, a.add(b), c).add(triple(b, a.add(b), c)),
+        T::zero(),
+    );
+
+    // triple(a,b,c) + triple(b,a,c) ≡ 0
+    // Commute: triple(b,a,c) + triple(a,b,c) ≡ 0
+    T::axiom_add_commutative(triple(a, b, c), triple(b, a, c));
+    // add_commutative gives: (a,b,c)+(b,a,c) ≡ (b,a,c)+(a,b,c)
+    // We need: (b,a,c)+(a,b,c) ≡ (a,b,c)+(b,a,c), so flip it
+    T::axiom_eqv_symmetric(
+        triple(a, b, c).add(triple(b, a, c)),
+        triple(b, a, c).add(triple(a, b, c)),
+    );
+    T::axiom_eqv_transitive(
+        triple(b, a, c).add(triple(a, b, c)),
+        triple(a, b, c).add(triple(b, a, c)),
+        T::zero(),
+    );
+    // lemma_neg_unique(triple(b,a,c), triple(a,b,c)): ensures triple(a,b,c) ≡ -(triple(b,a,c))
+    additive_group_lemmas::lemma_neg_unique::<T>(triple(b, a, c), triple(a, b, c));
+}
+
+/// triple(a, c, b) ≡ -triple(a, b, c) (swap last two)
+pub proof fn lemma_triple_swap_23<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
+    ensures
+        triple(a, c, b).eqv(triple(a, b, c).neg()),
+{
+    // cross(c, b) ≡ -cross(b, c)  [cross_anticommutative]
+    lemma_cross_anticommutative(c, b);
+    // dot(a, cross(c, b)) ≡ dot(a, -cross(b, c))
+    <Vec3<T> as Equivalence>::axiom_eqv_reflexive(a);
+    lemma_dot_congruence(a, a, cross(c, b), cross(b, c).neg());
+    // dot(a, -cross(b, c)) ≡ -dot(a, cross(b, c))  [dot_neg_right]
+    lemma_dot_neg_right(a, cross(b, c));
+    T::axiom_eqv_transitive(
+        triple(a, c, b),
+        dot(a, cross(b, c).neg()),
+        triple(a, b, c).neg(),
+    );
+}
+
+/// triple(a, b, c) ≡ triple(b, c, a) (cyclic permutation)
+pub proof fn lemma_triple_cyclic<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
+    ensures
+        triple(a, b, c).eqv(triple(b, c, a)),
+{
+    // triple(a,b,c) ≡ -triple(b,a,c)  [swap_12]
+    lemma_triple_swap_12(a, b, c);
+    // -triple(b,a,c) ≡ -(-triple(b,c,a))  [swap_23 inside neg]
+    lemma_triple_swap_23(b, a, c);
+    // triple(b,a,c) ≡ -triple(b,c,a) ... wait, swap_23 gives:
+    // triple(b,c,a) ≡ -triple(b,a,c)... no:
+    // swap_23(b,a,c): triple(b,c,a) ≡ -triple(b,a,c)
+    // So triple(b,a,c) ≡ ... we need the reverse
+    // From swap_23(b,a,c): triple(b,c,a) ≡ -triple(b,a,c)
+    // neg both sides: -triple(b,c,a) ≡ --triple(b,a,c) ≡ triple(b,a,c)
+    T::axiom_neg_congruence(triple(b, c, a), triple(b, a, c).neg());
+    additive_group_lemmas::lemma_neg_involution::<T>(triple(b, a, c));
+    T::axiom_eqv_transitive(
+        triple(b, c, a).neg(),
+        triple(b, a, c).neg().neg(),
+        triple(b, a, c),
+    );
+    // So triple(b,a,c) ≡ -triple(b,c,a) reversed: triple(b,a,c) ≡ -(-(-triple(b,c,a)))...
+    // Actually: triple(a,b,c) ≡ -triple(b,a,c), and -triple(b,c,a) ≡ triple(b,a,c)
+    // So: triple(a,b,c) ≡ -triple(b,a,c) and -triple(b,c,a) ≡ triple(b,a,c)
+    // neg the second: triple(b,a,c) ≡ -triple(b,c,a) reversed gives -triple(b,c,a) ≡ triple(b,a,c)
+    // Wait let me re-derive:
+
+    // triple(a,b,c) ≡ -triple(b,a,c)  ... (1) from swap_12
+    // triple(b,c,a) ≡ -triple(b,a,c)  ... from swap_23(b,a,c)
+    // Wait: swap_23 says triple(a, c, b) ≡ -triple(a, b, c)
+    // So swap_23(b, a, c): triple(b, c, a) ≡ -triple(b, a, c)  ← this is what we want!
+
+    // From (1): triple(a,b,c) ≡ -triple(b,a,c)
+    // From swap_23(b,a,c): triple(b,c,a) ≡ -triple(b,a,c)
+    // Both ≡ -triple(b,a,c), so triple(a,b,c) ≡ triple(b,c,a)
+
+    // triple(b,c,a) ≡ -triple(b,a,c) [swap_23(b,a,c)]
+    T::axiom_eqv_symmetric(triple(b, c, a), triple(b, a, c).neg());
+    // -triple(b,a,c) ≡ triple(b,c,a), and triple(a,b,c) ≡ -triple(b,a,c)
+    T::axiom_eqv_transitive(triple(a, b, c), triple(b, a, c).neg(), triple(b, c, a));
+}
+
+// ---------------------------------------------------------------------------
+// Lagrange identity helpers (private)
+// ---------------------------------------------------------------------------
+
+/// (x*y)*(x*y) ≡ (x*x)*(y*y)
+proof fn lemma_square_mul<T: Ring>(x: T, y: T)
+    ensures
+        x.mul(y).mul(x.mul(y)).eqv(x.mul(x).mul(y.mul(y))),
+{
+    T::axiom_mul_associative(x, y, x.mul(y));
+    T::axiom_mul_associative(y, x, y);
+    T::axiom_eqv_symmetric(y.mul(x).mul(y), y.mul(x.mul(y)));
+    T::axiom_mul_commutative(y, x);
+    T::axiom_mul_congruence_left(y.mul(x), x.mul(y), y);
+    T::axiom_mul_associative(x, y, y);
+    T::axiom_eqv_transitive(y.mul(x.mul(y)), y.mul(x).mul(y), x.mul(y).mul(y));
+    T::axiom_eqv_transitive(y.mul(x.mul(y)), x.mul(y).mul(y), x.mul(y.mul(y)));
+    ring_lemmas::lemma_mul_congruence_right::<T>(x, y.mul(x.mul(y)), x.mul(y.mul(y)));
+    T::axiom_eqv_transitive(
+        x.mul(y).mul(x.mul(y)),
+        x.mul(y.mul(x.mul(y))),
+        x.mul(x.mul(y.mul(y))),
+    );
+    T::axiom_mul_associative(x, x, y.mul(y));
+    T::axiom_eqv_symmetric(x.mul(x).mul(y.mul(y)), x.mul(x.mul(y.mul(y))));
+    T::axiom_eqv_transitive(
+        x.mul(y).mul(x.mul(y)),
+        x.mul(x.mul(y.mul(y))),
+        x.mul(x).mul(y.mul(y)),
+    );
+}
+
+/// (a*c)*(b*d) ≡ (a*d)*(b*c)
+proof fn lemma_mul_four_commute<T: Ring>(a: T, b: T, c: T, d: T)
+    ensures
+        a.mul(c).mul(b.mul(d)).eqv(a.mul(d).mul(b.mul(c))),
+{
+    T::axiom_mul_associative(a, c, b.mul(d));
+    T::axiom_mul_associative(c, b, d);
+    T::axiom_eqv_symmetric(c.mul(b).mul(d), c.mul(b.mul(d)));
+    T::axiom_mul_commutative(c, b);
+    T::axiom_mul_congruence_left(c.mul(b), b.mul(c), d);
+    T::axiom_mul_associative(b, c, d);
+    T::axiom_eqv_transitive(c.mul(b.mul(d)), c.mul(b).mul(d), b.mul(c).mul(d));
+    T::axiom_eqv_transitive(c.mul(b.mul(d)), b.mul(c).mul(d), b.mul(c.mul(d)));
+    ring_lemmas::lemma_mul_congruence_right::<T>(a, c.mul(b.mul(d)), b.mul(c.mul(d)));
+    T::axiom_eqv_transitive(
+        a.mul(c).mul(b.mul(d)),
+        a.mul(c.mul(b.mul(d))),
+        a.mul(b.mul(c.mul(d))),
+    );
+    T::axiom_mul_associative(a, d, b.mul(c));
+    T::axiom_mul_associative(d, b, c);
+    T::axiom_eqv_symmetric(d.mul(b).mul(c), d.mul(b.mul(c)));
+    T::axiom_mul_commutative(d, b);
+    T::axiom_mul_congruence_left(d.mul(b), b.mul(d), c);
+    T::axiom_mul_associative(b, d, c);
+    T::axiom_eqv_transitive(d.mul(b.mul(c)), d.mul(b).mul(c), b.mul(d).mul(c));
+    T::axiom_eqv_transitive(d.mul(b.mul(c)), b.mul(d).mul(c), b.mul(d.mul(c)));
+    T::axiom_mul_commutative(d, c);
+    ring_lemmas::lemma_mul_congruence_right::<T>(b, d.mul(c), c.mul(d));
+    T::axiom_eqv_transitive(d.mul(b.mul(c)), b.mul(d.mul(c)), b.mul(c.mul(d)));
+    ring_lemmas::lemma_mul_congruence_right::<T>(a, d.mul(b.mul(c)), b.mul(c.mul(d)));
+    T::axiom_eqv_transitive(
+        a.mul(d).mul(b.mul(c)),
+        a.mul(d.mul(b.mul(c))),
+        a.mul(b.mul(c.mul(d))),
+    );
+    T::axiom_eqv_symmetric(a.mul(d).mul(b.mul(c)), a.mul(b.mul(c.mul(d))));
+    T::axiom_eqv_transitive(
+        a.mul(c).mul(b.mul(d)),
+        a.mul(b.mul(c.mul(d))),
+        a.mul(d).mul(b.mul(c)),
+    );
+}
+
+/// (p*v - q*u)² ≡ p²v² - 2(pu)(qv) + q²u²
+proof fn lemma_pair_expansion<T: Ring>(p: T, q: T, u: T, v: T)
+    ensures
+        p.mul(v).sub(q.mul(u)).mul(p.mul(v).sub(q.mul(u))).eqv(
+            p.mul(p).mul(v.mul(v))
+                .sub(T::one().add(T::one()).mul(p.mul(u).mul(q.mul(v))))
+                .add(q.mul(q).mul(u.mul(u)))
+        ),
+{
+    let pv = p.mul(v);
+    let qu = q.mul(u);
+    let pu = p.mul(u);
+    let qv = q.mul(v);
+    let two = T::one().add(T::one());
+
+    // (pv-qu)² ≡ (pv)² - 2(pv)(qu) + (qu)²
+    ring_lemmas::lemma_square_sub_expand::<T>(pv, qu);
+
+    // Convert squared products via square_mul
+    lemma_square_mul::<T>(p, v); // (pv)² ≡ p²v²
+    lemma_square_mul::<T>(q, u); // (qu)² ≡ q²u²
+
+    // Convert cross term via four_commute: (pv)(qu) ≡ (pu)(qv)
+    lemma_mul_four_commute::<T>(p, q, v, u);
+    ring_lemmas::lemma_mul_congruence_right::<T>(two, pv.mul(qu), pu.mul(qv));
+
+    // Chain: (pv)²-2(pv)(qu)+(qu)² ≡ p²v²-2(pu)(qv)+q²u²
+    additive_group_lemmas::lemma_sub_congruence::<T>(
+        pv.mul(pv), p.mul(p).mul(v.mul(v)),
+        two.mul(pv.mul(qu)), two.mul(pu.mul(qv)),
+    );
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        pv.mul(pv).sub(two.mul(pv.mul(qu))),
+        p.mul(p).mul(v.mul(v)).sub(two.mul(pu.mul(qv))),
+        qu.mul(qu),
+        q.mul(q).mul(u.mul(u)),
+    );
+    T::axiom_eqv_transitive(
+        pv.sub(qu).mul(pv.sub(qu)),
+        pv.mul(pv).sub(two.mul(pv.mul(qu))).add(qu.mul(qu)),
+        p.mul(p).mul(v.mul(v)).sub(two.mul(pu.mul(qv))).add(q.mul(q).mul(u.mul(u))),
+    );
+}
+
+
+// ---------------------------------------------------------------------------
+// 2D Lagrange identity (helper)
+// ---------------------------------------------------------------------------
+
+/// 2D Lagrange identity: (pv-qu)² ≡ (p²+q²)(u²+v²) - (pu+qv)²
+///
+/// Proved via the additive form: (pv-qu)² + (pu+qv)² ≡ (p²+q²)(u²+v²),
+/// then converted to the subtraction form.
+proof fn lemma_lagrange_2d<T: Ring>(p: T, q: T, u: T, v: T)
+    ensures
+        p.mul(v).sub(q.mul(u)).mul(p.mul(v).sub(q.mul(u))).eqv(
+            p.mul(p).add(q.mul(q)).mul(u.mul(u).add(v.mul(v)))
+                .sub(p.mul(u).add(q.mul(v)).mul(p.mul(u).add(q.mul(v))))
+        ),
+{
+    let pp = p.mul(p); let qq = q.mul(q);
+    let uu = u.mul(u); let vv = v.mul(v);
+    let pu = p.mul(u); let qv = q.mul(v);
+    let pv = p.mul(v); let qu = q.mul(u);
+    let two = T::one().add(T::one());
+    let x = two.mul(pu.mul(qv)); // 2(pu)(qv)
+
+    // ── A: (pv-qu)² via pair_expansion ──
+    lemma_pair_expansion::<T>(p, q, u, v);
+    let pair_form = pp.mul(vv).sub(x).add(qq.mul(uu));
+
+    // ── B: (pu+qv)² via square_expand + square_mul ──
+    ring_lemmas::lemma_square_expand::<T>(pu, qv);
+    lemma_square_mul::<T>(p, u);
+    lemma_square_mul::<T>(q, v);
+    T::axiom_eqv_reflexive(x);
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        pu.mul(pu), pp.mul(uu), x, x,
+    );
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        pu.mul(pu).add(x), pp.mul(uu).add(x),
+        qv.mul(qv), qq.mul(vv),
+    );
+    T::axiom_eqv_transitive(
+        pu.add(qv).mul(pu.add(qv)),
+        pu.mul(pu).add(x).add(qv.mul(qv)),
+        pp.mul(uu).add(x).add(qq.mul(vv)),
+    );
+    let dot_form = pp.mul(uu).add(x).add(qq.mul(vv));
+
+    // ── C: Sum = pair_form + dot_form ──
+    // Rearrange via rearrange_2x2:
+    additive_group_lemmas::lemma_add_rearrange_2x2::<T>(
+        pp.mul(vv).sub(x), qq.mul(uu),
+        pp.mul(uu).add(x), qq.mul(vv),
+    );
+    // Inner cancellation: (p²v² - X) + (p²u² + X) ≡ p²v² + p²u²
+    T::axiom_sub_is_add_neg(pp.mul(vv), x);
+    T::axiom_add_congruence_left(
+        pp.mul(vv).sub(x), pp.mul(vv).add(x.neg()),
+        pp.mul(uu).add(x),
+    );
+    additive_group_lemmas::lemma_add_rearrange_2x2::<T>(
+        pp.mul(vv), x.neg(), pp.mul(uu), x,
+    );
+    T::axiom_eqv_transitive(
+        pp.mul(vv).sub(x).add(pp.mul(uu).add(x)),
+        pp.mul(vv).add(x.neg()).add(pp.mul(uu).add(x)),
+        pp.mul(vv).add(pp.mul(uu)).add(x.neg().add(x)),
+    );
+    additive_group_lemmas::lemma_add_inverse_left::<T>(x);
+    additive_group_lemmas::lemma_add_congruence_right::<T>(
+        pp.mul(vv).add(pp.mul(uu)),
+        x.neg().add(x), T::zero(),
+    );
+    T::axiom_eqv_transitive(
+        pp.mul(vv).sub(x).add(pp.mul(uu).add(x)),
+        pp.mul(vv).add(pp.mul(uu)).add(x.neg().add(x)),
+        pp.mul(vv).add(pp.mul(uu)).add(T::zero()),
+    );
+    T::axiom_add_zero_right(pp.mul(vv).add(pp.mul(uu)));
+    T::axiom_eqv_transitive(
+        pp.mul(vv).sub(x).add(pp.mul(uu).add(x)),
+        pp.mul(vv).add(pp.mul(uu)).add(T::zero()),
+        pp.mul(vv).add(pp.mul(uu)),
+    );
+
+    // ── D: Factor back to product form ──
+    T::axiom_add_commutative(pp.mul(vv), pp.mul(uu));
+    T::axiom_mul_distributes_left(pp, uu, vv);
+    T::axiom_eqv_symmetric(pp.mul(uu.add(vv)), pp.mul(uu).add(pp.mul(vv)));
+    T::axiom_eqv_transitive(
+        pp.mul(vv).add(pp.mul(uu)),
+        pp.mul(uu).add(pp.mul(vv)),
+        pp.mul(uu.add(vv)),
+    );
+    T::axiom_mul_distributes_left(qq, uu, vv);
+    T::axiom_eqv_symmetric(qq.mul(uu.add(vv)), qq.mul(uu).add(qq.mul(vv)));
+
+    // Chain: sub_form ≡ pp*(vv)+pp*(uu) ≡ pp*(uu+vv)
+    T::axiom_eqv_transitive(
+        pp.mul(vv).sub(x).add(pp.mul(uu).add(x)),
+        pp.mul(vv).add(pp.mul(uu)),
+        pp.mul(uu.add(vv)),
+    );
+
+    // Build full sum
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        pp.mul(vv).sub(x).add(pp.mul(uu).add(x)),
+        pp.mul(uu.add(vv)),
+        qq.mul(uu).add(qq.mul(vv)),
+        qq.mul(uu.add(vv)),
+    );
+    T::axiom_eqv_transitive(
+        pair_form.add(dot_form),
+        pp.mul(vv).sub(x).add(pp.mul(uu).add(x)).add(qq.mul(uu).add(qq.mul(vv))),
+        pp.mul(uu.add(vv)).add(qq.mul(uu.add(vv))),
+    );
+
+    // p²(u²+v²) + q²(u²+v²) ≡ (p²+q²)(u²+v²)
+    ring_lemmas::lemma_mul_distributes_right::<T>(pp, qq, uu.add(vv));
+    T::axiom_eqv_symmetric(
+        pp.add(qq).mul(uu.add(vv)),
+        pp.mul(uu.add(vv)).add(qq.mul(uu.add(vv))),
+    );
+    T::axiom_eqv_transitive(
+        pair_form.add(dot_form),
+        pp.mul(uu.add(vv)).add(qq.mul(uu.add(vv))),
+        pp.add(qq).mul(uu.add(vv)),
+    );
+    let product = pp.add(qq).mul(uu.add(vv));
+    let dot_sq = pu.add(qv).mul(pu.add(qv));
+
+    // ── E: Convert additive to subtraction form ──
+    additive_group_lemmas::lemma_add_then_sub_cancel::<T>(pair_form, dot_form);
+    T::axiom_eqv_symmetric(pair_form, pair_form.add(dot_form).sub(dot_form));
+    T::axiom_eqv_reflexive(dot_form);
+    additive_group_lemmas::lemma_sub_congruence::<T>(
+        pair_form.add(dot_form), product,
+        dot_form, dot_form,
+    );
+    T::axiom_eqv_transitive(
+        pair_form,
+        pair_form.add(dot_form).sub(dot_form),
+        product.sub(dot_form),
+    );
+
+    T::axiom_eqv_reflexive(product);
+    T::axiom_eqv_symmetric(dot_sq, dot_form);
+    additive_group_lemmas::lemma_sub_congruence::<T>(
+        product, product,
+        dot_form, dot_sq,
+    );
+    T::axiom_eqv_transitive(pair_form, product.sub(dot_form), product.sub(dot_sq));
+    T::axiom_eqv_symmetric(pv.sub(qu).mul(pv.sub(qu)), pair_form);
+    T::axiom_eqv_transitive(pv.sub(qu).mul(pv.sub(qu)), pair_form, product.sub(dot_sq));
+}
+
+// ---------------------------------------------------------------------------
+// Lagrange identity
+// ---------------------------------------------------------------------------
+
+/// Lagrange identity: ‖a × b‖² ≡ ‖a‖²·‖b‖² − (a · b)²
+///
+/// Uses dimensional reduction: the 3D identity reduces to the 2D Lagrange
+/// identity (for the cz component) plus pair_expansion (for cx, cy).
+pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
+    ensures
+        norm_sq(cross(a, b)).eqv(
+            norm_sq(a).mul(norm_sq(b)).sub(dot(a, b).mul(dot(a, b)))
+        ),
+{
+    let ax = a.x; let ay = a.y; let az = a.z;
+    let bx = b.x; let by = b.y; let bz = b.z;
+    let two = T::one().add(T::one());
+
+    // K = ax²+ay², k = az², L = bx²+by², l = bz²
+    // M = ax*bx+ay*by, m = az*bz
+    let k = az.mul(az);
+    let l = bz.mul(bz);
+    let big_m = ax.mul(bx).add(ay.mul(by));
+    let m = az.mul(bz);
+    let big_k = ax.mul(ax).add(ay.mul(ay));
+    let big_l = bx.mul(bx).add(by.mul(by));
+
+    // ── Step 1: 2D Lagrange for cz ──
+    // cz² ≡ K*L - M²
+    lemma_lagrange_2d::<T>(ax, ay, bx, by);
+
+    // ── Step 2: Expand (K+k)(L+l) ≡ (KL+Kl)+(kL+kl) ──
+    ring_lemmas::lemma_mul_distributes_right::<T>(big_k, k, big_l.add(l));
+    T::axiom_mul_distributes_left(big_k, big_l, l);
+    T::axiom_mul_distributes_left(k, big_l, l);
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        big_k.mul(big_l.add(l)), big_k.mul(big_l).add(big_k.mul(l)),
+        k.mul(big_l.add(l)), k.mul(big_l).add(k.mul(l)),
+    );
+    T::axiom_eqv_transitive(
+        big_k.add(k).mul(big_l.add(l)),
+        big_k.mul(big_l.add(l)).add(k.mul(big_l.add(l))),
+        big_k.mul(big_l).add(big_k.mul(l)).add(k.mul(big_l).add(k.mul(l))),
+    );
+
+    // ── Step 3: Expand (M+m)² ≡ (M²+2Mm)+m² ──
+    ring_lemmas::lemma_square_expand::<T>(big_m, m);
+
+    // ── Step 4: Subtract (K+k)(L+l) - (M+m)² ──
+    let product_exp = big_k.mul(big_l).add(big_k.mul(l)).add(k.mul(big_l).add(k.mul(l)));
+    let dot_sq_exp = big_m.mul(big_m).add(two.mul(big_m.mul(m))).add(m.mul(m));
+    let product_val = big_k.add(k).mul(big_l.add(l));
+    let dot_sq_val = big_m.add(m).mul(big_m.add(m));
+
+    additive_group_lemmas::lemma_sub_congruence::<T>(
+        product_val, product_exp,
+        dot_sq_val, dot_sq_exp,
+    );
+
+    // sub_sum_distributes: ≡ ((KL+Kl)-(M²+2Mm)) + ((kL+kl)-m²)
+    lemma_sub_sum_distributes::<T>(
+        big_k.mul(big_l).add(big_k.mul(l)),
+        k.mul(big_l).add(k.mul(l)),
+        big_m.mul(big_m).add(two.mul(big_m.mul(m))),
+        m.mul(m),
+    );
+    T::axiom_eqv_transitive(
+        product_val.sub(dot_sq_val),
+        product_exp.sub(dot_sq_exp),
+        big_k.mul(big_l).add(big_k.mul(l)).sub(big_m.mul(big_m).add(two.mul(big_m.mul(m))))
+            .add(k.mul(big_l).add(k.mul(l)).sub(m.mul(m))),
+    );
+
+    // ── Step 5: (kL+kl)-m² ≡ kL ──
+    lemma_square_mul::<T>(az, bz); // m² ≡ kl
+    T::axiom_eqv_symmetric(m.mul(m), k.mul(l));
+    // (kL+kl) - m²: since m² ≡ kl, this ≡ (kL+kl) - kl ≡ kL
+    T::axiom_sub_is_add_neg(k.mul(big_l).add(k.mul(l)), m.mul(m));
+    additive_group_lemmas::lemma_neg_congruence::<T>(m.mul(m), k.mul(l));
+    additive_group_lemmas::lemma_add_congruence_right::<T>(
+        k.mul(big_l).add(k.mul(l)),
+        m.mul(m).neg(), k.mul(l).neg(),
+    );
+    T::axiom_eqv_transitive(
+        k.mul(big_l).add(k.mul(l)).sub(m.mul(m)),
+        k.mul(big_l).add(k.mul(l)).add(m.mul(m).neg()),
+        k.mul(big_l).add(k.mul(l)).add(k.mul(l).neg()),
+    );
+    T::axiom_add_associative(k.mul(big_l), k.mul(l), k.mul(l).neg());
+    T::axiom_eqv_transitive(
+        k.mul(big_l).add(k.mul(l)).sub(m.mul(m)),
+        k.mul(big_l).add(k.mul(l)).add(k.mul(l).neg()),
+        k.mul(big_l).add(k.mul(l).add(k.mul(l).neg())),
+    );
+    T::axiom_add_inverse_right(k.mul(l));
+    additive_group_lemmas::lemma_add_congruence_right::<T>(
+        k.mul(big_l), k.mul(l).add(k.mul(l).neg()), T::zero(),
+    );
+    T::axiom_add_zero_right(k.mul(big_l));
+    T::axiom_eqv_transitive(
+        k.mul(big_l).add(k.mul(l)).sub(m.mul(m)),
+        k.mul(big_l).add(k.mul(l).add(k.mul(l).neg())),
+        k.mul(big_l).add(T::zero()),
+    );
+    T::axiom_eqv_transitive(
+        k.mul(big_l).add(k.mul(l)).sub(m.mul(m)),
+        k.mul(big_l).add(T::zero()),
+        k.mul(big_l),
+    );
+
+    // ── Step 6: (KL+Kl)-(M²+2Mm) ≡ (KL-M²)+(Kl-2Mm) ──
+    lemma_sub_sum_distributes::<T>(
+        big_k.mul(big_l), big_k.mul(l),
+        big_m.mul(big_m), two.mul(big_m.mul(m)),
+    );
+
+    // ── Step 7: KL-M² ≡ cz² ──
+    let cz_sq = ax.mul(by).sub(ay.mul(bx)).mul(ax.mul(by).sub(ay.mul(bx)));
+    T::axiom_eqv_symmetric(cz_sq, big_k.mul(big_l).sub(big_m.mul(big_m)));
+
+    // ── Step 8: Distribute Kl and 2Mm ──
+    // Kl = (ax²+ay²)*bz² ≡ ax²bz² + ay²bz²
+    ring_lemmas::lemma_mul_distributes_right::<T>(ax.mul(ax), ay.mul(ay), l);
+    // 2Mm: (M)*m ≡ (axbx)(m) + (ayby)(m), then 2*(...) distributes
+    ring_lemmas::lemma_mul_distributes_right::<T>(ax.mul(bx), ay.mul(by), m);
+    ring_lemmas::lemma_mul_congruence_right::<T>(
+        two, big_m.mul(m),
+        ax.mul(bx).mul(m).add(ay.mul(by).mul(m)),
+    );
+    T::axiom_mul_distributes_left(two, ax.mul(bx).mul(m), ay.mul(by).mul(m));
+    T::axiom_eqv_transitive(
+        two.mul(big_m.mul(m)),
+        two.mul(ax.mul(bx).mul(m).add(ay.mul(by).mul(m))),
+        two.mul(ax.mul(bx).mul(m)).add(two.mul(ay.mul(by).mul(m))),
+    );
+
+    // Kl-2Mm ≡ (ax²bz²+ay²bz²) - (2(axbx)m+2(ayby)m)
+    let kl_minus_2mm = big_k.mul(l).sub(two.mul(big_m.mul(m)));
+    additive_group_lemmas::lemma_sub_congruence::<T>(
+        big_k.mul(l), ax.mul(ax).mul(l).add(ay.mul(ay).mul(l)),
+        two.mul(big_m.mul(m)),
+        two.mul(ax.mul(bx).mul(m)).add(two.mul(ay.mul(by).mul(m))),
+    );
+    // ≡ (ax²bz²-2(axbx)m) + (ay²bz²-2(ayby)m)
+    lemma_sub_sum_distributes::<T>(
+        ax.mul(ax).mul(l), ay.mul(ay).mul(l),
+        two.mul(ax.mul(bx).mul(m)), two.mul(ay.mul(by).mul(m)),
+    );
+    let kl_2mm_dist = ax.mul(ax).mul(l).add(ay.mul(ay).mul(l))
+        .sub(two.mul(ax.mul(bx).mul(m)).add(two.mul(ay.mul(by).mul(m))));
+    let kl_2mm_split = ax.mul(ax).mul(l).sub(two.mul(ax.mul(bx).mul(m)))
+        .add(ay.mul(ay).mul(l).sub(two.mul(ay.mul(by).mul(m))));
+    T::axiom_eqv_transitive(kl_minus_2mm, kl_2mm_dist, kl_2mm_split);
+
+    // ── Step 9: kL ≡ az²bx² + az²by² ──
+    T::axiom_mul_distributes_left(k, bx.mul(bx), by.mul(by));
+
+    // ── Step 10: Chain RHS ≡ cz²+(A₁+B₁)+(A₂+B₂) ──
+    let a1 = ax.mul(ax).mul(l).sub(two.mul(ax.mul(bx).mul(m)));
+    let a2 = ay.mul(ay).mul(l).sub(two.mul(ay.mul(by).mul(m)));
+    let b1 = k.mul(bx.mul(bx));
+    let b2 = k.mul(by.mul(by));
+
+    // RHS = product_val - dot_sq_val
+    let rhs = product_val.sub(dot_sq_val);
+
+    // step_b: rhs ≡ ((KL+Kl)-(M²+2Mm)) + ((kL+kl)-m²)
+    let first_part = big_k.mul(big_l).add(big_k.mul(l))
+        .sub(big_m.mul(big_m).add(two.mul(big_m.mul(m))));
+    let second_part = k.mul(big_l).add(k.mul(l)).sub(m.mul(m));
+    let step_b = first_part.add(second_part);
+
+    // step_c: replace second_part with kL
+    let step_c = first_part.add(k.mul(big_l));
+    additive_group_lemmas::lemma_add_congruence_right::<T>(
+        first_part, second_part, k.mul(big_l),
+    );
+    T::axiom_eqv_transitive(rhs, step_b, step_c);
+
+    // step_d: first_part ≡ (KL-M²)+(Kl-2Mm) from step 6
+    let step_d = big_k.mul(big_l).sub(big_m.mul(big_m)).add(kl_minus_2mm);
+    T::axiom_add_congruence_left(first_part, step_d, k.mul(big_l));
+    T::axiom_eqv_transitive(rhs, step_c, step_d.add(k.mul(big_l)));
+
+    // Replace KL-M² with cz²
+    T::axiom_add_congruence_left(
+        big_k.mul(big_l).sub(big_m.mul(big_m)), cz_sq, kl_minus_2mm,
+    );
+    T::axiom_eqv_reflexive(k.mul(big_l));
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        step_d, cz_sq.add(kl_minus_2mm),
+        k.mul(big_l), k.mul(big_l),
+    );
+    T::axiom_eqv_transitive(rhs, step_d.add(k.mul(big_l)),
+        cz_sq.add(kl_minus_2mm).add(k.mul(big_l)));
+
+    // Replace kl_minus_2mm with split form
+    additive_group_lemmas::lemma_add_congruence_right::<T>(
+        cz_sq, kl_minus_2mm, kl_2mm_split,
+    );
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        cz_sq.add(kl_minus_2mm), cz_sq.add(kl_2mm_split),
+        k.mul(big_l), k.mul(big_l),
+    );
+    T::axiom_eqv_transitive(rhs,
+        cz_sq.add(kl_minus_2mm).add(k.mul(big_l)),
+        cz_sq.add(kl_2mm_split).add(k.mul(big_l)));
+
+    // Reassociate: (cz²+split)+kL ≡ cz²+(split+kL)
+    T::axiom_add_associative(cz_sq, kl_2mm_split, k.mul(big_l));
+    T::axiom_eqv_transitive(rhs,
+        cz_sq.add(kl_2mm_split).add(k.mul(big_l)),
+        cz_sq.add(kl_2mm_split.add(k.mul(big_l))));
+
+    // split+kL: replace kL with b1+b2, then rearrange
+    additive_group_lemmas::lemma_add_congruence_right::<T>(
+        kl_2mm_split, k.mul(big_l), b1.add(b2),
+    );
+    additive_group_lemmas::lemma_add_rearrange_2x2::<T>(a1, a2, b1, b2);
+    T::axiom_eqv_transitive(
+        kl_2mm_split.add(k.mul(big_l)),
+        kl_2mm_split.add(b1.add(b2)),
+        a1.add(b1).add(a2.add(b2)),
+    );
+    additive_group_lemmas::lemma_add_congruence_right::<T>(
+        cz_sq,
+        kl_2mm_split.add(k.mul(big_l)),
+        a1.add(b1).add(a2.add(b2)),
+    );
+    T::axiom_eqv_transitive(rhs,
+        cz_sq.add(kl_2mm_split.add(k.mul(big_l))),
+        cz_sq.add(a1.add(b1).add(a2.add(b2))));
+
+    // ── Step 11: A₁+B₁ ≡ cy², A₂+B₂ ≡ cx² ──
+
+    // cy = az*bx - ax*bz
+    // pair_expansion(ax,az,bx,bz): (ax*bz-az*bx)² ≡ ax²bz²-2(axbx)(azbz)+az²bx²
+    lemma_pair_expansion::<T>(ax, az, bx, bz);
+    let cy_def = az.mul(bx).sub(ax.mul(bz));
+    let cy_swap = ax.mul(bz).sub(az.mul(bx));
+    // cy_def ≡ -cy_swap via sub_antisymmetric
+    additive_group_lemmas::lemma_sub_antisymmetric::<T>(az.mul(bx), ax.mul(bz));
+    // cy² = cy_def*cy_def ≡ (-cy_swap)*(-cy_swap) ≡ cy_swap*cy_swap
+    T::axiom_mul_congruence_left(cy_def, cy_swap.neg(), cy_def);
+    ring_lemmas::lemma_mul_congruence_right::<T>(cy_swap.neg(), cy_def, cy_swap.neg());
+    T::axiom_eqv_transitive(
+        cy_def.mul(cy_def), cy_swap.neg().mul(cy_def), cy_swap.neg().mul(cy_swap.neg()),
+    );
+    ring_lemmas::lemma_neg_mul_neg::<T>(cy_swap, cy_swap);
+    T::axiom_eqv_transitive(
+        cy_def.mul(cy_def), cy_swap.neg().mul(cy_swap.neg()), cy_swap.mul(cy_swap),
+    );
+    // cy_swap² ≡ pair_expansion result = a1+b1
+    let cy_pair = ax.mul(ax).mul(bz.mul(bz))
+        .sub(two.mul(ax.mul(bx).mul(az.mul(bz))))
+        .add(az.mul(az).mul(bx.mul(bx)));
+    T::axiom_eqv_transitive(cy_def.mul(cy_def), cy_swap.mul(cy_swap), cy_pair);
+    // cy_pair = a1.add(b1) definitionally ✓
+    T::axiom_eqv_symmetric(cy_def.mul(cy_def), cy_pair);
+
+    // cx = ay*bz - az*by
+    // pair_expansion(ay,az,by,bz): (ay*bz-az*by)² ≡ ay²bz²-2(ayby)(azbz)+az²by²
+    lemma_pair_expansion::<T>(ay, az, by, bz);
+    let cx_def = ay.mul(bz).sub(az.mul(by));
+    let cx_pair = ay.mul(ay).mul(bz.mul(bz))
+        .sub(two.mul(ay.mul(by).mul(az.mul(bz))))
+        .add(az.mul(az).mul(by.mul(by)));
+    // cx² ≡ cx_pair = a2+b2 definitionally ✓
+    T::axiom_eqv_symmetric(cx_def.mul(cx_def), cx_pair);
+
+    // ── Step 12: Chain to norm_sq(cross) ──
+    let cx_sq = cx_def.mul(cx_def);
+    let cy_sq = cy_def.mul(cy_def);
+
+    // (A₁+B₁)+(A₂+B₂) ≡ cy²+cx²
+    additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
+        a1.add(b1), cy_sq, a2.add(b2), cx_sq,
+    );
+    additive_group_lemmas::lemma_add_congruence_right::<T>(
+        cz_sq, a1.add(b1).add(a2.add(b2)), cy_sq.add(cx_sq),
+    );
+    T::axiom_eqv_transitive(rhs,
+        cz_sq.add(a1.add(b1).add(a2.add(b2))),
+        cz_sq.add(cy_sq.add(cx_sq)));
+
+    // cz²+(cy²+cx²) ≡ cz²+(cx²+cy²) ≡ (cx²+cy²)+cz²
+    T::axiom_add_commutative(cy_sq, cx_sq);
+    additive_group_lemmas::lemma_add_congruence_right::<T>(
+        cz_sq, cy_sq.add(cx_sq), cx_sq.add(cy_sq),
+    );
+    T::axiom_eqv_transitive(rhs, cz_sq.add(cy_sq.add(cx_sq)), cz_sq.add(cx_sq.add(cy_sq)));
+    T::axiom_add_commutative(cx_sq.add(cy_sq), cz_sq);
+    T::axiom_eqv_symmetric(cx_sq.add(cy_sq).add(cz_sq), cz_sq.add(cx_sq.add(cy_sq)));
+    T::axiom_eqv_transitive(rhs, cz_sq.add(cx_sq.add(cy_sq)), cx_sq.add(cy_sq).add(cz_sq));
+
+    // norm_sq(cross(a,b)) = cx².add(cy²).add(cz²) ≡ rhs
+    T::axiom_eqv_symmetric(rhs, cx_sq.add(cy_sq).add(cz_sq));
+}
+
+// ---------------------------------------------------------------------------
+// Cauchy-Schwarz inequality
+// ---------------------------------------------------------------------------
+
+/// dot(a,b)² <= norm_sq(a) * norm_sq(b)
+pub proof fn lemma_cauchy_schwarz<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
+    ensures
+        dot(a, b).mul(dot(a, b)).le(norm_sq(a).mul(norm_sq(b))),
+{
+    let dot_sq = dot(a, b).mul(dot(a, b));
+    let product = norm_sq(a).mul(norm_sq(b));
+    let cross_norm = norm_sq(cross(a, b));
+
+    // norm_sq(cross(a,b)) >= 0
+    lemma_norm_sq_nonneg::<T>(cross(a, b));
+
+    // norm_sq(cross(a,b)) ≡ product - dot_sq  (Lagrange identity)
+    lemma_lagrange_identity::<T>(a, b);
+
+    // 0 ≤ norm_sq(cross(a,b)) ≡ product - dot_sq
+    T::axiom_eqv_reflexive(T::zero());
+    T::axiom_le_congruence(
+        T::zero(), T::zero(),
+        cross_norm, product.sub(dot_sq),
+    );
+
+    // 0 ≤ product - dot_sq  ⟺  dot_sq ≤ product
+    ordered_ring_lemmas::lemma_le_iff_sub_nonneg::<T>(dot_sq, product);
 }
 
 } // verus!

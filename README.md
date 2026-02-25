@@ -13,5 +13,5 @@ Requires [Verus](https://github.com/verus-lang/verus) and
 as siblings:
 
 ```
-VERUS_ROOT=../verus ./scripts/check.sh --require-verus --forbid-trusted-escapes --min-verified 90
+VERUS_ROOT=../verus ./scripts/check.sh --require-verus --forbid-trusted-escapes --min-verified 125
 ```
