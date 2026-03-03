@@ -1552,6 +1552,204 @@ pub proof fn lemma_triple_cyclic<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
 }
 
 // ---------------------------------------------------------------------------
+// Triple product: scale and linearity in all arguments
+// ---------------------------------------------------------------------------
+
+/// triple(scale(s, a), b, c) ≡ s * triple(a, b, c)
+pub proof fn lemma_triple_scale_first<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
+    ensures
+        triple(scale(s, a), b, c).eqv(s.mul(triple(a, b, c))),
+{
+    lemma_dot_scale_left(s, a, cross(b, c));
+}
+
+/// triple(a, b1 + b2, c) ≡ triple(a, b1, c) + triple(a, b2, c)
+pub proof fn lemma_triple_linear_second<T: Ring>(a: Vec3<T>, b1: Vec3<T>, b2: Vec3<T>, c: Vec3<T>)
+    ensures
+        triple(a, b1.add(b2), c).eqv(triple(a, b1, c).add(triple(a, b2, c))),
+{
+    // triple(a, b1+b2, c) ≡ triple(b1+b2, c, a) [cyclic]
+    lemma_triple_cyclic(a, b1.add(b2), c);
+    // = triple(b1, c, a) + triple(b2, c, a) [linear_first]
+    lemma_triple_linear_first(b1, b2, c, a);
+    T::axiom_eqv_transitive(
+        triple(a, b1.add(b2), c),
+        triple(b1.add(b2), c, a),
+        triple(b1, c, a).add(triple(b2, c, a)),
+    );
+    // triple(b1, c, a) ≡ triple(a, b1, c) [cyclic]
+    lemma_triple_cyclic(b1, c, a);
+    lemma_triple_cyclic(c, a, b1);
+    T::axiom_eqv_transitive(triple(b1, c, a), triple(c, a, b1), triple(a, b1, c));
+    // triple(b2, c, a) ≡ triple(a, b2, c) [cyclic]
+    lemma_triple_cyclic(b2, c, a);
+    lemma_triple_cyclic(c, a, b2);
+    T::axiom_eqv_transitive(triple(b2, c, a), triple(c, a, b2), triple(a, b2, c));
+    // combine
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        triple(b1, c, a), triple(a, b1, c),
+        triple(b2, c, a), triple(a, b2, c),
+    );
+    T::axiom_eqv_transitive(
+        triple(a, b1.add(b2), c),
+        triple(b1, c, a).add(triple(b2, c, a)),
+        triple(a, b1, c).add(triple(a, b2, c)),
+    );
+}
+
+/// triple(a, scale(s, b), c) ≡ s * triple(a, b, c)
+pub proof fn lemma_triple_scale_second<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
+    ensures
+        triple(a, scale(s, b), c).eqv(s.mul(triple(a, b, c))),
+{
+    // triple(a, scale(s,b), c) ≡ triple(scale(s,b), c, a) [cyclic]
+    lemma_triple_cyclic(a, scale(s, b), c);
+    // = s * triple(b, c, a) [scale_first]
+    lemma_triple_scale_first(s, b, c, a);
+    T::axiom_eqv_transitive(
+        triple(a, scale(s, b), c),
+        triple(scale(s, b), c, a),
+        s.mul(triple(b, c, a)),
+    );
+    // triple(b, c, a) ≡ triple(a, b, c) [cyclic twice]
+    lemma_triple_cyclic(b, c, a);
+    lemma_triple_cyclic(c, a, b);
+    T::axiom_eqv_transitive(triple(b, c, a), triple(c, a, b), triple(a, b, c));
+    ring_lemmas::lemma_mul_congruence_right::<T>(s, triple(b, c, a), triple(a, b, c));
+    T::axiom_eqv_transitive(
+        triple(a, scale(s, b), c),
+        s.mul(triple(b, c, a)),
+        s.mul(triple(a, b, c)),
+    );
+}
+
+/// triple(a, b, c1 + c2) ≡ triple(a, b, c1) + triple(a, b, c2)
+pub proof fn lemma_triple_linear_third<T: Ring>(a: Vec3<T>, b: Vec3<T>, c1: Vec3<T>, c2: Vec3<T>)
+    ensures
+        triple(a, b, c1.add(c2)).eqv(triple(a, b, c1).add(triple(a, b, c2))),
+{
+    // triple(a, b, c1+c2) ≡ triple(b, c1+c2, a) [cyclic]
+    lemma_triple_cyclic(a, b, c1.add(c2));
+    // = triple(b, c1, a) + triple(b, c2, a) [linear_second]
+    lemma_triple_linear_second(b, c1, c2, a);
+    T::axiom_eqv_transitive(
+        triple(a, b, c1.add(c2)),
+        triple(b, c1.add(c2), a),
+        triple(b, c1, a).add(triple(b, c2, a)),
+    );
+    // triple(b, c1, a) ≡ triple(a, b, c1) [cyclic twice]
+    lemma_triple_cyclic(b, c1, a);
+    lemma_triple_cyclic(c1, a, b);
+    T::axiom_eqv_transitive(triple(b, c1, a), triple(c1, a, b), triple(a, b, c1));
+    // triple(b, c2, a) ≡ triple(a, b, c2) [cyclic twice]
+    lemma_triple_cyclic(b, c2, a);
+    lemma_triple_cyclic(c2, a, b);
+    T::axiom_eqv_transitive(triple(b, c2, a), triple(c2, a, b), triple(a, b, c2));
+    // combine
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        triple(b, c1, a), triple(a, b, c1),
+        triple(b, c2, a), triple(a, b, c2),
+    );
+    T::axiom_eqv_transitive(
+        triple(a, b, c1.add(c2)),
+        triple(b, c1, a).add(triple(b, c2, a)),
+        triple(a, b, c1).add(triple(a, b, c2)),
+    );
+}
+
+/// triple(a, b, scale(s, c)) ≡ s * triple(a, b, c)
+pub proof fn lemma_triple_scale_third<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
+    ensures
+        triple(a, b, scale(s, c)).eqv(s.mul(triple(a, b, c))),
+{
+    // triple(a, b, scale(s,c)) ≡ triple(b, scale(s,c), a) [cyclic]
+    lemma_triple_cyclic(a, b, scale(s, c));
+    // = s * triple(b, c, a) [scale_second]
+    lemma_triple_scale_second(s, b, c, a);
+    T::axiom_eqv_transitive(
+        triple(a, b, scale(s, c)),
+        triple(b, scale(s, c), a),
+        s.mul(triple(b, c, a)),
+    );
+    // triple(b, c, a) ≡ triple(a, b, c) [cyclic twice]
+    lemma_triple_cyclic(b, c, a);
+    lemma_triple_cyclic(c, a, b);
+    T::axiom_eqv_transitive(triple(b, c, a), triple(c, a, b), triple(a, b, c));
+    ring_lemmas::lemma_mul_congruence_right::<T>(s, triple(b, c, a), triple(a, b, c));
+    T::axiom_eqv_transitive(
+        triple(a, b, scale(s, c)),
+        s.mul(triple(b, c, a)),
+        s.mul(triple(a, b, c)),
+    );
+}
+
+/// Triple product congruence in third argument:
+/// if c1 ≡ c2 then triple(a, b, c1) ≡ triple(a, b, c2).
+pub proof fn lemma_triple_congruence_third<T: Ring>(
+    a: Vec3<T>, b: Vec3<T>, c1: Vec3<T>, c2: Vec3<T>,
+)
+    requires c1.eqv(c2),
+    ensures
+        triple(a, b, c1).eqv(triple(a, b, c2)),
+{
+    T::axiom_eqv_reflexive(b.x);
+    T::axiom_eqv_reflexive(b.y);
+    T::axiom_eqv_reflexive(b.z);
+    lemma_cross_congruence::<T>(b, b, c1, c2);
+    T::axiom_eqv_reflexive(a.x);
+    T::axiom_eqv_reflexive(a.y);
+    T::axiom_eqv_reflexive(a.z);
+    lemma_dot_congruence::<T>(a, a, cross(b, c1), cross(b, c2));
+}
+
+/// triple(a, b, c.neg()) ≡ triple(a, b, c).neg()
+pub proof fn lemma_triple_neg_third<T: Ring>(
+    a: Vec3<T>, b: Vec3<T>, c: Vec3<T>,
+)
+    ensures
+        triple(a, b, c.neg()).eqv(triple(a, b, c).neg()),
+{
+    // Double cyclic: triple(a,b,c.neg()) ≡ triple(c.neg(),a,b)
+    lemma_triple_cyclic::<T>(a, b, c.neg());
+    lemma_triple_cyclic::<T>(b, c.neg(), a);
+    T::axiom_eqv_transitive(
+        triple(a, b, c.neg()),
+        triple(b, c.neg(), a),
+        triple(c.neg(), a, b),
+    );
+    // dot_commutative: dot(c.neg(), cross(a,b)) ≡ dot(cross(a,b), c.neg())
+    lemma_dot_commutative::<T>(c.neg(), cross(a, b));
+    T::axiom_eqv_transitive(
+        triple(a, b, c.neg()),
+        triple(c.neg(), a, b),
+        dot(cross(a, b), c.neg()),
+    );
+    // dot_neg_right: dot(cross(a,b), c.neg()) ≡ dot(cross(a,b), c).neg()
+    lemma_dot_neg_right::<T>(cross(a, b), c);
+    T::axiom_eqv_transitive(
+        triple(a, b, c.neg()),
+        dot(cross(a, b), c.neg()),
+        dot(cross(a, b), c).neg(),
+    );
+    // dot_commutative + neg_congruence
+    lemma_dot_commutative::<T>(cross(a, b), c);
+    T::axiom_neg_congruence(dot(cross(a, b), c), dot(c, cross(a, b)));
+    T::axiom_eqv_transitive(
+        triple(a, b, c.neg()),
+        dot(cross(a, b), c).neg(),
+        triple(c, a, b).neg(),
+    );
+    // cyclic + neg_congruence
+    lemma_triple_cyclic::<T>(c, a, b);
+    T::axiom_neg_congruence(triple(c, a, b), triple(a, b, c));
+    T::axiom_eqv_transitive(
+        triple(a, b, c.neg()),
+        triple(c, a, b).neg(),
+        triple(a, b, c).neg(),
+    );
+}
+
+// ---------------------------------------------------------------------------
 // Lagrange identity helpers (private)
 // ---------------------------------------------------------------------------
 

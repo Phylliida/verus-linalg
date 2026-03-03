@@ -1811,4 +1811,300 @@ pub proof fn lemma_inverse_involution<T: Field>(m: Mat2x2<T>)
     );
 }
 
+// ---------------------------------------------------------------------------
+// Mat-vec-mul associativity: mat_vec_mul(a, mat_vec_mul(b, v)) ≡ mat_vec_mul(mat_mul(a, b), v)
+// ---------------------------------------------------------------------------
+
+/// Helper: distribute s into dot(u, v) = s*(u.x*v.x + u.y*v.y) ≡ (s*u.x)*v.x + (s*u.y)*v.y
+proof fn lemma_distribute_scalar_dot<T: Ring>(s: T, u: Vec2<T>, v: Vec2<T>)
+    ensures
+        s.mul(dot(u, v)).eqv(
+            s.mul(u.x).mul(v.x).add(s.mul(u.y).mul(v.y))
+        ),
+{
+    // s * (u.x*v.x + u.y*v.y) ≡ s*(u.x*v.x) + s*(u.y*v.y)
+    T::axiom_mul_distributes_left(s, u.x.mul(v.x), u.y.mul(v.y));
+    // s*(u.x*v.x) ≡ (s*u.x)*v.x
+    T::axiom_mul_associative(s, u.x, v.x);
+    T::axiom_eqv_symmetric(s.mul(u.x).mul(v.x), s.mul(u.x.mul(v.x)));
+    // s*(u.y*v.y) ≡ (s*u.y)*v.y
+    T::axiom_mul_associative(s, u.y, v.y);
+    T::axiom_eqv_symmetric(s.mul(u.y).mul(v.y), s.mul(u.y.mul(v.y)));
+    // combine
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        s.mul(u.x.mul(v.x)), s.mul(u.x).mul(v.x),
+        s.mul(u.y.mul(v.y)), s.mul(u.y).mul(v.y),
+    );
+    T::axiom_eqv_transitive(
+        s.mul(dot(u, v)),
+        s.mul(u.x.mul(v.x)).add(s.mul(u.y.mul(v.y))),
+        s.mul(u.x).mul(v.x).add(s.mul(u.y).mul(v.y)),
+    );
+}
+
+/// mat_vec_mul(a, mat_vec_mul(b, v)) ≡ mat_vec_mul(mat_mul(a, b), v)
+pub proof fn lemma_mat_vec_mul_mat_mul<T: Ring>(a: Mat2x2<T>, b: Mat2x2<T>, v: Vec2<T>)
+    ensures
+        mat_vec_mul(a, mat_vec_mul(b, v)).eqv(mat_vec_mul(mat_mul(a, b), v)),
+{
+    let bv = mat_vec_mul(b, v);
+    let bt = transpose(b);
+
+    // For each row i of a, we need:
+    //   dot(a.row_i, bv) ≡ dot(mat_mul(a,b).row_i, v)
+    //
+    // LHS = a_ix * dot(b.row0, v) + a_iy * dot(b.row1, v)
+    //     ≡ (a_ix*b_0x)*v_x + (a_ix*b_0y)*v_y + (a_iy*b_1x)*v_x + (a_iy*b_1y)*v_y
+    // After rearranging:
+    //     ≡ (a_ix*b_0x + a_iy*b_1x)*v_x + (a_ix*b_0y + a_iy*b_1y)*v_y
+    //     = dot(a.row_i, bt.row0)*v_x + dot(a.row_i, bt.row1)*v_y
+    //     = dot(mat_mul(a,b).row_i, v) = RHS
+
+    // --- Row 0 ---
+    // Step 1: distribute a.row0.x into dot(b.row0, v)
+    lemma_distribute_scalar_dot(a.row0.x, b.row0, v);
+    // a.row0.x * dot(b.row0, v) ≡ (a.row0.x*b.row0.x)*v.x + (a.row0.x*b.row0.y)*v.y
+
+    // Step 2: distribute a.row0.y into dot(b.row1, v)
+    lemma_distribute_scalar_dot(a.row0.y, b.row1, v);
+
+    // Step 3: combine — LHS ≡ ((a0x*b0x)*vx + (a0x*b0y)*vy) + ((a0y*b1x)*vx + (a0y*b1y)*vy)
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        a.row0.x.mul(dot(b.row0, v)),
+        a.row0.x.mul(b.row0.x).mul(v.x).add(a.row0.x.mul(b.row0.y).mul(v.y)),
+        a.row0.y.mul(dot(b.row1, v)),
+        a.row0.y.mul(b.row1.x).mul(v.x).add(a.row0.y.mul(b.row1.y).mul(v.y)),
+    );
+
+    // Step 4: rearrange (A+B)+(C+D) ≡ (A+C)+(B+D)
+    additive_group_lemmas::lemma_add_rearrange_2x2::<T>(
+        a.row0.x.mul(b.row0.x).mul(v.x), a.row0.x.mul(b.row0.y).mul(v.y),
+        a.row0.y.mul(b.row1.x).mul(v.x), a.row0.y.mul(b.row1.y).mul(v.y),
+    );
+
+    // Step 5: factor — (a0x*b0x)*vx + (a0y*b1x)*vx ≡ (a0x*b0x + a0y*b1x)*vx
+    ring_lemmas::lemma_mul_distributes_right::<T>(a.row0.x.mul(b.row0.x), a.row0.y.mul(b.row1.x), v.x);
+    T::axiom_eqv_symmetric(
+        a.row0.x.mul(b.row0.x).add(a.row0.y.mul(b.row1.x)).mul(v.x),
+        a.row0.x.mul(b.row0.x).mul(v.x).add(a.row0.y.mul(b.row1.x).mul(v.x)),
+    );
+
+    ring_lemmas::lemma_mul_distributes_right::<T>(a.row0.x.mul(b.row0.y), a.row0.y.mul(b.row1.y), v.y);
+    T::axiom_eqv_symmetric(
+        a.row0.x.mul(b.row0.y).add(a.row0.y.mul(b.row1.y)).mul(v.y),
+        a.row0.x.mul(b.row0.y).mul(v.y).add(a.row0.y.mul(b.row1.y).mul(v.y)),
+    );
+
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        a.row0.x.mul(b.row0.x).mul(v.x).add(a.row0.y.mul(b.row1.x).mul(v.x)),
+        a.row0.x.mul(b.row0.x).add(a.row0.y.mul(b.row1.x)).mul(v.x),
+        a.row0.x.mul(b.row0.y).mul(v.y).add(a.row0.y.mul(b.row1.y).mul(v.y)),
+        a.row0.x.mul(b.row0.y).add(a.row0.y.mul(b.row1.y)).mul(v.y),
+    );
+
+    // Step 6: chain — use explicit LHS expression that Z3 can match
+    let lhs0 = a.row0.x.mul(dot(b.row0, v)).add(a.row0.y.mul(dot(b.row1, v)));
+    let dist0 = a.row0.x.mul(b.row0.x).mul(v.x).add(a.row0.x.mul(b.row0.y).mul(v.y)).add(
+        a.row0.y.mul(b.row1.x).mul(v.x).add(a.row0.y.mul(b.row1.y).mul(v.y))
+    );
+    let rear0 = a.row0.x.mul(b.row0.x).mul(v.x).add(a.row0.y.mul(b.row1.x).mul(v.x)).add(
+        a.row0.x.mul(b.row0.y).mul(v.y).add(a.row0.y.mul(b.row1.y).mul(v.y))
+    );
+    let fact0 = a.row0.x.mul(b.row0.x).add(a.row0.y.mul(b.row1.x)).mul(v.x).add(
+        a.row0.x.mul(b.row0.y).add(a.row0.y.mul(b.row1.y)).mul(v.y)
+    );
+    // lhs0 ≡ dist0 [add_congruence], dist0 ≡ rear0 [rearrange], rear0 ≡ fact0 [factor]
+    T::axiom_eqv_transitive(lhs0, dist0, rear0);
+    T::axiom_eqv_transitive(lhs0, rear0, fact0);
+    // fact0 definitionally = dot(mat_mul(a,b).row0, v)
+    // lhs0 definitionally = dot(a.row0, mat_vec_mul(b, v))
+
+    // --- Row 1 --- (same structure, different row)
+    lemma_distribute_scalar_dot(a.row1.x, b.row0, v);
+    lemma_distribute_scalar_dot(a.row1.y, b.row1, v);
+
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        a.row1.x.mul(dot(b.row0, v)),
+        a.row1.x.mul(b.row0.x).mul(v.x).add(a.row1.x.mul(b.row0.y).mul(v.y)),
+        a.row1.y.mul(dot(b.row1, v)),
+        a.row1.y.mul(b.row1.x).mul(v.x).add(a.row1.y.mul(b.row1.y).mul(v.y)),
+    );
+
+    additive_group_lemmas::lemma_add_rearrange_2x2::<T>(
+        a.row1.x.mul(b.row0.x).mul(v.x), a.row1.x.mul(b.row0.y).mul(v.y),
+        a.row1.y.mul(b.row1.x).mul(v.x), a.row1.y.mul(b.row1.y).mul(v.y),
+    );
+
+    ring_lemmas::lemma_mul_distributes_right::<T>(a.row1.x.mul(b.row0.x), a.row1.y.mul(b.row1.x), v.x);
+    T::axiom_eqv_symmetric(
+        a.row1.x.mul(b.row0.x).add(a.row1.y.mul(b.row1.x)).mul(v.x),
+        a.row1.x.mul(b.row0.x).mul(v.x).add(a.row1.y.mul(b.row1.x).mul(v.x)),
+    );
+
+    ring_lemmas::lemma_mul_distributes_right::<T>(a.row1.x.mul(b.row0.y), a.row1.y.mul(b.row1.y), v.y);
+    T::axiom_eqv_symmetric(
+        a.row1.x.mul(b.row0.y).add(a.row1.y.mul(b.row1.y)).mul(v.y),
+        a.row1.x.mul(b.row0.y).mul(v.y).add(a.row1.y.mul(b.row1.y).mul(v.y)),
+    );
+
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        a.row1.x.mul(b.row0.x).mul(v.x).add(a.row1.y.mul(b.row1.x).mul(v.x)),
+        a.row1.x.mul(b.row0.x).add(a.row1.y.mul(b.row1.x)).mul(v.x),
+        a.row1.x.mul(b.row0.y).mul(v.y).add(a.row1.y.mul(b.row1.y).mul(v.y)),
+        a.row1.x.mul(b.row0.y).add(a.row1.y.mul(b.row1.y)).mul(v.y),
+    );
+
+    let lhs1 = a.row1.x.mul(dot(b.row0, v)).add(a.row1.y.mul(dot(b.row1, v)));
+    let dist1 = a.row1.x.mul(b.row0.x).mul(v.x).add(a.row1.x.mul(b.row0.y).mul(v.y)).add(
+        a.row1.y.mul(b.row1.x).mul(v.x).add(a.row1.y.mul(b.row1.y).mul(v.y))
+    );
+    let rear1 = a.row1.x.mul(b.row0.x).mul(v.x).add(a.row1.y.mul(b.row1.x).mul(v.x)).add(
+        a.row1.x.mul(b.row0.y).mul(v.y).add(a.row1.y.mul(b.row1.y).mul(v.y))
+    );
+    let fact1 = a.row1.x.mul(b.row0.x).add(a.row1.y.mul(b.row1.x)).mul(v.x).add(
+        a.row1.x.mul(b.row0.y).add(a.row1.y.mul(b.row1.y)).mul(v.y)
+    );
+    T::axiom_eqv_transitive(lhs1, dist1, rear1);
+    T::axiom_eqv_transitive(lhs1, rear1, fact1);
+}
+
+// ---------------------------------------------------------------------------
+// Linear system solving
+// ---------------------------------------------------------------------------
+
+/// Solve Ax = b for 2x2 systems: x = inverse(A) * b
+pub open spec fn solve<T: Field>(m: Mat2x2<T>, b: Vec2<T>) -> Vec2<T> {
+    mat_vec_mul(inverse(m), b)
+}
+
+/// Correctness: mat_vec_mul(m, solve(m, b)) ≡ b
+pub proof fn lemma_solve_correct<T: Field>(m: Mat2x2<T>, b: Vec2<T>)
+    requires
+        !det(m).eqv(T::zero()),
+    ensures
+        mat_vec_mul(m, solve(m, b)).eqv(b),
+{
+    let inv = inverse(m);
+
+    // mat_vec_mul(m, mat_vec_mul(inv, b)) ≡ mat_vec_mul(mat_mul(m, inv), b)
+    lemma_mat_vec_mul_mat_mul(m, inv, b);
+
+    // mat_mul(m, inv).row_i ≡ identity().row_i
+    lemma_inverse_right(m);
+
+    // dot(mat_mul(m,inv).row_i, b) ≡ dot(identity().row_i, b)
+    Vec2::<T>::axiom_eqv_reflexive(b);
+    crate::vec2::ops::lemma_dot_congruence(
+        mat_mul(m, inv).row0, identity::<T>().row0, b, b,
+    );
+    crate::vec2::ops::lemma_dot_congruence(
+        mat_mul(m, inv).row1, identity::<T>().row1, b, b,
+    );
+
+    // mat_vec_mul(identity(), b) ≡ b
+    lemma_identity_mul_vec(b);
+
+    // Chain for x: mat_vec_mul(m, solve).x ≡ mat_vec_mul(MI, b).x ≡ mat_vec_mul(I, b).x ≡ b.x
+    T::axiom_eqv_transitive(
+        mat_vec_mul(m, solve(m, b)).x,
+        dot(mat_mul(m, inv).row0, b),
+        dot(identity::<T>().row0, b),
+    );
+    T::axiom_eqv_transitive(
+        mat_vec_mul(m, solve(m, b)).x,
+        dot(identity::<T>().row0, b),
+        b.x,
+    );
+
+    // Chain for y
+    T::axiom_eqv_transitive(
+        mat_vec_mul(m, solve(m, b)).y,
+        dot(mat_mul(m, inv).row1, b),
+        dot(identity::<T>().row1, b),
+    );
+    T::axiom_eqv_transitive(
+        mat_vec_mul(m, solve(m, b)).y,
+        dot(identity::<T>().row1, b),
+        b.y,
+    );
+}
+
+/// Uniqueness: if mat_vec_mul(m, x) ≡ b and det ≠ 0, then x ≡ solve(m, b)
+pub proof fn lemma_solve_unique<T: Field>(m: Mat2x2<T>, x: Vec2<T>, b: Vec2<T>)
+    requires
+        !det(m).eqv(T::zero()),
+        mat_vec_mul(m, x).eqv(b),
+    ensures
+        x.eqv(solve(m, b)),
+{
+    let inv = inverse(m);
+
+    // x ≡ mat_vec_mul(I, x) ≡ mat_vec_mul(mat_mul(inv, m), x) ≡ mat_vec_mul(inv, mat_vec_mul(m, x))
+    //   ≡ mat_vec_mul(inv, b) = solve(m, b)
+
+    // mat_vec_mul(inv, mat_vec_mul(m, x)) ≡ mat_vec_mul(mat_mul(inv, m), x)
+    lemma_mat_vec_mul_mat_mul(inv, m, x);
+
+    // mat_mul(inv, m).row_i ≡ identity().row_i
+    lemma_inverse_left(m);
+
+    // dot(mat_mul(inv,m).row_i, x) ≡ dot(identity().row_i, x)
+    Vec2::<T>::axiom_eqv_reflexive(x);
+    crate::vec2::ops::lemma_dot_congruence(
+        mat_mul(inv, m).row0, identity::<T>().row0, x, x,
+    );
+    crate::vec2::ops::lemma_dot_congruence(
+        mat_mul(inv, m).row1, identity::<T>().row1, x, x,
+    );
+
+    // mat_vec_mul(identity(), x) ≡ x
+    lemma_identity_mul_vec(x);
+
+    // Chain for x-component: mat_vec_mul(inv, mat_vec_mul(m, x)).x ≡ x.x
+    T::axiom_eqv_transitive(
+        mat_vec_mul(inv, mat_vec_mul(m, x)).x,
+        dot(mat_mul(inv, m).row0, x),
+        dot(identity::<T>().row0, x),
+    );
+    T::axiom_eqv_transitive(
+        mat_vec_mul(inv, mat_vec_mul(m, x)).x,
+        dot(identity::<T>().row0, x),
+        x.x,
+    );
+
+    // Chain for y-component
+    T::axiom_eqv_transitive(
+        mat_vec_mul(inv, mat_vec_mul(m, x)).y,
+        dot(mat_mul(inv, m).row1, x),
+        dot(identity::<T>().row1, x),
+    );
+    T::axiom_eqv_transitive(
+        mat_vec_mul(inv, mat_vec_mul(m, x)).y,
+        dot(identity::<T>().row1, x),
+        x.y,
+    );
+
+    // Now: mat_vec_mul(inv, mat_vec_mul(m, x)) ≡ x
+    // And: mat_vec_mul(inv, mat_vec_mul(m, x)) ≡ mat_vec_mul(inv, b)  [by congruence on m*x ≡ b]
+    Vec2::<T>::axiom_eqv_reflexive(inv.row0);
+    Vec2::<T>::axiom_eqv_reflexive(inv.row1);
+    crate::vec2::ops::lemma_dot_congruence(
+        inv.row0, inv.row0, mat_vec_mul(m, x), b,
+    );
+    crate::vec2::ops::lemma_dot_congruence(
+        inv.row1, inv.row1, mat_vec_mul(m, x), b,
+    );
+
+    // Chain: x.x ≡ mat_vec_mul(inv, m*x).x ≡ mat_vec_mul(inv, b).x = solve(m,b).x
+    T::axiom_eqv_symmetric(mat_vec_mul(inv, mat_vec_mul(m, x)).x, x.x);
+    T::axiom_eqv_transitive(
+        x.x, mat_vec_mul(inv, mat_vec_mul(m, x)).x, solve(m, b).x,
+    );
+
+    T::axiom_eqv_symmetric(mat_vec_mul(inv, mat_vec_mul(m, x)).y, x.y);
+    T::axiom_eqv_transitive(
+        x.y, mat_vec_mul(inv, mat_vec_mul(m, x)).y, solve(m, b).y,
+    );
+}
+
 } // verus!

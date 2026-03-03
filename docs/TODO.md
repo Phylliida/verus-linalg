@@ -18,14 +18,15 @@ verus-algebra (Ring, OrderedRing, Field traits + lemmas)
 
 ## What we have now
 
-195+ verified items, 0 errors, 0 assumes/admits.
+242 verified items, 0 errors, 0 assumes/admits.
 
 | Module | Type | Operations | Lemmas | Status |
 |---|---|---|---|---|
 | `vec2` | `Vec2<T>` | scale, dot, norm_sq, lerp, proj, rej, cwise_min/max | 46 | Done |
 | `vec3` | `Vec3<T>` | scale, dot, norm_sq, lerp, cross, triple, proj, rej, cwise_min/max | 60+ | Done |
 | `vec4` | `Vec4<T>` | scale, dot, norm_sq, lerp, cwise_min/max | 54 | Done |
-| `mat3` | `Mat3x3<T>` | identity, mat_vec_mul, transpose, det, mat_mul | 13 | Done |
+| `mat2` | `Mat2x2<T>` | identity, mat_vec_mul, transpose, det, mat_mul, adjugate, inverse | 23 | Done |
+| `mat3` | `Mat3x3<T>` | identity, mat_vec_mul, transpose, det, mat_mul, adjugate, inverse | 28 | Done |
 
 All types implement `Equivalence + AdditiveCommutativeMonoid + AdditiveGroup`.
 
@@ -34,79 +35,70 @@ All types implement `Equivalence + AdditiveCommutativeMonoid + AdditiveGroup`.
 **Scale:** distributes over add, associative, identity, zero, congruence, negation interaction.
 **Dot:** commutative, distributes over add, zero, scale interaction, Cauchy-Schwarz.
 **Cross (Vec3 only):** anticommutative, self-zero, distributes over add, scale linearity,
-orthogonality (dot(cross(a,b), a) ≡ 0), Lagrange identity.
+orthogonality (dot(cross(a,b), a) = 0), Lagrange identity.
 **Triple (Vec3 only):** self-zero, linear, antisymmetric swaps, cyclic permutation.
+**Mat2x2:** transpose involution, mat_vec_mul distributes, identity multiplication,
+det multiplicative, det transpose, adjugate, inverse right/left, inverse involution, det inverse.
 **Mat3x3:** transpose involution, mat_vec_mul distributes, identity multiplication, determinant
-sign under row swap, det zero when rows repeated, det linear in first row.
+sign under row swap, det zero when rows repeated, det linear in first row, det identity,
+det congruence, det transpose, adjugate (via cross products), inverse right/left.
 
 ---
 
-## Phase 1 — Mat2x2
+## Remaining work — Priority order
 
-A 2x2 matrix is needed for 2D transformations and orient2d decomposition.
+### P0 — Linear system solvers (next up)
 
-- [ ] Define `Mat2x2<T: Ring>` with rows `row0: Vec2<T>`, `row1: Vec2<T>`
-- [ ] Implement `Equivalence`, `AdditiveCommutativeMonoid`, `AdditiveGroup`
-- [ ] `identity()` — 2x2 identity matrix
-- [ ] `mat_vec_mul(m, v)` — matrix-vector multiplication
-- [ ] `mat_mul(a, b)` — matrix-matrix multiplication
-- [ ] `transpose(m)` — transpose
-- [ ] `det(m)` — determinant (ad - bc)
-- [ ] Lemma: transpose involution
-- [ ] Lemma: mat_vec_mul distributes over vector addition
-- [ ] Lemma: mat_vec_mul identity
-- [ ] Lemma: det(transpose(m)) ≡ det(m)
-- [ ] Lemma: det(mat_mul(a, b)) ≡ det(a) * det(b) (multiplicativity)
-- [ ] Lemma: det row swap negates sign
+Thin wrappers around existing inverse + mat_vec_mul. Directly needed by
+verus-geometry for intersection point computation (Cramer's rule).
+
+- [ ] `solve_2x2(m: Mat2x2<T: Field>, b: Vec2<T>) -> Vec2<T>` — `mat_vec_mul(inverse(m), b)`
+- [ ] `solve_3x3(m: Mat3x3<T: Field>, b: Vec3<T>) -> Vec3<T>` — `mat_vec_mul(inverse(m), b)`
+- [ ] Lemma: `mat_vec_mul(m, solve(m, b)) ≡ b` (correctness, when det != 0)
+- [ ] Lemma: if `mat_vec_mul(m, x) ≡ b` and det != 0, then `x ≡ solve(m, b)` (uniqueness)
+
+Estimated ~100-150 lines total. Easy — delegates to existing inverse lemmas.
+
+Files: `mat2/ops.rs`, `mat3/ops.rs`
 
 ---
 
-## Phase 2 — Mat4x4
+### P1 — Det multiplicative for Mat3x3
 
-Needed for homogeneous coordinate transformations (3D graphics, BREP).
+Important algebraic completeness. Unlocks det_inverse and inverse_involution
+for Mat3x3 (Mat2x2 already has all of these).
 
-- [ ] Define `Mat4x4<T: Ring>` with rows `row0..row3: Vec4<T>`
-- [ ] Implement `Equivalence`, `AdditiveCommutativeMonoid`, `AdditiveGroup`
-- [ ] `identity()`, `mat_vec_mul`, `mat_mul`, `transpose`, `det`
-- [ ] Key lemmas: transpose involution, multiply identity, det multiplicativity
-- [ ] Lemma: det sign under row permutations
+- [ ] `lemma_det_multiplicative`: `det(mat_mul(a, b)) ≡ det(a).mul(det(b))`
 
----
+The hardest remaining lemma. Direct expansion has many terms. Strategies:
+1. Brute force: expand both sides, match via ring axioms (~500+ lines)
+2. Multilinearity of det + column operations
+3. Leverage existing lemmas (det_linear_first_row, row swap, etc.)
 
-## Phase 3 — Matrix inverse (requires Field)
+Mat2x2's `lemma_det_multiplicative` proof (in `mat2/ops.rs`) serves as a pattern
+reference but is much simpler (4 terms vs 36+).
 
-Needed for solving linear systems, coordinate transforms, etc.
+- [ ] `lemma_det_inverse`: `det(inverse(m)) ≡ recip(det(m))` — follows from det_multiplicative
+- [ ] `lemma_inverse_involution`: `inverse(inverse(m)) ≡ m` — follows from det_inverse
 
-### 3.1 Mat2x2 inverse
+Estimated ~600-700 lines total. Hard.
 
-- [ ] `inverse(m: Mat2x2<T: Field>) -> Mat2x2<T>` (when det ≠ 0)
-- [ ] Lemma: `mat_mul(m, inverse(m)) ≡ identity()` (when det ≠ 0)
-- [ ] Lemma: `mat_mul(inverse(m), m) ≡ identity()`
-- [ ] Lemma: `inverse(inverse(m)) ≡ m`
-- [ ] Lemma: `det(inverse(m)) ≡ recip(det(m))`
-
-### 3.2 Mat3x3 inverse
-
-- [ ] Cofactor matrix / adjugate
-- [ ] `inverse(m: Mat3x3<T: Field>) -> Mat3x3<T>` via adjugate / det
-- [ ] Same lemma suite as Mat2x2
-- [ ] Cramer's rule as a corollary
-
-### 3.3 Solving linear systems
-
-- [ ] `solve_2x2(m, b)` — solve Ax = b for 2x2
-- [ ] `solve_3x3(m, b)` — solve Ax = b for 3x3
-- [ ] Lemma: solution satisfies `mat_vec_mul(m, x) ≡ b`
-- [ ] Lemma: solution is unique when det ≠ 0
+File: `mat3/ops.rs`
 
 ---
 
-## Phase 4 — Quaternions
+### P2 — Quaternions (port from old VerusCAD)
 
 Needed for 3D rotations in CAD (orientation of parts, view manipulation).
-The old vcad-math had a full quaternion module.
+The old `vcad-math` has a **complete, verified** quaternion module (~5,300 lines)
+that can be ported with mechanical refactoring (replace concrete `Scalar` with
+generic `T: Ring`).
 
-### 4.1 Quaternion type
+Source files for porting:
+- `old/VerusCAD/crates/vcad-math/src/quaternion.rs` (~4,666 lines)
+- `old/VerusCAD/crates/vcad-math/src/quaternion_assoc_cases.rs` (~637 lines)
+
+#### 2.1 Type and algebra
 
 ```
 pub struct Quaternion<T: Ring> {
@@ -119,119 +111,123 @@ pub struct Quaternion<T: Ring> {
 
 - [ ] Define `Quaternion<T: Ring>`
 - [ ] Implement `Equivalence`, `AdditiveCommutativeMonoid`, `AdditiveGroup`
-
-### 4.2 Quaternion algebra
-
-- [ ] `quat_mul(a, b)` — Hamilton product (NOT commutative)
+- [ ] `quat_mul(a, b)` — Hamilton product (NOT commutative, 16-term expansion)
 - [ ] `conjugate(q)` — (w, -x, -y, -z)
-- [ ] `norm_sq(q)` — w² + x² + y² + z²
-- [ ] `inverse(q)` — conjugate(q) / norm_sq(q) (for Field, when norm_sq ≠ 0)
+- [ ] `norm_sq(q)` — w^2 + x^2 + y^2 + z^2
+- [ ] `inverse(q)` — conjugate(q) / norm_sq(q) (requires Field, norm_sq != 0)
 - [ ] `from_scalar(s)` — embed scalar as quaternion (s, 0, 0, 0)
 - [ ] `from_vec3(v)` — embed vector as pure quaternion (0, vx, vy, vz)
 - [ ] `to_vec3(q)` — extract vector part
 
-### 4.3 Quaternion lemmas
+#### 2.2 Ring structure proofs
 
-- [ ] Lemma: `quat_mul` is associative
+- [ ] Lemma: `quat_mul` is associative (64 basis cases — old code has all)
 - [ ] Lemma: `quat_mul` is NOT commutative (counterexample witness)
-- [ ] Lemma: `quat_mul` distributes over addition
-- [ ] Lemma: `conjugate(conjugate(q)) ≡ q` (involution)
+- [ ] Lemma: `quat_mul` distributes over addition (left + right)
+- [ ] Lemma: one is multiplicative identity
+- [ ] Basis algebra: i^2 = j^2 = k^2 = -1, ij = k, jk = i, ki = j
+
+#### 2.3 Conjugation and norm
+
+- [ ] Lemma: conjugate involution
+- [ ] Lemma: conjugate is additive, linear over scale
 - [ ] Lemma: `conjugate(quat_mul(a, b)) ≡ quat_mul(conjugate(b), conjugate(a))` (reversal)
 - [ ] Lemma: `norm_sq(quat_mul(a, b)) ≡ norm_sq(a) * norm_sq(b)` (multiplicativity)
-- [ ] Lemma: `quat_mul(q, inverse(q)) ≡ from_scalar(one)` (for nonzero)
+- [ ] Lemma: `norm_sq` nonnegative, zero iff q = 0
 - [ ] Lemma: `quat_mul(q, conjugate(q)) ≡ from_scalar(norm_sq(q))`
 
-### 4.4 Rotation via quaternion
+#### 2.4 Inverse and division
+
+- [ ] Lemma: `quat_mul(q, inverse(q)) ≡ from_scalar(one)` (right inverse)
+- [ ] Lemma: `quat_mul(inverse(q), q) ≡ from_scalar(one)` (left inverse)
+- [ ] Lemma: inverse involution
+- [ ] Lemma: norm_sq(inverse(q)) = 1/norm_sq(q)
+
+#### 2.5 Rotation via quaternion
 
 - [ ] `rotate_vec3(q, v)` — compute `q * from_vec3(v) * conjugate(q)` and extract vec3
-- [ ] Lemma: rotation preserves vector length (norm_sq)
-- [ ] Lemma: rotation preserves dot product
-- [ ] Lemma: rotation composition: rotate(q1, rotate(q2, v)) ≡ rotate(q1*q2, v)
-- [ ] Lemma: unit quaternion rotation is an isometry
+- [ ] Lemma: rotation preserves vector norm_sq (unit quaternion precondition)
+- [ ] Lemma: rotation composition: `rotate(q1, rotate(q2, v)) ≡ rotate(q1*q2, v)`
+- [ ] Lemma: rotated quaternion has zero scalar part (result is pure)
+
+Estimated ~4,000-5,000 lines. Moderate difficulty (mechanical port, proofs exist).
+
+Files: new `src/quat.rs` + `src/quat/ops.rs` (+ possibly `src/quat/assoc_cases.rs`)
 
 ---
 
-## Phase 5 — Affine transformations
+### P3 — Mat4x4 (deferred)
 
-Combine rotation, translation, and scaling in a unified framework.
+Needed for homogeneous coordinate transformations (3D graphics, BREP).
+No old code to port — write from scratch following Mat3x3 patterns.
 
-### 5.1 Affine transform type
+- [ ] Define `Mat4x4<T: Ring>` with rows `row0..row3: Vec4<T>`
+- [ ] Implement `Equivalence`, `AdditiveCommutativeMonoid`, `AdditiveGroup`
+- [ ] `identity()`, `mat_vec_mul`, `mat_mul`, `transpose`, `det`
+- [ ] Key lemmas: transpose involution, multiply identity, det multiplicativity
+- [ ] Lemma: det sign under row permutations
+- [ ] Adjugate + inverse (when needed)
 
-```
-pub struct AffineTransform3<T: Ring> {
-    pub linear: Mat3x3<T>,   // rotation + scale + shear
-    pub translation: Vec3<T>, // translation offset
-}
-```
+Estimated ~2,000-3,000 lines. Easy-Medium (tedious, more components).
 
-- [ ] Define `AffineTransform3<T>`
-- [ ] `apply_point(t, p: Point3<T>) -> Point3<T>` — linear * p + translation
-- [ ] `apply_vec(t, v: Vec3<T>) -> Vec3<T>` — linear * v (vectors ignore translation)
-- [ ] `compose(t1, t2)` — composition of transforms
-- [ ] `identity()` — identity transform
+Files: new `src/mat4.rs` + `src/mat4/ops.rs`
 
-### 5.2 Affine transform lemmas
+---
 
-- [ ] Lemma: compose is associative
-- [ ] Lemma: identity is neutral element
-- [ ] Lemma: apply_point(compose(t1, t2), p) ≡ apply_point(t1, apply_point(t2, p))
-- [ ] Lemma: if linear part is orthogonal, transform preserves distances
+### P4 — Affine transformations (deferred)
 
-### 5.3 Rigid transforms (rotation + translation only)
+Combine rotation, translation, and scaling. Needs Mat3x3 + quaternions first.
 
-- [ ] `RigidTransform3` — quaternion rotation + translation
+- [ ] `AffineTransform3<T>` — linear part (Mat3x3) + translation (Vec3)
+- [ ] `apply_point`, `apply_vec`, `compose`, `identity`
+- [ ] Lemma: compose is associative, identity is neutral
+- [ ] `RigidTransform3` — quaternion rotation + translation subset
 - [ ] Lemma: rigid transforms preserve distances
-- [ ] Lemma: rigid transforms preserve orientation (det > 0)
-- [ ] Conversion: RigidTransform3 ↔ AffineTransform3
 
 ---
 
-## Phase 6 — Extended vector operations
+### P5 — Extended vector operations (deferred)
 
-### 6.1 Outer product (tensor product)
+Small utilities, easy to add on demand.
 
-- [ ] `outer(a: Vec3<T>, b: Vec3<T>) -> Mat3x3<T>` — a ⊗ b
-- [ ] Lemma: `mat_vec_mul(outer(a, b), v) ≡ scale(dot(b, v), a)`
-- [ ] Lemma: `trace(outer(a, b)) ≡ dot(a, b)`
-- [ ] Useful for: projection matrices, Householder reflections
-
-### 6.2 Skew-symmetric matrix from Vec3
-
-- [ ] `skew(v: Vec3<T>) -> Mat3x3<T>` — matrix such that skew(v) * w ≡ cross(v, w)
-- [ ] Lemma: `mat_vec_mul(skew(v), w) ≡ cross(v, w)`
-- [ ] Lemma: `skew(v)` is antisymmetric: `transpose(skew(v)) ≡ neg(skew(v))`
-- [ ] Useful for: Rodrigues' rotation formula, angular velocity
-
-### 6.3 Homogeneous coordinates
-
-- [ ] `to_homogeneous(p: Point3<T>) -> Vec4<T>` — (x, y, z, 1)
-- [ ] `from_homogeneous(v: Vec4<T>) -> Point3<T>` — (x/w, y/w, z/w) (requires Field, w ≠ 0)
-- [ ] `to_homogeneous_vec(v: Vec3<T>) -> Vec4<T>` — (x, y, z, 0)
-- [ ] Lemma: round-trip `from_homogeneous(to_homogeneous(p)) ≡ p`
-- [ ] Useful for: perspective projection, NURBS, projective geometry
+- [ ] `outer(a, b) -> Mat3x3<T>` — outer/tensor product
+- [ ] `skew(v) -> Mat3x3<T>` — skew-symmetric matrix (skew(v)*w = cross(v,w))
+- [ ] Homogeneous coordinate conversions (Point3 <-> Vec4)
 
 ---
 
-## Phase 7 — Eigenvalues and decompositions (long-term)
+### P6 — Eigenvalues and decompositions (long-term)
 
-These are needed for advanced operations (principal curvatures, mass properties)
-but are complex to verify. Lower priority.
+- [ ] Characteristic polynomial for 2x2, 3x3
+- [ ] Cayley-Hamilton theorem
+- [ ] Eigenvalues for symmetric matrices
+- [ ] SVD / Polar decomposition
 
-### 7.1 Characteristic polynomial
+---
 
-- [ ] `char_poly_2x2(m) -> (T, T, T)` — coefficients of det(m - λI)
-- [ ] `char_poly_3x3(m) -> (T, T, T, T)`
-- [ ] Lemma: Cayley-Hamilton theorem (m satisfies its own char. polynomial)
+## Completed phases
 
-### 7.2 Eigenvalues for symmetric matrices
+### Phase 1 — Mat2x2 (DONE)
 
-- [ ] 2x2 symmetric eigenvalues (closed form via quadratic formula)
-- [ ] 3x3 symmetric eigenvalues (Cardano's formula or iterative, harder to verify)
-- [ ] Spectral theorem: symmetric matrix has real eigenvalues
+Full implementation with 23 lemmas including:
+identity, mat_vec_mul, transpose, det, mat_mul, adjugate, inverse,
+transpose involution, det transpose, det multiplicative, det swap rows,
+det identity, det congruence, inverse right/left, inverse involution, det inverse.
 
-### 7.3 SVD / Polar decomposition
+### Phase 2 — Mat3x3 core (DONE)
 
-- [ ] Very long-term. Probably defer until actively needed.
+Full implementation with 28 lemmas including:
+identity, mat_vec_mul, transpose, det, mat_mul, adjugate (via cross products), inverse,
+transpose involution, det swap rows, det zero repeated rows, det linear first row,
+det identity, det congruence, det transpose, mat_mul_adjugate right/left,
+inverse right/left. Plus helper lemmas: 3-factor product rearrangements,
+sub_add_swap, adjugate_transpose_rows.
+
+### Phase 3 — Vec2/Vec3/Vec4 (DONE)
+
+Complete vector type suites: 46 + 60+ + 54 = 160+ verified lemmas.
+Scale, dot, norm_sq, lerp, cross, triple, proj, rej, cwise_min/max,
+Cauchy-Schwarz, Lagrange identity, and more.
 
 ---
 
@@ -243,24 +239,28 @@ Most vector/matrix proofs expand to component-level algebra and then
 apply ring lemmas. This is mechanical but verbose. The current codebase
 handles this well — follow the same pattern for new types.
 
-### Pattern: lifting lemmas across dimensions
+### Pattern: cross product adjugate (Mat3x3)
 
-Vec2/Vec3/Vec4 have parallel lemma suites (scale, dot, norm_sq, etc.).
-Currently each is proven independently. Consider:
-- Could a macro or proof-by-analogy reduce duplication? (Verus limitation: probably not)
-- At minimum, keep the naming convention identical across dimensions
+The 3x3 adjugate has a natural expression via cross products:
+columns of adj(m) = cross(r1,r2), cross(r2,r0), cross(r0,r1).
+This made the adjugate product proofs much cleaner than direct
+cofactor expansion (~130 lines vs estimated 300-400).
+
+### Pattern: transpose trick (Mat3x3 left inverse)
+
+To prove adj(m)*m = det(m)*I, apply the right adjugate proof to m^T
+and use dot_commutative + adjugate_transpose_rows to relate entries.
+This avoids duplicating the entire 9-entry expansion.
 
 ### Difficulty estimates
 
 | Item | Difficulty | Notes |
 |---|---|---|
-| Mat2x2 basics | Easy | Same pattern as Mat3x3, fewer components |
-| Mat4x4 basics | Easy-Medium | Same pattern, more components, more tedious |
-| Matrix inverse 2x2 | Medium | Need to prove adjugate formula correct |
-| Matrix inverse 3x3 | Medium-Hard | Cofactor expansion, 9 minors |
-| Quaternion algebra | Medium | Hamilton product has 16 terms, not commutative |
-| Quaternion rotation proofs | Hard | Rotation preserving norm needs norm_sq multiplicativity |
-| Affine transforms | Medium | Composition is matrix multiply + translation bookkeeping |
+| Linear solvers | Easy | Thin wrappers around inverse |
+| Det multiplicative 3x3 | Hard | Many terms, longest single proof |
+| Quaternion port | Moderate | Mechanical refactor, all proofs exist |
+| Mat4x4 basics | Easy-Medium | Same pattern, more components |
+| Affine transforms | Medium | Composition is mat_mul + translation |
 | Eigenvalues | Hard | Requires polynomial root reasoning |
 | SVD | Very Hard | Existence proof is non-trivial |
 
@@ -280,15 +280,11 @@ Enforced by `--forbid-trusted-escapes` in CI.
 
 ## Milestones
 
-| Milestone | Phases | What it enables |
+| Milestone | Priority | What it enables |
 |---|---|---|
-| **M1: Mat2x2** | 1 | 2D transforms, orient2d as det(Mat2x2) |
-| **M2: Mat4x4** | 2 | Homogeneous coordinates, 3D transforms |
-| **M3: Matrix inverse** | 3 | Linear system solving, coordinate transforms |
-| **M4: Quaternions** | 4 | 3D rotations for CAD view/part orientation |
-| **M5: Affine transforms** | 5 | Unified transform framework for BREP kernel |
-| **M6: Extended ops** | 6 | Projection matrices, Rodrigues rotation |
-
-**M1 and M3 are highest priority** — downstream geometry predicates
-(intersection point computation) need 2x2/3x3 system solving.
-**M4 is important for CAD UX** (view rotation, part placement).
+| **Linear solvers** | P0 | Intersection point computation in verus-geometry |
+| **Det multiplicative 3x3** | P1 | Algebraic completeness (det_inverse, inverse_involution) |
+| **Quaternions** | P2 | 3D rotations for CAD view/part orientation |
+| **Mat4x4** | P3 | Homogeneous coordinates, 3D transforms |
+| **Affine transforms** | P4 | Unified transform framework for BREP kernel |
+| **Extended ops** | P5 | Projection matrices, Rodrigues rotation |
