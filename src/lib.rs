@@ -8,4 +8,7 @@ pub mod vec3;
 pub mod vec4;
 
 #[cfg(verus_keep_ghost)]
+pub mod mat2;
+
+#[cfg(verus_keep_ghost)]
 pub mod mat3;

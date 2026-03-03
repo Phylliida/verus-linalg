@@ -496,6 +496,38 @@ pub proof fn lemma_cross_anticommutative<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
+/// cross respects equivalence: a1 ≡ a2 ∧ b1 ≡ b2 → cross(a1,b1) ≡ cross(a2,b2)
+pub proof fn lemma_cross_congruence<T: Ring>(a1: Vec3<T>, a2: Vec3<T>, b1: Vec3<T>, b2: Vec3<T>)
+    requires
+        a1.eqv(a2),
+        b1.eqv(b2),
+    ensures
+        cross(a1, b1).eqv(cross(a2, b2)),
+{
+    // Each component of cross is a.i*b.j - a.k*b.l, so use mul_congruence + sub_congruence.
+    // x: a1.y*b1.z - a1.z*b1.y ≡ a2.y*b2.z - a2.z*b2.y
+    ring_lemmas::lemma_mul_congruence::<T>(a1.y, a2.y, b1.z, b2.z);
+    ring_lemmas::lemma_mul_congruence::<T>(a1.z, a2.z, b1.y, b2.y);
+    additive_group_lemmas::lemma_sub_congruence::<T>(
+        a1.y.mul(b1.z), a2.y.mul(b2.z),
+        a1.z.mul(b1.y), a2.z.mul(b2.y),
+    );
+    // y: a1.z*b1.x - a1.x*b1.z ≡ a2.z*b2.x - a2.x*b2.z
+    ring_lemmas::lemma_mul_congruence::<T>(a1.z, a2.z, b1.x, b2.x);
+    ring_lemmas::lemma_mul_congruence::<T>(a1.x, a2.x, b1.z, b2.z);
+    additive_group_lemmas::lemma_sub_congruence::<T>(
+        a1.z.mul(b1.x), a2.z.mul(b2.x),
+        a1.x.mul(b1.z), a2.x.mul(b2.z),
+    );
+    // z: a1.x*b1.y - a1.y*b1.x ≡ a2.x*b2.y - a2.y*b2.x
+    ring_lemmas::lemma_mul_congruence::<T>(a1.x, a2.x, b1.y, b2.y);
+    ring_lemmas::lemma_mul_congruence::<T>(a1.y, a2.y, b1.x, b2.x);
+    additive_group_lemmas::lemma_sub_congruence::<T>(
+        a1.x.mul(b1.y), a2.x.mul(b2.y),
+        a1.y.mul(b1.x), a2.y.mul(b2.x),
+    );
+}
+
 /// cross(a, a) ≡ zero
 pub proof fn lemma_cross_self_zero<T: Ring>(a: Vec3<T>)
     ensures
