@@ -121,7 +121,7 @@ pub proof fn lemma_mat_vec_mul_scale<T: Ring>(m: Mat3x3<T>, s: T, v: Vec3<T>)
 }
 
 /// dot of unit vector e_i with v ≡ v's i-th component  (helper)
-proof fn lemma_dot_e0<T: Ring>(v: Vec3<T>)
+pub proof fn lemma_dot_e0<T: Ring>(v: Vec3<T>)
     ensures
         dot(Vec3::<T> { x: T::one(), y: T::zero(), z: T::zero() }, v).eqv(v.x),
 {
@@ -152,7 +152,7 @@ proof fn lemma_dot_e0<T: Ring>(v: Vec3<T>)
     );
 }
 
-proof fn lemma_dot_e1<T: Ring>(v: Vec3<T>)
+pub proof fn lemma_dot_e1<T: Ring>(v: Vec3<T>)
     ensures
         dot(Vec3::<T> { x: T::zero(), y: T::one(), z: T::zero() }, v).eqv(v.y),
 {
@@ -182,7 +182,7 @@ proof fn lemma_dot_e1<T: Ring>(v: Vec3<T>)
     );
 }
 
-proof fn lemma_dot_e2<T: Ring>(v: Vec3<T>)
+pub proof fn lemma_dot_e2<T: Ring>(v: Vec3<T>)
     ensures
         dot(Vec3::<T> { x: T::zero(), y: T::zero(), z: T::one() }, v).eqv(v.z),
 {
@@ -212,7 +212,7 @@ proof fn lemma_dot_e2<T: Ring>(v: Vec3<T>)
     );
 }
 
-proof fn lemma_dot_e0_right<T: Ring>(v: Vec3<T>)
+pub proof fn lemma_dot_e0_right<T: Ring>(v: Vec3<T>)
     ensures
         dot(v, Vec3::<T> { x: T::one(), y: T::zero(), z: T::zero() }).eqv(v.x),
 {
@@ -222,7 +222,7 @@ proof fn lemma_dot_e0_right<T: Ring>(v: Vec3<T>)
     T::axiom_eqv_transitive(dot(v, e0), dot(e0, v), v.x);
 }
 
-proof fn lemma_dot_e1_right<T: Ring>(v: Vec3<T>)
+pub proof fn lemma_dot_e1_right<T: Ring>(v: Vec3<T>)
     ensures
         dot(v, Vec3::<T> { x: T::zero(), y: T::one(), z: T::zero() }).eqv(v.y),
 {
@@ -232,7 +232,7 @@ proof fn lemma_dot_e1_right<T: Ring>(v: Vec3<T>)
     T::axiom_eqv_transitive(dot(v, e1), dot(e1, v), v.y);
 }
 
-proof fn lemma_dot_e2_right<T: Ring>(v: Vec3<T>)
+pub proof fn lemma_dot_e2_right<T: Ring>(v: Vec3<T>)
     ensures
         dot(v, Vec3::<T> { x: T::zero(), y: T::zero(), z: T::one() }).eqv(v.z),
 {
@@ -393,7 +393,7 @@ pub proof fn lemma_identity_mat_mul_right<T: Ring>(m: Mat3x3<T>)
 // ---------------------------------------------------------------------------
 
 /// a - 0 ≡ a (private helper)
-proof fn lemma_sub_zero_right<T: Ring>(a: T)
+pub proof fn lemma_sub_zero_right<T: Ring>(a: T)
     ensures
         a.sub(T::zero()).eqv(a),
 {
@@ -535,7 +535,7 @@ pub open spec fn inverse<T: Field>(m: Mat3x3<T>) -> Mat3x3<T> {
 // ---------------------------------------------------------------------------
 
 /// m * adjugate(m) has det(m) on diagonal, 0 off-diagonal
-proof fn lemma_mat_mul_adjugate_right<T: Ring>(m: Mat3x3<T>)
+pub proof fn lemma_mat_mul_adjugate_right<T: Ring>(m: Mat3x3<T>)
     ensures
         mat_mul(m, adjugate(m)).row0.eqv(Vec3 { x: det(m), y: T::zero(), z: T::zero() }),
         mat_mul(m, adjugate(m)).row1.eqv(Vec3 { x: T::zero(), y: det(m), z: T::zero() }),
@@ -597,7 +597,7 @@ proof fn lemma_mat_mul_adjugate_right<T: Ring>(m: Mat3x3<T>)
 // ---------------------------------------------------------------------------
 
 /// (a*b)*c ≡ c*(a*b) [commutativity of outer product]
-proof fn lemma_mul3_outer_comm<T: Ring>(a: T, b: T, c: T)
+pub proof fn lemma_mul3_outer_comm<T: Ring>(a: T, b: T, c: T)
     ensures
         a.mul(b).mul(c).eqv(c.mul(a.mul(b))),
 {
@@ -605,7 +605,7 @@ proof fn lemma_mul3_outer_comm<T: Ring>(a: T, b: T, c: T)
 }
 
 /// (a*b)*c ≡ (c*a)*b [rotate right: move c to front]
-proof fn lemma_mul3_rotate_right<T: Ring>(a: T, b: T, c: T)
+pub proof fn lemma_mul3_rotate_right<T: Ring>(a: T, b: T, c: T)
     ensures
         a.mul(b).mul(c).eqv(c.mul(a).mul(b)),
 {
@@ -622,7 +622,7 @@ proof fn lemma_mul3_rotate_right<T: Ring>(a: T, b: T, c: T)
 }
 
 /// (a*b)*c ≡ (b*c)*a [rotate left: move a to end]
-proof fn lemma_mul3_rotate_left<T: Ring>(a: T, b: T, c: T)
+pub proof fn lemma_mul3_rotate_left<T: Ring>(a: T, b: T, c: T)
     ensures
         a.mul(b).mul(c).eqv(b.mul(c).mul(a)),
 {
@@ -640,7 +640,7 @@ proof fn lemma_mul3_rotate_left<T: Ring>(a: T, b: T, c: T)
 // ---------------------------------------------------------------------------
 
 /// a*(b*c) ≡ b*(a*c) [swap first two factors in a*(b*c) form]
-proof fn lemma_mul3_swap12<T: Ring>(a: T, b: T, c: T)
+pub proof fn lemma_mul3_swap12<T: Ring>(a: T, b: T, c: T)
     ensures
         a.mul(b.mul(c)).eqv(b.mul(a.mul(c))),
 {
@@ -662,7 +662,7 @@ proof fn lemma_mul3_swap12<T: Ring>(a: T, b: T, c: T)
 }
 
 /// (a-b) + (c-d) ≡ (c-b) + (a-d)  [swap first operands of two subs in a sum]
-proof fn lemma_sub_add_swap<T: Ring>(a: T, b: T, c: T, d: T)
+pub proof fn lemma_sub_add_swap<T: Ring>(a: T, b: T, c: T, d: T)
     ensures
         a.sub(b).add(c.sub(d)).eqv(c.sub(b).add(a.sub(d))),
 {
@@ -731,7 +731,7 @@ proof fn lemma_sub_add_swap<T: Ring>(a: T, b: T, c: T, d: T)
 /// Each component of adj(m) differs from the corresponding component of
 /// transpose(adj(m^T)) only by commutativity in the subtrahend of a cross
 /// product component.
-proof fn lemma_adjugate_transpose_rows<T: Ring>(m: Mat3x3<T>)
+pub proof fn lemma_adjugate_transpose_rows<T: Ring>(m: Mat3x3<T>)
     ensures
         adjugate(m).row0.eqv(transpose(adjugate(transpose(m))).row0),
         adjugate(m).row1.eqv(transpose(adjugate(transpose(m))).row1),
@@ -965,7 +965,7 @@ pub proof fn lemma_det_transpose<T: Ring>(m: Mat3x3<T>)
 // ---------------------------------------------------------------------------
 
 /// adjugate(m) * m has det(m) on diagonal, 0 off-diagonal
-proof fn lemma_mat_mul_adjugate_left<T: Ring>(m: Mat3x3<T>)
+pub proof fn lemma_mat_mul_adjugate_left<T: Ring>(m: Mat3x3<T>)
     ensures
         mat_mul(adjugate(m), m).row0.eqv(Vec3 { x: det(m), y: T::zero(), z: T::zero() }),
         mat_mul(adjugate(m), m).row1.eqv(Vec3 { x: T::zero(), y: det(m), z: T::zero() }),
@@ -1291,7 +1291,7 @@ pub proof fn lemma_inverse_left<T: Field>(m: Mat3x3<T>)
 
 /// Helper: s * dot(u, v) ≡ (s*u.x)*v.x + (s*u.y)*v.y + (s*u.z)*v.z
 /// i.e., distribute s into each term of the dot product and reassociate.
-proof fn lemma_distribute_scalar_dot3<T: Ring>(s: T, u: Vec3<T>, v: Vec3<T>)
+pub proof fn lemma_distribute_scalar_dot3<T: Ring>(s: T, u: Vec3<T>, v: Vec3<T>)
     ensures
         s.mul(dot(u, v)).eqv(
             s.mul(u.x).mul(v.x).add(s.mul(u.y).mul(v.y)).add(s.mul(u.z).mul(v.z))
@@ -1342,7 +1342,7 @@ proof fn lemma_distribute_scalar_dot3<T: Ring>(s: T, u: Vec3<T>, v: Vec3<T>)
 /// Rearrange 9 terms from row-major to column-major grouping.
 /// ((a0+a1)+a2) + ((b0+b1)+b2)) + ((c0+c1)+c2)
 /// ≡ ((a0+b0)+c0) + ((a1+b1)+c1)) + ((a2+b2)+c2)
-proof fn lemma_add_rearrange_3x3<T: Ring>(
+pub proof fn lemma_add_rearrange_3x3<T: Ring>(
     a0: T, a1: T, a2: T,
     b0: T, b1: T, b2: T,
     c0: T, c1: T, c2: T,
@@ -1409,7 +1409,7 @@ proof fn lemma_add_rearrange_3x3<T: Ring>(
 
 /// Factor 3 additive terms over a common right factor:
 /// (p*z + q*z) + r*z ≡ ((p+q)+r)*z
-proof fn lemma_factor_3<T: Ring>(p: T, q: T, r: T, z: T)
+pub proof fn lemma_factor_3<T: Ring>(p: T, q: T, r: T, z: T)
     ensures
         p.mul(z).add(q.mul(z)).add(r.mul(z)).eqv(p.add(q).add(r).mul(z)),
 {
@@ -1426,7 +1426,7 @@ proof fn lemma_factor_3<T: Ring>(p: T, q: T, r: T, z: T)
 }
 
 /// 3-term additive congruence: if a1≡a2, b1≡b2, c1≡c2, then (a1+b1)+c1 ≡ (a2+b2)+c2
-proof fn lemma_add_congruence_3<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T)
+pub proof fn lemma_add_congruence_3<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T)
     requires a1.eqv(a2), b1.eqv(b2), c1.eqv(c2),
     ensures a1.add(b1).add(c1).eqv(a2.add(b2).add(c2)),
 {
@@ -1436,7 +1436,7 @@ proof fn lemma_add_congruence_3<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: 
 
 /// Helper: for any row vector ai and matrix b,
 /// dot(ai, mat_vec_mul(b, v)) ≡ dot(ai, bt.col0)*v.x + dot(ai, bt.col1)*v.y + dot(ai, bt.col2)*v.z
-proof fn lemma_dot_mat_vec_mul_row<T: Ring>(ai: Vec3<T>, b: Mat3x3<T>, v: Vec3<T>)
+pub proof fn lemma_dot_mat_vec_mul_row<T: Ring>(ai: Vec3<T>, b: Mat3x3<T>, v: Vec3<T>)
     ensures
         dot(ai, mat_vec_mul(b, v)).eqv(
             dot(ai, transpose(b).row0).mul(v.x)
@@ -1515,7 +1515,7 @@ pub proof fn lemma_mat_vec_mul_mat_mul<T: Ring>(a: Mat3x3<T>, b: Mat3x3<T>, v: V
 
 /// Expand triple with 3-term scaled sum in first arg:
 /// triple(s0*r0 + s1*r1 + s2*r2, p, q) ≡ s0*T(r0,p,q) + s1*T(r1,p,q) + s2*T(r2,p,q)
-proof fn lemma_triple_expand_arg1_3<T: Ring>(
+pub proof fn lemma_triple_expand_arg1_3<T: Ring>(
     s0: T, r0: Vec3<T>, s1: T, r1: Vec3<T>, s2: T, r2: Vec3<T>,
     p: Vec3<T>, q: Vec3<T>,
 )
@@ -1584,7 +1584,7 @@ proof fn lemma_triple_expand_arg1_3<T: Ring>(
 }
 
 /// Same expansion for second arg
-proof fn lemma_triple_expand_arg2_3<T: Ring>(
+pub proof fn lemma_triple_expand_arg2_3<T: Ring>(
     p: Vec3<T>,
     s0: T, r0: Vec3<T>, s1: T, r1: Vec3<T>, s2: T, r2: Vec3<T>,
     q: Vec3<T>,
@@ -1648,7 +1648,7 @@ proof fn lemma_triple_expand_arg2_3<T: Ring>(
 }
 
 /// Same expansion for third arg
-proof fn lemma_triple_expand_arg3_3<T: Ring>(
+pub proof fn lemma_triple_expand_arg3_3<T: Ring>(
     p: Vec3<T>,
     q: Vec3<T>,
     s0: T, r0: Vec3<T>, s1: T, r1: Vec3<T>, s2: T, r2: Vec3<T>,
@@ -1711,7 +1711,7 @@ proof fn lemma_triple_expand_arg3_3<T: Ring>(
 }
 
 /// If x ≡ 0 then s*x ≡ 0
-proof fn lemma_mul_zero_by_eqv<T: Ring>(s: T, x: T)
+pub proof fn lemma_mul_zero_by_eqv<T: Ring>(s: T, x: T)
     requires x.eqv(T::zero()),
     ensures s.mul(x).eqv(T::zero()),
 {
@@ -1721,7 +1721,7 @@ proof fn lemma_mul_zero_by_eqv<T: Ring>(s: T, x: T)
 }
 
 /// Kill first of 3 terms: if a ≡ 0, then (a + b) + c ≡ b + c
-proof fn lemma_sum3_kill_first<T: Ring>(a: T, b: T, c: T)
+pub proof fn lemma_sum3_kill_first<T: Ring>(a: T, b: T, c: T)
     requires a.eqv(T::zero()),
     ensures a.add(b).add(c).eqv(b.add(c)),
 {
@@ -1734,7 +1734,7 @@ proof fn lemma_sum3_kill_first<T: Ring>(a: T, b: T, c: T)
 }
 
 /// Kill second of 3 terms: if b ≡ 0, then (a + b) + c ≡ a + c
-proof fn lemma_sum3_kill_second<T: Ring>(a: T, b: T, c: T)
+pub proof fn lemma_sum3_kill_second<T: Ring>(a: T, b: T, c: T)
     requires b.eqv(T::zero()),
     ensures a.add(b).add(c).eqv(a.add(c)),
 {
@@ -1745,7 +1745,7 @@ proof fn lemma_sum3_kill_second<T: Ring>(a: T, b: T, c: T)
 }
 
 /// Kill third of 3 terms: if c ≡ 0, then (a + b) + c ≡ a + b
-proof fn lemma_sum3_kill_third<T: Ring>(a: T, b: T, c: T)
+pub proof fn lemma_sum3_kill_third<T: Ring>(a: T, b: T, c: T)
     requires c.eqv(T::zero()),
     ensures a.add(b).add(c).eqv(a.add(b)),
 {
@@ -1755,7 +1755,7 @@ proof fn lemma_sum3_kill_third<T: Ring>(a: T, b: T, c: T)
 }
 
 /// Kill first and third: if a ≡ 0, c ≡ 0, then (a + b) + c ≡ b
-proof fn lemma_sum3_kill_first_third<T: Ring>(a: T, b: T, c: T)
+pub proof fn lemma_sum3_kill_first_third<T: Ring>(a: T, b: T, c: T)
     requires a.eqv(T::zero()), c.eqv(T::zero()),
     ensures a.add(b).add(c).eqv(b),
 {
@@ -1768,7 +1768,7 @@ proof fn lemma_sum3_kill_first_third<T: Ring>(a: T, b: T, c: T)
 }
 
 /// Kill first and second: if a ≡ 0, b ≡ 0, then (a + b) + c ≡ c
-proof fn lemma_sum3_kill_first_second<T: Ring>(a: T, b: T, c: T)
+pub proof fn lemma_sum3_kill_first_second<T: Ring>(a: T, b: T, c: T)
     requires a.eqv(T::zero()), b.eqv(T::zero()),
     ensures a.add(b).add(c).eqv(c),
 {
@@ -1781,7 +1781,7 @@ proof fn lemma_sum3_kill_first_second<T: Ring>(a: T, b: T, c: T)
 }
 
 /// Kill second and third: if b ≡ 0, c ≡ 0, then (a + b) + c ≡ a
-proof fn lemma_sum3_kill_second_third<T: Ring>(a: T, b: T, c: T)
+pub proof fn lemma_sum3_kill_second_third<T: Ring>(a: T, b: T, c: T)
     requires b.eqv(T::zero()), c.eqv(T::zero()),
     ensures a.add(b).add(c).eqv(a),
 {
@@ -1794,7 +1794,7 @@ proof fn lemma_sum3_kill_second_third<T: Ring>(a: T, b: T, c: T)
 }
 
 /// Column 0 of det multiplicative: triple(b0, ABr1, ABr2) ≡ cross(a1,a2).x * det(b)
-proof fn lemma_det_mul_col0<T: Ring>(a: Mat3x3<T>, b: Mat3x3<T>)
+pub proof fn lemma_det_mul_col0<T: Ring>(a: Mat3x3<T>, b: Mat3x3<T>)
     ensures triple(b.row0, mat_mul(a,b).row1, mat_mul(a,b).row2)
             .eqv(cross(a.row1, a.row2).x.mul(det(b))),
 {
@@ -1896,7 +1896,7 @@ proof fn lemma_det_mul_col0<T: Ring>(a: Mat3x3<T>, b: Mat3x3<T>)
 }
 
 /// Column 1 of det multiplicative: triple(b1, ABr1, ABr2) ≡ cross(a1,a2).y * det(b)
-proof fn lemma_det_mul_col1<T: Ring>(a: Mat3x3<T>, b: Mat3x3<T>)
+pub proof fn lemma_det_mul_col1<T: Ring>(a: Mat3x3<T>, b: Mat3x3<T>)
     ensures triple(b.row1, mat_mul(a,b).row1, mat_mul(a,b).row2)
             .eqv(cross(a.row1, a.row2).y.mul(det(b))),
 {
@@ -2032,7 +2032,7 @@ proof fn lemma_det_mul_col1<T: Ring>(a: Mat3x3<T>, b: Mat3x3<T>)
 }
 
 /// Column 2 of det multiplicative: triple(b2, ABr1, ABr2) ≡ cross(a1,a2).z * det(b)
-proof fn lemma_det_mul_col2<T: Ring>(a: Mat3x3<T>, b: Mat3x3<T>)
+pub proof fn lemma_det_mul_col2<T: Ring>(a: Mat3x3<T>, b: Mat3x3<T>)
     ensures triple(b.row2, mat_mul(a,b).row1, mat_mul(a,b).row2)
             .eqv(cross(a.row1, a.row2).z.mul(det(b))),
 {
@@ -2257,7 +2257,7 @@ pub proof fn lemma_det_inverse<T: Field>(m: Mat3x3<T>)
 }
 
 /// Helper: recip(d) ≢ 0 when d ≢ 0
-proof fn lemma_recip_nonzero<T: Field>(d: T)
+pub proof fn lemma_recip_nonzero<T: Field>(d: T)
     requires !d.eqv(T::zero()),
     ensures !d.recip().eqv(T::zero()),
 {
@@ -2273,7 +2273,7 @@ proof fn lemma_recip_nonzero<T: Field>(d: T)
 }
 
 /// Helper: det(inverse(m)) ≢ 0 when det(m) ≢ 0
-proof fn lemma_det_inv_nonzero<T: Field>(m: Mat3x3<T>)
+pub proof fn lemma_det_inv_nonzero<T: Field>(m: Mat3x3<T>)
     requires !det(m).eqv(T::zero()),
     ensures !det(inverse(m)).eqv(T::zero()),
 {
@@ -2288,7 +2288,7 @@ proof fn lemma_det_inv_nonzero<T: Field>(m: Mat3x3<T>)
 }
 
 /// Helper: mat_vec_mul(inv(m), mat_vec_mul(m, v)) ≡ v
-proof fn lemma_inv_m_cancel_left<T: Field>(m: Mat3x3<T>, v: Vec3<T>)
+pub proof fn lemma_inv_m_cancel_left<T: Field>(m: Mat3x3<T>, v: Vec3<T>)
     requires !det(m).eqv(T::zero()),
     ensures mat_vec_mul(inverse(m), mat_vec_mul(m, v)).eqv(v),
 {
@@ -2607,6 +2607,43 @@ pub proof fn lemma_solve_unique<T: Field>(m: Mat3x3<T>, x: Vec3<T>, b: Vec3<T>)
     T::axiom_eqv_transitive(
         x.z, mat_vec_mul(inv, mat_vec_mul(m, x)).z, solve(m, b).z,
     );
+}
+
+// ---------------------------------------------------------------------------
+// Cross-checking properties
+// ---------------------------------------------------------------------------
+
+/// mat_mul(a, mat_mul(b, c)) ≡ mat_mul(mat_mul(a, b), c)
+pub proof fn lemma_mat_mul_associative<T: Ring>(a: Mat3x3<T>, b: Mat3x3<T>, c: Mat3x3<T>)
+    ensures
+        mat_mul(a, mat_mul(b, c)).row0.eqv(mat_mul(mat_mul(a, b), c).row0),
+        mat_mul(a, mat_mul(b, c)).row1.eqv(mat_mul(mat_mul(a, b), c).row1),
+        mat_mul(a, mat_mul(b, c)).row2.eqv(mat_mul(mat_mul(a, b), c).row2),
+{
+    let ct = transpose(c);
+    lemma_mat_vec_mul_mat_mul(a, b, ct.row0);
+    lemma_mat_vec_mul_mat_mul(a, b, ct.row1);
+    lemma_mat_vec_mul_mat_mul(a, b, ct.row2);
+}
+
+/// transpose(mat_mul(a, b)) ≡ mat_mul(transpose(b), transpose(a))
+pub proof fn lemma_transpose_mat_mul<T: Ring>(a: Mat3x3<T>, b: Mat3x3<T>)
+    ensures
+        transpose(mat_mul(a, b)).row0.eqv(mat_mul(transpose(b), transpose(a)).row0),
+        transpose(mat_mul(a, b)).row1.eqv(mat_mul(transpose(b), transpose(a)).row1),
+        transpose(mat_mul(a, b)).row2.eqv(mat_mul(transpose(b), transpose(a)).row2),
+{
+    let bt = transpose(b);
+    // Each entry: dot(a.row_j, bt.row_i) ≡ dot(bt.row_i, a.row_j) by commutativity
+    crate::vec3::ops::lemma_dot_commutative(a.row0, bt.row0);
+    crate::vec3::ops::lemma_dot_commutative(a.row1, bt.row0);
+    crate::vec3::ops::lemma_dot_commutative(a.row2, bt.row0);
+    crate::vec3::ops::lemma_dot_commutative(a.row0, bt.row1);
+    crate::vec3::ops::lemma_dot_commutative(a.row1, bt.row1);
+    crate::vec3::ops::lemma_dot_commutative(a.row2, bt.row1);
+    crate::vec3::ops::lemma_dot_commutative(a.row0, bt.row2);
+    crate::vec3::ops::lemma_dot_commutative(a.row1, bt.row2);
+    crate::vec3::ops::lemma_dot_commutative(a.row2, bt.row2);
 }
 
 } // verus!

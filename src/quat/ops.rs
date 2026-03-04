@@ -598,7 +598,7 @@ pub proof fn lemma_mul_congruence_right<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Qu
 
 /// Helper: rearrange w-component pattern for distributivity
 /// (A+A')-(B+B')-(C+C')-(D+D') ≡ (A-B-C-D)+(A'-B'-C'-D')
-proof fn lemma_rearrange_ssss<T: Ring>(
+pub proof fn lemma_rearrange_ssss<T: Ring>(
     a: T, ap: T, b: T, bp: T, c: T, cp: T, d: T, dp: T,
 )
     ensures
@@ -637,7 +637,7 @@ proof fn lemma_rearrange_ssss<T: Ring>(
 
 /// Helper: rearrange x-component pattern (add-add-sub)
 /// (A+A')+(B+B')+(C+C')-(D+D') ≡ (A+B+C-D)+(A'+B'+C'-D')
-proof fn lemma_rearrange_aas<T: Ring>(
+pub proof fn lemma_rearrange_aas<T: Ring>(
     a: T, ap: T, b: T, bp: T, c: T, cp: T, d: T, dp: T,
 )
     ensures
@@ -676,7 +676,7 @@ proof fn lemma_rearrange_aas<T: Ring>(
 
 /// Helper: rearrange y-component pattern (sub-add-add)
 /// (A+A')-(B+B')+(C+C')+(D+D') ≡ (A-B+C+D)+(A'-B'+C'+D')
-proof fn lemma_rearrange_saa<T: Ring>(
+pub proof fn lemma_rearrange_saa<T: Ring>(
     a: T, ap: T, b: T, bp: T, c: T, cp: T, d: T, dp: T,
 )
     ensures
@@ -715,7 +715,7 @@ proof fn lemma_rearrange_saa<T: Ring>(
 
 /// Helper: rearrange z-component pattern (add-sub-add)
 /// (A+A')+(B+B')-(C+C')+(D+D') ≡ (A+B-C+D)+(A'+B'-C'+D')
-proof fn lemma_rearrange_asa<T: Ring>(
+pub proof fn lemma_rearrange_asa<T: Ring>(
     a: T, ap: T, b: T, bp: T, c: T, cp: T, d: T, dp: T,
 )
     ensures
@@ -1009,7 +1009,7 @@ pub proof fn lemma_mul_distributes_right<T: Ring>(a: Quat<T>, b: Quat<T>, c: Qua
 
 /// Helper: factor s out of sub-sub-sub pattern
 /// s*a - s*b - s*c - s*d ≡ s*(a - b - c - d)
-proof fn lemma_factor_ssss<T: Ring>(s: T, a: T, b: T, c: T, d: T)
+pub proof fn lemma_factor_ssss<T: Ring>(s: T, a: T, b: T, c: T, d: T)
     ensures
         s.mul(a).sub(s.mul(b)).sub(s.mul(c)).sub(s.mul(d)).eqv(
             s.mul(a.sub(b).sub(c).sub(d))
@@ -1043,7 +1043,7 @@ proof fn lemma_factor_ssss<T: Ring>(s: T, a: T, b: T, c: T, d: T)
 
 /// Helper: factor s out of add-add-sub pattern
 /// s*a + s*b + s*c - s*d ≡ s*(a + b + c - d)
-proof fn lemma_factor_aas<T: Ring>(s: T, a: T, b: T, c: T, d: T)
+pub proof fn lemma_factor_aas<T: Ring>(s: T, a: T, b: T, c: T, d: T)
     ensures
         s.mul(a).add(s.mul(b)).add(s.mul(c)).sub(s.mul(d)).eqv(
             s.mul(a.add(b).add(c).sub(d))
@@ -1077,7 +1077,7 @@ proof fn lemma_factor_aas<T: Ring>(s: T, a: T, b: T, c: T, d: T)
 
 /// Helper: factor s out of sub-add-add pattern
 /// s*a - s*b + s*c + s*d ≡ s*(a - b + c + d)
-proof fn lemma_factor_saa<T: Ring>(s: T, a: T, b: T, c: T, d: T)
+pub proof fn lemma_factor_saa<T: Ring>(s: T, a: T, b: T, c: T, d: T)
     ensures
         s.mul(a).sub(s.mul(b)).add(s.mul(c)).add(s.mul(d)).eqv(
             s.mul(a.sub(b).add(c).add(d))
@@ -1111,7 +1111,7 @@ proof fn lemma_factor_saa<T: Ring>(s: T, a: T, b: T, c: T, d: T)
 
 /// Helper: factor s out of add-sub-add pattern
 /// s*a + s*b - s*c + s*d ≡ s*(a + b - c + d)
-proof fn lemma_factor_asa<T: Ring>(s: T, a: T, b: T, c: T, d: T)
+pub proof fn lemma_factor_asa<T: Ring>(s: T, a: T, b: T, c: T, d: T)
     ensures
         s.mul(a).add(s.mul(b)).sub(s.mul(c)).add(s.mul(d)).eqv(
             s.mul(a.add(b).sub(c).add(d))

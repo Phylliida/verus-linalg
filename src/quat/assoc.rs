@@ -30,7 +30,7 @@ pub open spec fn basis_decompose<T: Ring>(q: Quat<T>) -> Quat<T> {
 // ===========================================================================
 
 /// 4-way add congruence: a1+b1+c1+d1 ≡ a2+b2+c2+d2
-proof fn lemma_aaa_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T, d2: T)
+pub proof fn lemma_aaa_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T, d2: T)
     requires a1.eqv(a2), b1.eqv(b2), c1.eqv(c2), d1.eqv(d2),
     ensures a1.add(b1).add(c1).add(d1).eqv(a2.add(b2).add(c2).add(d2)),
 {
@@ -40,7 +40,7 @@ proof fn lemma_aaa_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T
 }
 
 /// a + 0 + 0 + 0 ≡ a  (non-zero at position 0)
-proof fn lemma_add_zeros_0<T: Ring>(a: T)
+pub proof fn lemma_add_zeros_0<T: Ring>(a: T)
     ensures a.add(T::zero()).add(T::zero()).add(T::zero()).eqv(a),
 {
     let z = T::zero();
@@ -53,7 +53,7 @@ proof fn lemma_add_zeros_0<T: Ring>(a: T)
 }
 
 /// 0 + a + 0 + 0 ≡ a  (non-zero at position 1)
-proof fn lemma_add_zeros_1<T: Ring>(a: T)
+pub proof fn lemma_add_zeros_1<T: Ring>(a: T)
     ensures T::zero().add(a).add(T::zero()).add(T::zero()).eqv(a),
 {
     let z = T::zero();
@@ -67,7 +67,7 @@ proof fn lemma_add_zeros_1<T: Ring>(a: T)
 }
 
 /// 0 + 0 + a + 0 ≡ a  (non-zero at position 2)
-proof fn lemma_add_zeros_2<T: Ring>(a: T)
+pub proof fn lemma_add_zeros_2<T: Ring>(a: T)
     ensures T::zero().add(T::zero()).add(a).add(T::zero()).eqv(a),
 {
     let z = T::zero();
@@ -83,7 +83,7 @@ proof fn lemma_add_zeros_2<T: Ring>(a: T)
 }
 
 /// 0 + 0 + 0 + a ≡ a  (non-zero at position 3)
-proof fn lemma_add_zeros_3<T: Ring>(a: T)
+pub proof fn lemma_add_zeros_3<T: Ring>(a: T)
     ensures T::zero().add(T::zero()).add(T::zero()).add(a).eqv(a),
 {
     let z = T::zero();
@@ -142,7 +142,7 @@ pub proof fn lemma_basis_decompose_eqv<T: Ring>(q: Quat<T>)
 // ===========================================================================
 
 /// If assoc(a,b,c1) and assoc(a,b,c2), then assoc(a,b,c1+c2)
-proof fn lemma_assoc_linear_right_add<T: Ring>(a: Quat<T>, b: Quat<T>, c1: Quat<T>, c2: Quat<T>)
+pub proof fn lemma_assoc_linear_right_add<T: Ring>(a: Quat<T>, b: Quat<T>, c1: Quat<T>, c2: Quat<T>)
     requires assoc_instance(a, b, c1), assoc_instance(a, b, c2),
     ensures assoc_instance(a, b, c1.add(c2)),
 {
@@ -181,7 +181,7 @@ proof fn lemma_assoc_linear_right_add<T: Ring>(a: Quat<T>, b: Quat<T>, c1: Quat<
 }
 
 /// If assoc(a,b,c), then assoc(a,b,scale(k,c))
-proof fn lemma_assoc_linear_right_scale<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>, k: T)
+pub proof fn lemma_assoc_linear_right_scale<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>, k: T)
     requires assoc_instance(a, b, c),
     ensures assoc_instance(a, b, scale(k, c)),
 {
@@ -218,7 +218,7 @@ proof fn lemma_assoc_linear_right_scale<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat
 // ===========================================================================
 
 /// If assoc(a,b1,c) and assoc(a,b2,c), then assoc(a,b1+b2,c)
-proof fn lemma_assoc_linear_middle_add<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat<T>, c: Quat<T>)
+pub proof fn lemma_assoc_linear_middle_add<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat<T>, c: Quat<T>)
     requires assoc_instance(a, b1, c), assoc_instance(a, b2, c),
     ensures assoc_instance(a, b1.add(b2), c),
 {
@@ -263,7 +263,7 @@ proof fn lemma_assoc_linear_middle_add<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Qua
 }
 
 /// If assoc(a,b,c), then assoc(a,scale(k,b),c)
-proof fn lemma_assoc_linear_middle_scale<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>, k: T)
+pub proof fn lemma_assoc_linear_middle_scale<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>, k: T)
     requires assoc_instance(a, b, c),
     ensures assoc_instance(a, scale(k, b), c),
 {
@@ -308,7 +308,7 @@ proof fn lemma_assoc_linear_middle_scale<T: Ring>(a: Quat<T>, b: Quat<T>, c: Qua
 // ===========================================================================
 
 /// If assoc(a1,b,c) and assoc(a2,b,c), then assoc(a1+a2,b,c)
-proof fn lemma_assoc_linear_left_add<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<T>, c: Quat<T>)
+pub proof fn lemma_assoc_linear_left_add<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<T>, c: Quat<T>)
     requires assoc_instance(a1, b, c), assoc_instance(a2, b, c),
     ensures assoc_instance(a1.add(a2), b, c),
 {
@@ -346,7 +346,7 @@ proof fn lemma_assoc_linear_left_add<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<
 }
 
 /// If assoc(a,b,c), then assoc(scale(k,a),b,c)
-proof fn lemma_assoc_linear_left_scale<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>, k: T)
+pub proof fn lemma_assoc_linear_left_scale<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>, k: T)
     requires assoc_instance(a, b, c),
     ensures assoc_instance(scale(k, a), b, c),
 {
@@ -384,7 +384,7 @@ proof fn lemma_assoc_linear_left_scale<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<
 // ===========================================================================
 
 /// Transfer assoc through eqv on right: assoc(a,b,c1) ∧ c1≡c2 → assoc(a,b,c2)
-proof fn lemma_assoc_eqv_right<T: Ring>(a: Quat<T>, b: Quat<T>, c1: Quat<T>, c2: Quat<T>)
+pub proof fn lemma_assoc_eqv_right<T: Ring>(a: Quat<T>, b: Quat<T>, c1: Quat<T>, c2: Quat<T>)
     requires assoc_instance(a, b, c1), c1.eqv(c2),
     ensures assoc_instance(a, b, c2),
 {
@@ -400,7 +400,7 @@ proof fn lemma_assoc_eqv_right<T: Ring>(a: Quat<T>, b: Quat<T>, c1: Quat<T>, c2:
 }
 
 /// Transfer assoc through eqv on middle: assoc(a,b1,c) ∧ b1≡b2 → assoc(a,b2,c)
-proof fn lemma_assoc_eqv_middle<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat<T>, c: Quat<T>)
+pub proof fn lemma_assoc_eqv_middle<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat<T>, c: Quat<T>)
     requires assoc_instance(a, b1, c), b1.eqv(b2),
     ensures assoc_instance(a, b2, c),
 {
@@ -414,7 +414,7 @@ proof fn lemma_assoc_eqv_middle<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat<T>, c
 }
 
 /// Transfer assoc through eqv on left: assoc(a1,b,c) ∧ a1≡a2 → assoc(a2,b,c)
-proof fn lemma_assoc_eqv_left<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<T>, c: Quat<T>)
+pub proof fn lemma_assoc_eqv_left<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<T>, c: Quat<T>)
     requires assoc_instance(a1, b, c), a1.eqv(a2),
     ensures assoc_instance(a2, b, c),
 {
@@ -432,7 +432,7 @@ proof fn lemma_assoc_eqv_left<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<T>, c: 
 // ===========================================================================
 
 /// Given assoc for all 4 basis elements as c, derive assoc for arbitrary c
-proof fn lemma_linearize_right<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>)
+pub proof fn lemma_linearize_right<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>)
     requires
         assoc_instance(a, b, basis(0)),
         assoc_instance(a, b, basis(1)),
@@ -457,7 +457,7 @@ proof fn lemma_linearize_right<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>)
 }
 
 /// Given assoc for all 4 basis elements as b, derive assoc for arbitrary b
-proof fn lemma_linearize_middle<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>)
+pub proof fn lemma_linearize_middle<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>)
     requires
         assoc_instance(a, basis(0), c),
         assoc_instance(a, basis(1), c),
@@ -481,7 +481,7 @@ proof fn lemma_linearize_middle<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>)
 }
 
 /// Given assoc for all 4 basis elements as a, derive assoc for arbitrary a
-proof fn lemma_linearize_left<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>)
+pub proof fn lemma_linearize_left<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>)
     requires
         assoc_instance(basis(0), b, c),
         assoc_instance(basis(1), b, c),
@@ -509,7 +509,7 @@ proof fn lemma_linearize_left<T: Ring>(a: Quat<T>, b: Quat<T>, c: Quat<T>)
 // ===========================================================================
 
 /// assoc(basis(i), b, c) for arbitrary b, c
-proof fn lemma_assoc_basis_any<T: Ring>(i: int, b: Quat<T>, c: Quat<T>)
+pub proof fn lemma_assoc_basis_any<T: Ring>(i: int, b: Quat<T>, c: Quat<T>)
     requires 0 <= i < 4,
     ensures assoc_instance(basis::<T>(i), b, c),
 {

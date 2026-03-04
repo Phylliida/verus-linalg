@@ -18,17 +18,18 @@ verus-algebra (Ring, OrderedRing, Field traits + lemmas)
 
 ## What we have now
 
-602 verified items, 0 errors, 0 assumes/admits.
+533 verified items, 0 errors, 0 assumes/admits.
 
 | Module | Type | Operations | Lemmas | Status |
 |---|---|---|---|---|
 | `vec2` | `Vec2<T>` | scale, dot, norm_sq, lerp, proj, rej, cwise_min/max | 46 | Done |
 | `vec3` | `Vec3<T>` | scale, dot, norm_sq, lerp, cross, triple, proj, rej, cwise_min/max | 60+ | Done |
 | `vec4` | `Vec4<T>` | scale, dot, norm_sq, lerp, cwise_min/max | 54 | Done |
-| `mat2` | `Mat2x2<T>` | identity, mat_vec_mul, transpose, det, mat_mul, adjugate, inverse | 23 | Done |
-| `mat3` | `Mat3x3<T>` | identity, mat_vec_mul, transpose, det, mat_mul, adjugate, inverse | 28 | Done |
+| `mat2` | `Mat2x2<T>` | identity, mat_vec_mul, transpose, det, mat_mul, adjugate, inverse | 25 | Done |
+| `mat3` | `Mat3x3<T>` | identity, mat_vec_mul, transpose, det, mat_mul, adjugate, inverse | 30 | Done |
+| `mat4` | `Mat4x4<T>` | identity, mat_vec_mul, transpose, det, mat_mul | 30 | Done |
 | `quat` | `Quat<T>` | mul, conjugate, norm_sq, inverse, rotation, basis | 80+ | Done |
-| `runtime` | `RuntimeVec2/3/4, RuntimeQuat, RuntimeMat2x2/3x3` | exec wrappers for all spec ops | 70+ | Done |
+| `runtime` | `RuntimeVec2/3/4, RuntimeQuat, RuntimeMat2x2/3x3/4x4` | exec wrappers for all spec ops | 70+ | Done |
 
 All spec types implement `Equivalence + AdditiveCommutativeMonoid + AdditiveGroup`.
 Runtime types use `Ghost<SpecType<Rational>>` + `wf_spec()` pattern with exec ops ensuring `out@ == spec_fn(args@)`.
@@ -41,24 +42,46 @@ Runtime types use `Ghost<SpecType<Rational>>` + `wf_spec()` pattern with exec op
 orthogonality (dot(cross(a,b), a) = 0), Lagrange identity.
 **Triple (Vec3 only):** self-zero, linear, antisymmetric swaps, cyclic permutation.
 **Mat2x2:** transpose involution, mat_vec_mul distributes, identity multiplication,
-det multiplicative, det transpose, adjugate, inverse right/left, inverse involution, det inverse.
+det multiplicative, det transpose, adjugate, inverse right/left, inverse involution, det inverse,
+mat_mul associative, transpose-of-product.
 **Mat3x3:** transpose involution, mat_vec_mul distributes, identity multiplication, determinant
 sign under row swap, det zero when rows repeated, det linear in first row, det identity,
-det congruence, det transpose, adjugate (via cross products), inverse right/left.
+det congruence, det transpose, adjugate (via cross products), inverse right/left,
+mat_mul associative, transpose-of-product.
 
 ---
 
 ## Remaining work — Priority order
 
-### P0 — Linear system solvers (next up)
+### P0 — Cross-checking properties (spec bug catchers)
+
+These properties cross-check that spec definitions (mat_mul, transpose,
+conjugate) are mutually consistent. A subtle sign error or index swap in
+any one definition would be caught by these.
+
+- [x] **`mat_mul` associativity (Mat2x2)**: `mat_mul(A, mat_mul(B, C)) ≡ mat_mul(mat_mul(A, B), C)`
+- [x] **`mat_mul` associativity (Mat3x3)**: same property
+- [x] **`transpose(mat_mul(A, B)) ≡ mat_mul(transpose(B), transpose(A))`** (Mat2x2)
+- [x] **`transpose(mat_mul(A, B)) ≡ mat_mul(transpose(B), transpose(A))`** (Mat3x3)
+- [x] **`conjugate(mul(a, b)) ≡ mul(conjugate(b), conjugate(a))`** (Quat anti-automorphism)
+
+Strategy: component-wise expansion + ring axioms. Mat2x2 has 2x2=4 entries
+each with ~8 terms. Mat3x3 has 3x3=9 entries each with ~27 terms — larger but
+still mechanical. Quaternion conjugate-of-product has 4 components with ~16 terms each.
+
+Files: `mat2/ops.rs`, `mat3/ops.rs`, `quat/conjugate.rs`
+
+---
+
+### P1 — Linear system solvers
 
 Thin wrappers around existing inverse + mat_vec_mul. Directly needed by
 verus-geometry for intersection point computation (Cramer's rule).
 
-- [ ] `solve_2x2(m: Mat2x2<T: Field>, b: Vec2<T>) -> Vec2<T>` — `mat_vec_mul(inverse(m), b)`
-- [ ] `solve_3x3(m: Mat3x3<T: Field>, b: Vec3<T>) -> Vec3<T>` — `mat_vec_mul(inverse(m), b)`
-- [ ] Lemma: `mat_vec_mul(m, solve(m, b)) ≡ b` (correctness, when det != 0)
-- [ ] Lemma: if `mat_vec_mul(m, x) ≡ b` and det != 0, then `x ≡ solve(m, b)` (uniqueness)
+- [x] `solve_2x2(m: Mat2x2<T: Field>, b: Vec2<T>) -> Vec2<T>` — `mat_vec_mul(inverse(m), b)`
+- [x] `solve_3x3(m: Mat3x3<T: Field>, b: Vec3<T>) -> Vec3<T>` — `mat_vec_mul(inverse(m), b)`
+- [x] Lemma: `mat_vec_mul(m, solve(m, b)) ≡ b` (correctness, when det != 0)
+- [x] Lemma: if `mat_vec_mul(m, x) ≡ b` and det != 0, then `x ≡ solve(m, b)` (uniqueness)
 
 Estimated ~100-150 lines total. Easy — delegates to existing inverse lemmas.
 
@@ -66,118 +89,23 @@ Files: `mat2/ops.rs`, `mat3/ops.rs`
 
 ---
 
-### P1 — Det multiplicative for Mat3x3
+### P2 — Mat4x4 (DONE — core)
 
-Important algebraic completeness. Unlocks det_inverse and inverse_involution
-for Mat3x3 (Mat2x2 already has all of these).
+Homogeneous coordinate transformations (3D graphics, BREP).
 
-- [ ] `lemma_det_multiplicative`: `det(mat_mul(a, b)) ≡ det(a).mul(det(b))`
+- [x] Define `Mat4x4<T: Ring>` with rows `row0..row3: Vec4<T>`
+- [x] `identity()`, `mat_vec_mul`, `mat_mul`, `transpose`, `det` (Laplace expansion)
+- [x] Key lemmas: transpose involution, identity multiplication, mat_mul associative,
+  transpose-of-product, det identity, det congruence, mat_vec_mul distributes/scales
+- [x] `RuntimeMat4x4` exec wrapper
+- [ ] Adjugate + inverse (deferred until needed)
+- [ ] Det swap rows, det zero repeated, det linear, det transpose, det multiplicative (deferred)
 
-The hardest remaining lemma. Direct expansion has many terms. Strategies:
-1. Brute force: expand both sides, match via ring axioms (~500+ lines)
-2. Multilinearity of det + column operations
-3. Leverage existing lemmas (det_linear_first_row, row swap, etc.)
-
-Mat2x2's `lemma_det_multiplicative` proof (in `mat2/ops.rs`) serves as a pattern
-reference but is much simpler (4 terms vs 36+).
-
-- [ ] `lemma_det_inverse`: `det(inverse(m)) ≡ recip(det(m))` — follows from det_multiplicative
-- [ ] `lemma_inverse_involution`: `inverse(inverse(m)) ≡ m` — follows from det_inverse
-
-Estimated ~600-700 lines total. Hard.
-
-File: `mat3/ops.rs`
+Files: `src/mat4.rs`, `src/mat4/ops.rs`, `src/runtime/mat4.rs`
 
 ---
 
-### P2 — Quaternions (port from old VerusCAD)
-
-Needed for 3D rotations in CAD (orientation of parts, view manipulation).
-The old `vcad-math` has a **complete, verified** quaternion module (~5,300 lines)
-that can be ported with mechanical refactoring (replace concrete `Scalar` with
-generic `T: Ring`).
-
-Source files for porting:
-- `old/VerusCAD/crates/vcad-math/src/quaternion.rs` (~4,666 lines)
-- `old/VerusCAD/crates/vcad-math/src/quaternion_assoc_cases.rs` (~637 lines)
-
-#### 2.1 Type and algebra
-
-```
-pub struct Quaternion<T: Ring> {
-    pub w: T,  // scalar part
-    pub x: T,  // i component
-    pub y: T,  // j component
-    pub z: T,  // k component
-}
-```
-
-- [ ] Define `Quaternion<T: Ring>`
-- [ ] Implement `Equivalence`, `AdditiveCommutativeMonoid`, `AdditiveGroup`
-- [ ] `quat_mul(a, b)` — Hamilton product (NOT commutative, 16-term expansion)
-- [ ] `conjugate(q)` — (w, -x, -y, -z)
-- [ ] `norm_sq(q)` — w^2 + x^2 + y^2 + z^2
-- [ ] `inverse(q)` — conjugate(q) / norm_sq(q) (requires Field, norm_sq != 0)
-- [ ] `from_scalar(s)` — embed scalar as quaternion (s, 0, 0, 0)
-- [ ] `from_vec3(v)` — embed vector as pure quaternion (0, vx, vy, vz)
-- [ ] `to_vec3(q)` — extract vector part
-
-#### 2.2 Ring structure proofs
-
-- [ ] Lemma: `quat_mul` is associative (64 basis cases — old code has all)
-- [ ] Lemma: `quat_mul` is NOT commutative (counterexample witness)
-- [ ] Lemma: `quat_mul` distributes over addition (left + right)
-- [ ] Lemma: one is multiplicative identity
-- [ ] Basis algebra: i^2 = j^2 = k^2 = -1, ij = k, jk = i, ki = j
-
-#### 2.3 Conjugation and norm
-
-- [ ] Lemma: conjugate involution
-- [ ] Lemma: conjugate is additive, linear over scale
-- [ ] Lemma: `conjugate(quat_mul(a, b)) ≡ quat_mul(conjugate(b), conjugate(a))` (reversal)
-- [ ] Lemma: `norm_sq(quat_mul(a, b)) ≡ norm_sq(a) * norm_sq(b)` (multiplicativity)
-- [ ] Lemma: `norm_sq` nonnegative, zero iff q = 0
-- [ ] Lemma: `quat_mul(q, conjugate(q)) ≡ from_scalar(norm_sq(q))`
-
-#### 2.4 Inverse and division
-
-- [ ] Lemma: `quat_mul(q, inverse(q)) ≡ from_scalar(one)` (right inverse)
-- [ ] Lemma: `quat_mul(inverse(q), q) ≡ from_scalar(one)` (left inverse)
-- [ ] Lemma: inverse involution
-- [ ] Lemma: norm_sq(inverse(q)) = 1/norm_sq(q)
-
-#### 2.5 Rotation via quaternion
-
-- [ ] `rotate_vec3(q, v)` — compute `q * from_vec3(v) * conjugate(q)` and extract vec3
-- [ ] Lemma: rotation preserves vector norm_sq (unit quaternion precondition)
-- [ ] Lemma: rotation composition: `rotate(q1, rotate(q2, v)) ≡ rotate(q1*q2, v)`
-- [ ] Lemma: rotated quaternion has zero scalar part (result is pure)
-
-Estimated ~4,000-5,000 lines. Moderate difficulty (mechanical port, proofs exist).
-
-Files: new `src/quat.rs` + `src/quat/ops.rs` (+ possibly `src/quat/assoc_cases.rs`)
-
----
-
-### P3 — Mat4x4 (deferred)
-
-Needed for homogeneous coordinate transformations (3D graphics, BREP).
-No old code to port — write from scratch following Mat3x3 patterns.
-
-- [ ] Define `Mat4x4<T: Ring>` with rows `row0..row3: Vec4<T>`
-- [ ] Implement `Equivalence`, `AdditiveCommutativeMonoid`, `AdditiveGroup`
-- [ ] `identity()`, `mat_vec_mul`, `mat_mul`, `transpose`, `det`
-- [ ] Key lemmas: transpose involution, multiply identity, det multiplicativity
-- [ ] Lemma: det sign under row permutations
-- [ ] Adjugate + inverse (when needed)
-
-Estimated ~2,000-3,000 lines. Easy-Medium (tedious, more components).
-
-Files: new `src/mat4.rs` + `src/mat4/ops.rs`
-
----
-
-### P4 — Affine transformations (deferred)
+### P3 — Affine transformations (deferred)
 
 Combine rotation, translation, and scaling. Needs Mat3x3 + quaternions first.
 
@@ -189,7 +117,7 @@ Combine rotation, translation, and scaling. Needs Mat3x3 + quaternions first.
 
 ---
 
-### P5 — Extended vector operations (deferred)
+### P4 — Extended vector operations (deferred)
 
 Small utilities, easy to add on demand.
 
@@ -199,7 +127,7 @@ Small utilities, easy to add on demand.
 
 ---
 
-### P6 — Eigenvalues and decompositions (long-term)
+### P5 — Eigenvalues and decompositions (long-term)
 
 - [ ] Characteristic polynomial for 2x2, 3x3
 - [ ] Cayley-Hamilton theorem
@@ -222,7 +150,7 @@ det identity, det congruence, inverse right/left, inverse involution, det invers
 Full implementation with 28 lemmas including:
 identity, mat_vec_mul, transpose, det, mat_mul, adjugate (via cross products), inverse,
 transpose involution, det swap rows, det zero repeated rows, det linear first row,
-det identity, det congruence, det transpose, mat_mul_adjugate right/left,
+det identity, det congruence, det transpose, det multiplicative, mat_mul_adjugate right/left,
 inverse right/left. Plus helper lemmas: 3-factor product rearrangements,
 sub_add_swap, adjugate_transpose_rows.
 
@@ -231,6 +159,28 @@ sub_add_swap, adjugate_transpose_rows.
 Complete vector type suites: 46 + 60+ + 54 = 160+ verified lemmas.
 Scale, dot, norm_sq, lerp, cross, triple, proj, rej, cwise_min/max,
 Cauchy-Schwarz, Lagrange identity, and more.
+
+### Phase 4 — Quaternions (DONE)
+
+Full quaternion module: 80+ verified items across 9 files.
+Type, algebra (Equivalence + AdditiveGroup), Hamilton product, associativity (64 basis cases),
+conjugate (involution, additive, scale, anti-automorphism), norm_sq (multiplicative, nonneg),
+inverse (right/left, involution), rotation (preserves norm, pure output), basis algebra.
+
+### Phase 5 — Runtime types (DONE)
+
+RuntimeVec2/3/4, RuntimeQuat, RuntimeMat2x2/3x3/4x4 with exec wrappers for all spec ops.
+70+ exec functions, each ensuring `out@ == spec_fn(args@)`. Uses `Ghost<SpecType<Rational>>`
+pattern with `wf_spec()`. verus-geometry migrated to import from verus-linalg.
+
+### Phase 6 — Mat4x4 (DONE)
+
+Full 4x4 matrix module: 32 new verified items.
+Type, identity, mat_vec_mul, transpose, det (Laplace expansion via Vec3 triple product),
+mat_mul, drop_x/y/z/w helpers. Lemmas: transpose involution, mat_vec_mul distributes/scales/zero,
+basis dot products, identity multiplication, det identity, det congruence,
+mat_mul associative, transpose-of-product.
+RuntimeMat4x4 with identity, mat_vec_mul, transpose, det, mat_mul exec functions.
 
 ---
 
@@ -259,9 +209,8 @@ This avoids duplicating the entire 9-entry expansion.
 
 | Item | Difficulty | Notes |
 |---|---|---|
+| Cross-checking properties (P0) | Medium | Mechanical component expansion, verbose |
 | Linear solvers | Easy | Thin wrappers around inverse |
-| Det multiplicative 3x3 | Hard | Many terms, longest single proof |
-| Quaternion port | Moderate | Mechanical refactor, all proofs exist |
 | Mat4x4 basics | Easy-Medium | Same pattern, more components |
 | Affine transforms | Medium | Composition is mat_mul + translation |
 | Eigenvalues | Hard | Requires polynomial root reasoning |
@@ -285,9 +234,9 @@ Enforced by `--forbid-trusted-escapes` in CI.
 
 | Milestone | Priority | What it enables |
 |---|---|---|
-| **Linear solvers** | P0 | Intersection point computation in verus-geometry |
-| **Det multiplicative 3x3** | P1 | Algebraic completeness (det_inverse, inverse_involution) |
-| **Quaternions** | P2 | 3D rotations for CAD view/part orientation |
-| **Mat4x4** | P3 | Homogeneous coordinates, 3D transforms |
-| **Affine transforms** | P4 | Unified transform framework for BREP kernel |
-| **Extended ops** | P5 | Projection matrices, Rodrigues rotation |
+| **Cross-checking properties** | P0 | Catches spec-level bugs in mat_mul, transpose, conjugate |
+| **Linear solvers** | P1 | Intersection point computation in verus-geometry |
+| **Mat4x4** | P2 | Homogeneous coordinates, 3D transforms |
+| **Affine transforms** | P3 | Unified transform framework for BREP kernel |
+| **Extended ops** | P4 | Projection matrices, Rodrigues rotation |
+| **Eigenvalues** | P5 | Characteristic polynomial, Cayley-Hamilton |

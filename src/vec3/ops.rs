@@ -548,7 +548,7 @@ pub proof fn lemma_cross_self_zero<T: Ring>(a: Vec3<T>)
 // Helper: (a + b) - (c + d) ≡ (a - c) + (b - d)
 // ---------------------------------------------------------------------------
 
-proof fn lemma_sub_sum_distributes<T: Ring>(a: T, b: T, c: T, d: T)
+pub proof fn lemma_sub_sum_distributes<T: Ring>(a: T, b: T, c: T, d: T)
     ensures
         a.add(b).sub(c.add(d)).eqv(a.sub(c).add(b.sub(d))),
 {
@@ -754,7 +754,7 @@ pub proof fn lemma_cross_scale<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
 // Helper: (a * b) * c ≡ (a * c) * b (swap last two factors)
 // ---------------------------------------------------------------------------
 
-proof fn lemma_mul_right_swap<T: Ring>(a: T, b: T, c: T)
+pub proof fn lemma_mul_right_swap<T: Ring>(a: T, b: T, c: T)
     ensures
         a.mul(b).mul(c).eqv(a.mul(c).mul(b)),
 {
@@ -1754,7 +1754,7 @@ pub proof fn lemma_triple_neg_third<T: Ring>(
 // ---------------------------------------------------------------------------
 
 /// (x*y)*(x*y) ≡ (x*x)*(y*y)
-proof fn lemma_square_mul<T: Ring>(x: T, y: T)
+pub proof fn lemma_square_mul<T: Ring>(x: T, y: T)
     ensures
         x.mul(y).mul(x.mul(y)).eqv(x.mul(x).mul(y.mul(y))),
 {
@@ -1782,7 +1782,7 @@ proof fn lemma_square_mul<T: Ring>(x: T, y: T)
 }
 
 /// (a*c)*(b*d) ≡ (a*d)*(b*c)
-proof fn lemma_mul_four_commute<T: Ring>(a: T, b: T, c: T, d: T)
+pub proof fn lemma_mul_four_commute<T: Ring>(a: T, b: T, c: T, d: T)
     ensures
         a.mul(c).mul(b.mul(d)).eqv(a.mul(d).mul(b.mul(c))),
 {
@@ -1826,7 +1826,7 @@ proof fn lemma_mul_four_commute<T: Ring>(a: T, b: T, c: T, d: T)
 }
 
 /// (p*v - q*u)² ≡ p²v² - 2(pu)(qv) + q²u²
-proof fn lemma_pair_expansion<T: Ring>(p: T, q: T, u: T, v: T)
+pub proof fn lemma_pair_expansion<T: Ring>(p: T, q: T, u: T, v: T)
     ensures
         p.mul(v).sub(q.mul(u)).mul(p.mul(v).sub(q.mul(u))).eqv(
             p.mul(p).mul(v.mul(v))
@@ -1878,7 +1878,7 @@ proof fn lemma_pair_expansion<T: Ring>(p: T, q: T, u: T, v: T)
 ///
 /// Proved via the additive form: (pv-qu)² + (pu+qv)² ≡ (p²+q²)(u²+v²),
 /// then converted to the subtraction form.
-proof fn lemma_lagrange_2d<T: Ring>(p: T, q: T, u: T, v: T)
+pub proof fn lemma_lagrange_2d<T: Ring>(p: T, q: T, u: T, v: T)
     ensures
         p.mul(v).sub(q.mul(u)).mul(p.mul(v).sub(q.mul(u))).eqv(
             p.mul(p).add(q.mul(q)).mul(u.mul(u).add(v.mul(v)))
@@ -2476,7 +2476,7 @@ pub proof fn lemma_lerp_self<T: Ring>(a: Vec3<T>, t: T)
 // ---------------------------------------------------------------------------
 
 /// norm_sq(a+b) ≡ norm_sq(a) + 2·dot(a,b) + norm_sq(b)
-proof fn lemma_norm_sq_add_expand<T: Ring>(a: Vec3<T>, b: Vec3<T>)
+pub proof fn lemma_norm_sq_add_expand<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         norm_sq(a.add(b)).eqv(
             norm_sq(a).add(two::<T>().mul(dot(a, b))).add(norm_sq(b))
@@ -2575,7 +2575,7 @@ pub proof fn lemma_pythagorean<T: Ring>(a: Vec3<T>, b: Vec3<T>)
 }
 
 /// norm_sq(a-b) ≡ norm_sq(a) - 2·dot(a,b) + norm_sq(b)
-proof fn lemma_norm_sq_sub_expand<T: Ring>(a: Vec3<T>, b: Vec3<T>)
+pub proof fn lemma_norm_sq_sub_expand<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         norm_sq(a.sub(b)).eqv(
             norm_sq(a).sub(two::<T>().mul(dot(a, b))).add(norm_sq(b))
@@ -2851,7 +2851,7 @@ pub open spec fn rej<T: OrderedField>(a: Vec3<T>, b: Vec3<T>) -> Vec3<T> {
 }
 
 /// dot(a.neg(), b) ≡ dot(a, b).neg()
-proof fn lemma_dot_neg_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
+pub proof fn lemma_dot_neg_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         dot(a.neg(), b).eqv(dot(a, b).neg()),
 {
@@ -2868,7 +2868,7 @@ proof fn lemma_dot_neg_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
 }
 
 /// dot(proj(a, b), b) ≡ dot(a, b) when norm_sq(b) ≢ 0
-proof fn lemma_dot_proj<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
+pub proof fn lemma_dot_proj<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
     requires
         !norm_sq(b).eqv(T::zero()),
     ensures

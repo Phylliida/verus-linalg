@@ -947,7 +947,7 @@ pub proof fn lemma_lerp_self<T: Ring>(a: Vec4<T>, t: T)
 // ---------------------------------------------------------------------------
 
 /// norm_sq(a+b) ≡ norm_sq(a) + 2·dot(a,b) + norm_sq(b)
-proof fn lemma_norm_sq_add_expand<T: Ring>(a: Vec4<T>, b: Vec4<T>)
+pub proof fn lemma_norm_sq_add_expand<T: Ring>(a: Vec4<T>, b: Vec4<T>)
     ensures
         norm_sq(a.add(b)).eqv(
             norm_sq(a).add(two::<T>().mul(dot(a, b))).add(norm_sq(b))
@@ -1046,7 +1046,7 @@ pub proof fn lemma_pythagorean<T: Ring>(a: Vec4<T>, b: Vec4<T>)
 }
 
 /// norm_sq(a-b) ≡ norm_sq(a) - 2·dot(a,b) + norm_sq(b)
-proof fn lemma_norm_sq_sub_expand<T: Ring>(a: Vec4<T>, b: Vec4<T>)
+pub proof fn lemma_norm_sq_sub_expand<T: Ring>(a: Vec4<T>, b: Vec4<T>)
     ensures
         norm_sq(a.sub(b)).eqv(
             norm_sq(a).sub(two::<T>().mul(dot(a, b))).add(norm_sq(b))

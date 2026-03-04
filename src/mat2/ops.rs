@@ -107,7 +107,7 @@ pub proof fn lemma_mat_vec_mul_scale<T: Ring>(m: Mat2x2<T>, s: T, v: Vec2<T>)
 // ---------------------------------------------------------------------------
 
 /// dot((1,0), v) ≡ v.x
-proof fn lemma_dot_e0<T: Ring>(v: Vec2<T>)
+pub proof fn lemma_dot_e0<T: Ring>(v: Vec2<T>)
     ensures
         dot(Vec2::<T> { x: T::one(), y: T::zero() }, v).eqv(v.x),
 {
@@ -127,7 +127,7 @@ proof fn lemma_dot_e0<T: Ring>(v: Vec2<T>)
 }
 
 /// dot((0,1), v) ≡ v.y
-proof fn lemma_dot_e1<T: Ring>(v: Vec2<T>)
+pub proof fn lemma_dot_e1<T: Ring>(v: Vec2<T>)
     ensures
         dot(Vec2::<T> { x: T::zero(), y: T::one() }, v).eqv(v.y),
 {
@@ -145,7 +145,7 @@ proof fn lemma_dot_e1<T: Ring>(v: Vec2<T>)
     );
 }
 
-proof fn lemma_dot_e0_right<T: Ring>(v: Vec2<T>)
+pub proof fn lemma_dot_e0_right<T: Ring>(v: Vec2<T>)
     ensures
         dot(v, Vec2::<T> { x: T::one(), y: T::zero() }).eqv(v.x),
 {
@@ -155,7 +155,7 @@ proof fn lemma_dot_e0_right<T: Ring>(v: Vec2<T>)
     T::axiom_eqv_transitive(dot(v, e0), dot(e0, v), v.x);
 }
 
-proof fn lemma_dot_e1_right<T: Ring>(v: Vec2<T>)
+pub proof fn lemma_dot_e1_right<T: Ring>(v: Vec2<T>)
     ensures
         dot(v, Vec2::<T> { x: T::zero(), y: T::one() }).eqv(v.y),
 {
@@ -1064,7 +1064,7 @@ pub proof fn lemma_det_congruence<T: Ring>(a: Mat2x2<T>, b: Mat2x2<T>)
 // ---------------------------------------------------------------------------
 
 /// m * adj(m) has diagonal det(m) and off-diagonal 0
-proof fn lemma_mat_mul_adjugate_right<T: Ring>(m: Mat2x2<T>)
+pub proof fn lemma_mat_mul_adjugate_right<T: Ring>(m: Mat2x2<T>)
     ensures
         mat_mul(m, adjugate(m)).row0.eqv(Vec2 { x: det(m), y: T::zero() }),
         mat_mul(m, adjugate(m)).row1.eqv(Vec2 { x: T::zero(), y: det(m) }),
@@ -1182,7 +1182,7 @@ proof fn lemma_mat_mul_adjugate_right<T: Ring>(m: Mat2x2<T>)
 // ---------------------------------------------------------------------------
 
 /// adj(m) * m has diagonal det(m) and off-diagonal 0
-proof fn lemma_mat_mul_adjugate_left<T: Ring>(m: Mat2x2<T>)
+pub proof fn lemma_mat_mul_adjugate_left<T: Ring>(m: Mat2x2<T>)
     ensures
         mat_mul(adjugate(m), m).row0.eqv(Vec2 { x: det(m), y: T::zero() }),
         mat_mul(adjugate(m), m).row1.eqv(Vec2 { x: T::zero(), y: det(m) }),
@@ -1816,7 +1816,7 @@ pub proof fn lemma_inverse_involution<T: Field>(m: Mat2x2<T>)
 // ---------------------------------------------------------------------------
 
 /// Helper: distribute s into dot(u, v) = s*(u.x*v.x + u.y*v.y) ≡ (s*u.x)*v.x + (s*u.y)*v.y
-proof fn lemma_distribute_scalar_dot<T: Ring>(s: T, u: Vec2<T>, v: Vec2<T>)
+pub proof fn lemma_distribute_scalar_dot<T: Ring>(s: T, u: Vec2<T>, v: Vec2<T>)
     ensures
         s.mul(dot(u, v)).eqv(
             s.mul(u.x).mul(v.x).add(s.mul(u.y).mul(v.y))
@@ -2105,6 +2105,39 @@ pub proof fn lemma_solve_unique<T: Field>(m: Mat2x2<T>, x: Vec2<T>, b: Vec2<T>)
     T::axiom_eqv_transitive(
         x.y, mat_vec_mul(inv, mat_vec_mul(m, x)).y, solve(m, b).y,
     );
+}
+
+// ---------------------------------------------------------------------------
+// Cross-checking properties
+// ---------------------------------------------------------------------------
+
+/// mat_mul(a, mat_mul(b, c)) ≡ mat_mul(mat_mul(a, b), c)
+pub proof fn lemma_mat_mul_associative<T: Ring>(a: Mat2x2<T>, b: Mat2x2<T>, c: Mat2x2<T>)
+    ensures
+        mat_mul(a, mat_mul(b, c)).row0.eqv(mat_mul(mat_mul(a, b), c).row0),
+        mat_mul(a, mat_mul(b, c)).row1.eqv(mat_mul(mat_mul(a, b), c).row1),
+{
+    let ct = transpose(c);
+    // Column j of mat_mul(A, BC) = mat_vec_mul(A, mat_vec_mul(B, ct.row_j))
+    //                             ≡ mat_vec_mul(AB, ct.row_j) = column j of mat_mul(AB, C)
+    lemma_mat_vec_mul_mat_mul(a, b, ct.row0);
+    lemma_mat_vec_mul_mat_mul(a, b, ct.row1);
+}
+
+/// transpose(mat_mul(a, b)) ≡ mat_mul(transpose(b), transpose(a))
+pub proof fn lemma_transpose_mat_mul<T: Ring>(a: Mat2x2<T>, b: Mat2x2<T>)
+    ensures
+        transpose(mat_mul(a, b)).row0.eqv(mat_mul(transpose(b), transpose(a)).row0),
+        transpose(mat_mul(a, b)).row1.eqv(mat_mul(transpose(b), transpose(a)).row1),
+{
+    let bt = transpose(b);
+    // Entry (i,j) of transpose(AB) = dot(a.row_j, bt.row_i)
+    // Entry (i,j) of mat_mul(Bt, At) = dot(bt.row_i, a.row_j)
+    // These differ only in dot argument order.
+    crate::vec2::ops::lemma_dot_commutative(a.row0, bt.row0);
+    crate::vec2::ops::lemma_dot_commutative(a.row1, bt.row0);
+    crate::vec2::ops::lemma_dot_commutative(a.row0, bt.row1);
+    crate::vec2::ops::lemma_dot_commutative(a.row1, bt.row1);
 }
 
 } // verus!

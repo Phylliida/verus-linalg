@@ -45,7 +45,7 @@ pub open spec fn basis_mul_idx(i: int, j: int) -> int
 // ===========================================================================
 
 /// 0 - a ≡ a.neg()
-proof fn lemma_zero_sub<T: Ring>(a: T)
+pub proof fn lemma_zero_sub<T: Ring>(a: T)
     ensures T::zero().sub(a).eqv(a.neg()),
 {
     T::axiom_sub_is_add_neg(T::zero(), a);
@@ -54,7 +54,7 @@ proof fn lemma_zero_sub<T: Ring>(a: T)
 }
 
 /// Establish all needed facts about products of zero and one
-proof fn lemma_zero_one_mul<T: Ring>()
+pub proof fn lemma_zero_one_mul<T: Ring>()
     ensures
         T::zero().mul(T::zero()).eqv(T::zero()),
         T::zero().mul(T::one()).eqv(T::zero()),
@@ -78,7 +78,7 @@ proof fn lemma_zero_one_mul<T: Ring>()
 // ===========================================================================
 
 /// a1-b1-c1-d1 ≡ a2-b2-c2-d2 when components match
-proof fn lemma_ssss_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T, d2: T)
+pub proof fn lemma_ssss_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T, d2: T)
     requires a1.eqv(a2), b1.eqv(b2), c1.eqv(c2), d1.eqv(d2),
     ensures a1.sub(b1).sub(c1).sub(d1).eqv(a2.sub(b2).sub(c2).sub(d2)),
 {
@@ -88,7 +88,7 @@ proof fn lemma_ssss_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: 
 }
 
 /// a1+b1+c1-d1 ≡ a2+b2+c2-d2
-proof fn lemma_aas_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T, d2: T)
+pub proof fn lemma_aas_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T, d2: T)
     requires a1.eqv(a2), b1.eqv(b2), c1.eqv(c2), d1.eqv(d2),
     ensures a1.add(b1).add(c1).sub(d1).eqv(a2.add(b2).add(c2).sub(d2)),
 {
@@ -98,7 +98,7 @@ proof fn lemma_aas_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T
 }
 
 /// a1-b1+c1+d1 ≡ a2-b2+c2+d2
-proof fn lemma_saa_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T, d2: T)
+pub proof fn lemma_saa_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T, d2: T)
     requires a1.eqv(a2), b1.eqv(b2), c1.eqv(c2), d1.eqv(d2),
     ensures a1.sub(b1).add(c1).add(d1).eqv(a2.sub(b2).add(c2).add(d2)),
 {
@@ -108,7 +108,7 @@ proof fn lemma_saa_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T
 }
 
 /// a1+b1-c1+d1 ≡ a2+b2-c2+d2
-proof fn lemma_asa_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T, d2: T)
+pub proof fn lemma_asa_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T, d2: T)
     requires a1.eqv(a2), b1.eqv(b2), c1.eqv(c2), d1.eqv(d2),
     ensures a1.add(b1).sub(c1).add(d1).eqv(a2.add(b2).sub(c2).add(d2)),
 {
@@ -122,7 +122,7 @@ proof fn lemma_asa_cong<T: Ring>(a1: T, a2: T, b1: T, b2: T, c1: T, c2: T, d1: T
 // ===========================================================================
 
 /// 0-0-0-0 ≡ 0
-proof fn lemma_ssss_zero<T: Ring>()
+pub proof fn lemma_ssss_zero<T: Ring>()
     ensures T::zero().sub(T::zero()).sub(T::zero()).sub(T::zero()).eqv(T::zero()),
 {
     let z = T::zero();
@@ -135,7 +135,7 @@ proof fn lemma_ssss_zero<T: Ring>()
 }
 
 /// 0+0+0-0 ≡ 0
-proof fn lemma_aas_zero<T: Ring>()
+pub proof fn lemma_aas_zero<T: Ring>()
     ensures T::zero().add(T::zero()).add(T::zero()).sub(T::zero()).eqv(T::zero()),
 {
     let z = T::zero();
@@ -149,7 +149,7 @@ proof fn lemma_aas_zero<T: Ring>()
 }
 
 /// 0-0+0+0 ≡ 0
-proof fn lemma_saa_zero<T: Ring>()
+pub proof fn lemma_saa_zero<T: Ring>()
     ensures T::zero().sub(T::zero()).add(T::zero()).add(T::zero()).eqv(T::zero()),
 {
     let z = T::zero();
@@ -163,7 +163,7 @@ proof fn lemma_saa_zero<T: Ring>()
 }
 
 /// 0+0-0+0 ≡ 0
-proof fn lemma_asa_zero<T: Ring>()
+pub proof fn lemma_asa_zero<T: Ring>()
     ensures T::zero().add(T::zero()).sub(T::zero()).add(T::zero()).eqv(T::zero()),
 {
     let z = T::zero();
@@ -184,7 +184,7 @@ proof fn lemma_asa_zero<T: Ring>()
 // --- ssss pattern: a-b-c-d ---
 
 /// 0-1-0-0 ≡ -1  (for i*i w-component)
-proof fn lemma_ssss_at1<T: Ring>()
+pub proof fn lemma_ssss_at1<T: Ring>()
     ensures T::zero().sub(T::one()).sub(T::zero()).sub(T::zero()).eqv(T::one().neg()),
 {
     let z = T::zero(); let o = T::one(); let n = o.neg();
@@ -198,7 +198,7 @@ proof fn lemma_ssss_at1<T: Ring>()
 }
 
 /// 0-0-1-0 ≡ -1  (for j*j w-component)
-proof fn lemma_ssss_at2<T: Ring>()
+pub proof fn lemma_ssss_at2<T: Ring>()
     ensures T::zero().sub(T::zero()).sub(T::one()).sub(T::zero()).eqv(T::one().neg()),
 {
     let z = T::zero(); let o = T::one(); let n = o.neg();
@@ -214,7 +214,7 @@ proof fn lemma_ssss_at2<T: Ring>()
 }
 
 /// 0-0-0-1 ≡ -1  (for k*k w-component)
-proof fn lemma_ssss_at3<T: Ring>()
+pub proof fn lemma_ssss_at3<T: Ring>()
     ensures T::zero().sub(T::zero()).sub(T::zero()).sub(T::one()).eqv(T::one().neg()),
 {
     let z = T::zero(); let o = T::one(); let n = o.neg();
@@ -231,7 +231,7 @@ proof fn lemma_ssss_at3<T: Ring>()
 // --- aas pattern: a+b+c-d ---
 
 /// 0+0+1-0 ≡ 1  (for j*k x-component)
-proof fn lemma_aas_at2<T: Ring>()
+pub proof fn lemma_aas_at2<T: Ring>()
     ensures T::zero().add(T::zero()).add(T::one()).sub(T::zero()).eqv(T::one()),
 {
     let z = T::zero(); let o = T::one();
@@ -247,7 +247,7 @@ proof fn lemma_aas_at2<T: Ring>()
 }
 
 /// 0+0+0-1 ≡ -1  (for k*j x-component)
-proof fn lemma_aas_at3<T: Ring>()
+pub proof fn lemma_aas_at3<T: Ring>()
     ensures T::zero().add(T::zero()).add(T::zero()).sub(T::one()).eqv(T::one().neg()),
 {
     let z = T::zero(); let o = T::one(); let n = o.neg();
@@ -264,7 +264,7 @@ proof fn lemma_aas_at3<T: Ring>()
 // --- saa pattern: a-b+c+d ---
 
 /// 0-1+0+0 ≡ -1  (for i*k y-component)
-proof fn lemma_saa_at1<T: Ring>()
+pub proof fn lemma_saa_at1<T: Ring>()
     ensures T::zero().sub(T::one()).add(T::zero()).add(T::zero()).eqv(T::one().neg()),
 {
     let z = T::zero(); let o = T::one(); let n = o.neg();
@@ -278,7 +278,7 @@ proof fn lemma_saa_at1<T: Ring>()
 }
 
 /// 0-0+0+1 ≡ 1  (for k*i y-component)
-proof fn lemma_saa_at3<T: Ring>()
+pub proof fn lemma_saa_at3<T: Ring>()
     ensures T::zero().sub(T::zero()).add(T::zero()).add(T::one()).eqv(T::one()),
 {
     let z = T::zero(); let o = T::one();
@@ -296,7 +296,7 @@ proof fn lemma_saa_at3<T: Ring>()
 // --- asa pattern: a+b-c+d ---
 
 /// 0+1-0+0 ≡ 1  (for i*j z-component)
-proof fn lemma_asa_at1<T: Ring>()
+pub proof fn lemma_asa_at1<T: Ring>()
     ensures T::zero().add(T::one()).sub(T::zero()).add(T::zero()).eqv(T::one()),
 {
     let z = T::zero(); let o = T::one();
@@ -311,7 +311,7 @@ proof fn lemma_asa_at1<T: Ring>()
 }
 
 /// 0+0-1+0 ≡ -1  (for j*i z-component)
-proof fn lemma_asa_at2<T: Ring>()
+pub proof fn lemma_asa_at2<T: Ring>()
     ensures T::zero().add(T::zero()).sub(T::one()).add(T::zero()).eqv(T::one().neg()),
 {
     let z = T::zero(); let o = T::one(); let n = o.neg();
@@ -332,7 +332,7 @@ proof fn lemma_asa_at2<T: Ring>()
 
 /// Helper: prove one component eqv via intermediate value
 /// Given lhs ≡ mid and rhs ≡ mid, proves lhs ≡ rhs
-proof fn lemma_chain_via<T: Ring>(lhs: T, mid: T, rhs: T)
+pub proof fn lemma_chain_via<T: Ring>(lhs: T, mid: T, rhs: T)
     requires lhs.eqv(mid), rhs.eqv(mid),
     ensures lhs.eqv(rhs),
 {
@@ -341,7 +341,7 @@ proof fn lemma_chain_via<T: Ring>(lhs: T, mid: T, rhs: T)
 }
 
 /// i*i = signed_basis(-1, 0)
-proof fn lemma_basis_mul_11<T: Ring>()
+pub proof fn lemma_basis_mul_11<T: Ring>()
     ensures mul(qi::<T>(), qi::<T>()).eqv(
         signed_basis(sign_value::<T>(basis_mul_sign(1, 1)), basis_mul_idx(1, 1))),
 {
@@ -373,7 +373,7 @@ proof fn lemma_basis_mul_11<T: Ring>()
 }
 
 /// j*j = signed_basis(-1, 0)
-proof fn lemma_basis_mul_22<T: Ring>()
+pub proof fn lemma_basis_mul_22<T: Ring>()
     ensures mul(qj::<T>(), qj::<T>()).eqv(
         signed_basis(sign_value::<T>(basis_mul_sign(2, 2)), basis_mul_idx(2, 2))),
 {
@@ -402,7 +402,7 @@ proof fn lemma_basis_mul_22<T: Ring>()
 }
 
 /// k*k = signed_basis(-1, 0)
-proof fn lemma_basis_mul_33<T: Ring>()
+pub proof fn lemma_basis_mul_33<T: Ring>()
     ensures mul(qk::<T>(), qk::<T>()).eqv(
         signed_basis(sign_value::<T>(basis_mul_sign(3, 3)), basis_mul_idx(3, 3))),
 {
@@ -431,7 +431,7 @@ proof fn lemma_basis_mul_33<T: Ring>()
 }
 
 /// i*j = k → signed_basis(1, 3)
-proof fn lemma_basis_mul_12<T: Ring>()
+pub proof fn lemma_basis_mul_12<T: Ring>()
     ensures mul(qi::<T>(), qj::<T>()).eqv(
         signed_basis(sign_value::<T>(basis_mul_sign(1, 2)), basis_mul_idx(1, 2))),
 {
@@ -461,7 +461,7 @@ proof fn lemma_basis_mul_12<T: Ring>()
 }
 
 /// j*k = i → signed_basis(1, 1)
-proof fn lemma_basis_mul_23<T: Ring>()
+pub proof fn lemma_basis_mul_23<T: Ring>()
     ensures mul(qj::<T>(), qk::<T>()).eqv(
         signed_basis(sign_value::<T>(basis_mul_sign(2, 3)), basis_mul_idx(2, 3))),
 {
@@ -491,7 +491,7 @@ proof fn lemma_basis_mul_23<T: Ring>()
 }
 
 /// k*i = j → signed_basis(1, 2)
-proof fn lemma_basis_mul_31<T: Ring>()
+pub proof fn lemma_basis_mul_31<T: Ring>()
     ensures mul(qk::<T>(), qi::<T>()).eqv(
         signed_basis(sign_value::<T>(basis_mul_sign(3, 1)), basis_mul_idx(3, 1))),
 {
@@ -521,7 +521,7 @@ proof fn lemma_basis_mul_31<T: Ring>()
 }
 
 /// j*i = -k → signed_basis(-1, 3)
-proof fn lemma_basis_mul_21<T: Ring>()
+pub proof fn lemma_basis_mul_21<T: Ring>()
     ensures mul(qj::<T>(), qi::<T>()).eqv(
         signed_basis(sign_value::<T>(basis_mul_sign(2, 1)), basis_mul_idx(2, 1))),
 {
@@ -551,7 +551,7 @@ proof fn lemma_basis_mul_21<T: Ring>()
 }
 
 /// k*j = -i → signed_basis(-1, 1)
-proof fn lemma_basis_mul_32<T: Ring>()
+pub proof fn lemma_basis_mul_32<T: Ring>()
     ensures mul(qk::<T>(), qj::<T>()).eqv(
         signed_basis(sign_value::<T>(basis_mul_sign(3, 2)), basis_mul_idx(3, 2))),
 {
@@ -581,7 +581,7 @@ proof fn lemma_basis_mul_32<T: Ring>()
 }
 
 /// i*k = -j → signed_basis(-1, 2)
-proof fn lemma_basis_mul_13<T: Ring>()
+pub proof fn lemma_basis_mul_13<T: Ring>()
     ensures mul(qi::<T>(), qk::<T>()).eqv(
         signed_basis(sign_value::<T>(basis_mul_sign(1, 3)), basis_mul_idx(1, 3))),
 {

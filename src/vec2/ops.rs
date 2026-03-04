@@ -544,7 +544,7 @@ pub proof fn lemma_lerp_self<T: Ring>(a: Vec2<T>, t: T)
 // ---------------------------------------------------------------------------
 
 /// norm_sq(a+b) ≡ norm_sq(a) + 2·dot(a,b) + norm_sq(b)
-proof fn lemma_norm_sq_add_expand<T: Ring>(a: Vec2<T>, b: Vec2<T>)
+pub proof fn lemma_norm_sq_add_expand<T: Ring>(a: Vec2<T>, b: Vec2<T>)
     ensures
         norm_sq(a.add(b)).eqv(
             norm_sq(a).add(two::<T>().mul(dot(a, b))).add(norm_sq(b))
@@ -659,7 +659,7 @@ pub proof fn lemma_pythagorean<T: Ring>(a: Vec2<T>, b: Vec2<T>)
 }
 
 /// norm_sq(a-b) ≡ norm_sq(a) - 2·dot(a,b) + norm_sq(b)
-proof fn lemma_norm_sq_sub_expand<T: Ring>(a: Vec2<T>, b: Vec2<T>)
+pub proof fn lemma_norm_sq_sub_expand<T: Ring>(a: Vec2<T>, b: Vec2<T>)
     ensures
         norm_sq(a.sub(b)).eqv(
             norm_sq(a).sub(two::<T>().mul(dot(a, b))).add(norm_sq(b))
@@ -936,7 +936,7 @@ pub open spec fn rej<T: OrderedField>(a: Vec2<T>, b: Vec2<T>) -> Vec2<T> {
 }
 
 /// dot(a.neg(), b) ≡ dot(a, b).neg()
-proof fn lemma_dot_neg_left<T: Ring>(a: Vec2<T>, b: Vec2<T>)
+pub proof fn lemma_dot_neg_left<T: Ring>(a: Vec2<T>, b: Vec2<T>)
     ensures
         dot(a.neg(), b).eqv(dot(a, b).neg()),
 {
@@ -953,7 +953,7 @@ proof fn lemma_dot_neg_left<T: Ring>(a: Vec2<T>, b: Vec2<T>)
 }
 
 /// dot(proj(a, b), b) ≡ dot(a, b) when norm_sq(b) ≢ 0
-proof fn lemma_dot_proj<T: OrderedField>(a: Vec2<T>, b: Vec2<T>)
+pub proof fn lemma_dot_proj<T: OrderedField>(a: Vec2<T>, b: Vec2<T>)
     requires
         !norm_sq(b).eqv(T::zero()),
     ensures

@@ -14,6 +14,9 @@ pub mod mat2;
 pub mod mat3;
 
 #[cfg(verus_keep_ghost)]
+pub mod mat4;
+
+#[cfg(verus_keep_ghost)]
 pub mod quat;
 
 pub mod runtime;

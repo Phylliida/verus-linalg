@@ -62,7 +62,7 @@ pub proof fn lemma_conjugate_involution<T: Ring>(q: Quat<T>)
 }
 
 /// conj(one()) ≡ one()
-proof fn lemma_conjugate_one<T: Ring>()
+pub proof fn lemma_conjugate_one<T: Ring>()
     ensures conjugate::<T>(one()).eqv(one()),
 {
     T::axiom_eqv_reflexive(T::one());
@@ -70,7 +70,7 @@ proof fn lemma_conjugate_one<T: Ring>()
 }
 
 /// For imaginary basis (i≥1): conj(basis(i)) ≡ basis(i).neg()
-proof fn lemma_conjugate_imag_basis<T: Ring>(i: int)
+pub proof fn lemma_conjugate_imag_basis<T: Ring>(i: int)
     requires 1 <= i < 4,
     ensures conjugate::<T>(basis(i)).eqv(basis::<T>(i).neg()),
 {
@@ -87,7 +87,7 @@ proof fn lemma_conjugate_imag_basis<T: Ring>(i: int)
 // ===========================================================================
 
 /// q.neg() ≡ scale(-1, q)
-proof fn lemma_neg_eq_scale_neg_one<T: Ring>(q: Quat<T>)
+pub proof fn lemma_neg_eq_scale_neg_one<T: Ring>(q: Quat<T>)
     ensures q.neg().eqv(scale(T::one().neg(), q)),
 {
     // scale(1, q) ≡ q
@@ -172,7 +172,7 @@ pub proof fn lemma_qneg_mul_neg<T: Ring>(a: Quat<T>, b: Quat<T>)
 // ===========================================================================
 
 /// scale(s, q.neg()) ≡ scale(s.neg(), q)
-proof fn lemma_scale_neg_swap<T: Ring>(s: T, q: Quat<T>)
+pub proof fn lemma_scale_neg_swap<T: Ring>(s: T, q: Quat<T>)
     ensures scale(s, q.neg()).eqv(scale(s.neg(), q)),
 {
     lemma_scale_neg_vec(s, q);
@@ -186,7 +186,7 @@ proof fn lemma_scale_neg_swap<T: Ring>(s: T, q: Quat<T>)
 }
 
 /// sign_value(-s) ≡ sign_value(s).neg()
-proof fn lemma_sign_value_neg<T: Ring>(s: int)
+pub proof fn lemma_sign_value_neg<T: Ring>(s: int)
     requires s == 1 || s == -1,
     ensures sign_value::<T>(-s).eqv(sign_value::<T>(s).neg()),
 {
@@ -208,7 +208,7 @@ pub open spec fn conj_mul_rev<T: Ring>(a: Quat<T>, b: Quat<T>) -> bool {
 }
 
 /// Basis case: conj(basis(i)*basis(j)) ≡ conj(basis(j))*conj(basis(i))
-proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
+pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
     requires 0 <= i < 4, 0 <= j < 4,
     ensures conj_mul_rev::<T>(basis(i), basis(j)),
 {
@@ -374,7 +374,7 @@ proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
 // Linear lifting: right
 // ===========================================================================
 
-proof fn lemma_conj_mul_rev_linear_right_add<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat<T>)
+pub proof fn lemma_conj_mul_rev_linear_right_add<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat<T>)
     requires conj_mul_rev(a, b1), conj_mul_rev(a, b2),
     ensures conj_mul_rev(a, b1.add(b2)),
 {
@@ -419,7 +419,7 @@ proof fn lemma_conj_mul_rev_linear_right_add<T: Ring>(a: Quat<T>, b1: Quat<T>, b
     );
 }
 
-proof fn lemma_conj_mul_rev_linear_right_scale<T: Ring>(a: Quat<T>, b: Quat<T>, k: T)
+pub proof fn lemma_conj_mul_rev_linear_right_scale<T: Ring>(a: Quat<T>, b: Quat<T>, k: T)
     requires conj_mul_rev(a, b),
     ensures conj_mul_rev(a, scale(k, b)),
 {
@@ -464,7 +464,7 @@ proof fn lemma_conj_mul_rev_linear_right_scale<T: Ring>(a: Quat<T>, b: Quat<T>, 
 // Linear lifting: left
 // ===========================================================================
 
-proof fn lemma_conj_mul_rev_linear_left_add<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<T>)
+pub proof fn lemma_conj_mul_rev_linear_left_add<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<T>)
     requires conj_mul_rev(a1, b), conj_mul_rev(a2, b),
     ensures conj_mul_rev(a1.add(a2), b),
 {
@@ -508,7 +508,7 @@ proof fn lemma_conj_mul_rev_linear_left_add<T: Ring>(a1: Quat<T>, a2: Quat<T>, b
     );
 }
 
-proof fn lemma_conj_mul_rev_linear_left_scale<T: Ring>(a: Quat<T>, b: Quat<T>, k: T)
+pub proof fn lemma_conj_mul_rev_linear_left_scale<T: Ring>(a: Quat<T>, b: Quat<T>, k: T)
     requires conj_mul_rev(a, b),
     ensures conj_mul_rev(scale(k, a), b),
 {
@@ -553,7 +553,7 @@ proof fn lemma_conj_mul_rev_linear_left_scale<T: Ring>(a: Quat<T>, b: Quat<T>, k
 // Equivalence transfer
 // ===========================================================================
 
-proof fn lemma_conj_mul_rev_eqv_right<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat<T>)
+pub proof fn lemma_conj_mul_rev_eqv_right<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat<T>)
     requires conj_mul_rev(a, b1), b1.eqv(b2),
     ensures conj_mul_rev(a, b2),
 {
@@ -571,7 +571,7 @@ proof fn lemma_conj_mul_rev_eqv_right<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat
     );
 }
 
-proof fn lemma_conj_mul_rev_eqv_left<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<T>)
+pub proof fn lemma_conj_mul_rev_eqv_left<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<T>)
     requires conj_mul_rev(a1, b), a1.eqv(a2),
     ensures conj_mul_rev(a2, b),
 {
@@ -593,7 +593,7 @@ proof fn lemma_conj_mul_rev_eqv_left<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<
 // Assembly
 // ===========================================================================
 
-proof fn lemma_linearize_right<T: Ring>(a: Quat<T>, b: Quat<T>)
+pub proof fn lemma_linearize_right<T: Ring>(a: Quat<T>, b: Quat<T>)
     requires forall|j: int| 0 <= j < 4 ==> conj_mul_rev::<T>(a, basis(j)),
     ensures conj_mul_rev(a, b),
 {
@@ -615,7 +615,7 @@ proof fn lemma_linearize_right<T: Ring>(a: Quat<T>, b: Quat<T>)
     lemma_conj_mul_rev_eqv_right(a, basis_decompose(b), b);
 }
 
-proof fn lemma_conj_basis_any<T: Ring>(i: int, b: Quat<T>)
+pub proof fn lemma_conj_basis_any<T: Ring>(i: int, b: Quat<T>)
     requires 0 <= i < 4,
     ensures conj_mul_rev::<T>(basis(i), b),
 {

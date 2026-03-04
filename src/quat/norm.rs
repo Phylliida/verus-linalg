@@ -249,7 +249,7 @@ pub proof fn lemma_real_scale<T: Ring>(k: T, s: T)
 
 /// a*(-b) + b*a ≡ 0
 /// Proof: a*(-b) ≡ -(a*b), b*a ≡ a*b [comm], so -(a*b) + a*b = 0
-proof fn lemma_mul_neg_add_rev_zero<T: Ring>(a: T, b: T)
+pub proof fn lemma_mul_neg_add_rev_zero<T: Ring>(a: T, b: T)
     ensures a.mul(b.neg()).add(b.mul(a)).eqv(T::zero()),
 {
     ring_lemmas::lemma_mul_neg_right::<T>(a, b);
@@ -276,7 +276,7 @@ proof fn lemma_mul_neg_add_rev_zero<T: Ring>(a: T, b: T)
 
 /// c*(-d) - d*(-c) ≡ 0
 /// Proof: c*(-d) ≡ -(c*d), -(d*(-c)) ≡ d*c ≡ c*d, so -(c*d) + c*d = 0
-proof fn lemma_mul_neg_sub_rev_neg_zero<T: Ring>(c: T, d: T)
+pub proof fn lemma_mul_neg_sub_rev_neg_zero<T: Ring>(c: T, d: T)
     ensures c.mul(d.neg()).sub(d.mul(c.neg())).eqv(T::zero()),
 {
     // c*(-d) ≡ -(c*d)
@@ -323,7 +323,7 @@ proof fn lemma_mul_neg_sub_rev_neg_zero<T: Ring>(c: T, d: T)
 ///
 /// Strategy: -a*(-b) ≡ -(a*(-b)) ≡ -(-(a*b)) ≡ a*b using neg chain,
 /// so sub becomes add.
-proof fn lemma_mul_conj_w<T: Ring>(q: Quat<T>)
+pub proof fn lemma_mul_conj_w<T: Ring>(q: Quat<T>)
     ensures mul(q, conjugate(q)).w.eqv(norm_sq(q)),
 {
     let (w, x, y, z) = (q.w, q.x, q.y, q.z);
@@ -414,7 +414,7 @@ proof fn lemma_mul_conj_w<T: Ring>(q: Quat<T>)
 /// q.w*(-q.x) + q.x*q.w + q.y*(-q.z) - q.z*(-q.y)
 /// = -(q.w*q.x) + q.x*q.w + -(q.y*q.z) - (-(q.z*q.y))
 /// The first two cancel by commutativity, the last two cancel similarly.
-proof fn lemma_mul_conj_x<T: Ring>(q: Quat<T>)
+pub proof fn lemma_mul_conj_x<T: Ring>(q: Quat<T>)
     ensures mul(q, conjugate(q)).x.eqv(T::zero()),
 {
     let (w, x, y, z) = (q.w, q.x, q.y, q.z);
@@ -525,7 +525,7 @@ proof fn lemma_mul_conj_x<T: Ring>(q: Quat<T>)
 }
 
 /// a*b - b*a ≡ 0 (ring commutativity means commutator vanishes)
-proof fn lemma_commutator_zero<T: Ring>(a: T, b: T)
+pub proof fn lemma_commutator_zero<T: Ring>(a: T, b: T)
     ensures a.mul(b).sub(b.mul(a)).eqv(T::zero()),
 {
     T::axiom_mul_commutative(a, b);
@@ -544,7 +544,7 @@ proof fn lemma_commutator_zero<T: Ring>(a: T, b: T)
 
 /// Y-component of mul(q, conj(q)) ≡ 0
 /// q.w*(-q.y) - q.x*(-q.z) + q.y*q.w + q.z*(-q.x)
-proof fn lemma_mul_conj_y<T: Ring>(q: Quat<T>)
+pub proof fn lemma_mul_conj_y<T: Ring>(q: Quat<T>)
     ensures mul(q, conjugate(q)).y.eqv(T::zero()),
 {
     let (w, x, y, z) = (q.w, q.x, q.y, q.z);
@@ -688,7 +688,7 @@ proof fn lemma_mul_conj_y<T: Ring>(q: Quat<T>)
 
 /// Z-component of mul(q, conj(q)) ≡ 0
 /// q.w*(-q.z) + q.x*(-q.y) - q.y*(-q.x) + q.z*q.w
-proof fn lemma_mul_conj_z<T: Ring>(q: Quat<T>)
+pub proof fn lemma_mul_conj_z<T: Ring>(q: Quat<T>)
     ensures mul(q, conjugate(q)).z.eqv(T::zero()),
 {
     let (w, x, y, z) = (q.w, q.x, q.y, q.z);
@@ -1030,7 +1030,7 @@ pub proof fn lemma_norm_sq_scale<T: Ring>(k: T, q: Quat<T>)
 }
 
 /// (k*c)*(k*c) ≡ (k*k)*(c*c)
-proof fn lemma_sq_scale_factor<T: Ring>(k: T, c: T)
+pub proof fn lemma_sq_scale_factor<T: Ring>(k: T, c: T)
     ensures k.mul(c).mul(k.mul(c)).eqv(k.mul(k).mul(c.mul(c))),
 {
     // (k*c)*(k*c) = k*(c*(k*c)) by assoc
