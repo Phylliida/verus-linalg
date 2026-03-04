@@ -3,10 +3,11 @@ use verus_algebra::traits::*;
 use verus_algebra::lemmas::additive_group_lemmas;
 use verus_algebra::lemmas::ring_lemmas;
 use crate::vec3::Vec3;
-use crate::vec3::ops::{triple, lemma_triple_congruence_first, lemma_triple_congruence_second, lemma_triple_congruence_third};
+use crate::vec3::ops::{triple, lemma_triple_congruence_first, lemma_triple_congruence_second, lemma_triple_congruence_third, lemma_triple_swap_12, lemma_triple_swap_23, lemma_triple_self_zero_12, lemma_triple_self_zero_23, lemma_triple_self_zero_13, lemma_triple_linear_first, lemma_triple_scale_first};
 use crate::vec4::Vec4;
 use crate::vec4::ops::{dot, scale};
 use super::Mat4x4;
+use verus_algebra::lemmas::field_lemmas;
 
 verus! {
 
@@ -1146,6 +1147,554 @@ pub proof fn lemma_transpose_mat_mul<T: Ring>(a: Mat4x4<T>, b: Mat4x4<T>)
     crate::vec4::ops::lemma_dot_commutative(a.row1, bt.row3);
     crate::vec4::ops::lemma_dot_commutative(a.row2, bt.row3);
     crate::vec4::ops::lemma_dot_commutative(a.row3, bt.row3);
+}
+
+// ---------------------------------------------------------------------------
+// Phase 1: Easy det properties + helpers
+// ---------------------------------------------------------------------------
+
+/// Signed cofactor vector for Laplace expansion along row 0.
+/// det(m) ≡ dot(row0, cofactor_vec(row1, row2, row3)).
+pub open spec fn cofactor_vec<T: Ring>(r1: Vec4<T>, r2: Vec4<T>, r3: Vec4<T>) -> Vec4<T> {
+    Vec4 {
+        x: triple(drop_x(r1), drop_x(r2), drop_x(r3)),
+        y: triple(drop_y(r1), drop_y(r2), drop_y(r3)).neg(),
+        z: triple(drop_z(r1), drop_z(r2), drop_z(r3)),
+        w: triple(drop_w(r1), drop_w(r2), drop_w(r3)).neg(),
+    }
+}
+
+/// det(m) ≡ dot(row0, cofactor_vec(row1, row2, row3)).
+/// Bridges sub-based det definition with add-based dot definition.
+pub proof fn lemma_det_as_dot<T: Ring>(m: Mat4x4<T>)
+    ensures
+        det(m).eqv(dot(m.row0, cofactor_vec(m.row1, m.row2, m.row3))),
+{
+    let r0 = m.row0;
+    let r1 = m.row1; let r2 = m.row2; let r3 = m.row3;
+    let tx = triple(drop_x(r1), drop_x(r2), drop_x(r3));
+    let ty = triple(drop_y(r1), drop_y(r2), drop_y(r3));
+    let tz = triple(drop_z(r1), drop_z(r2), drop_z(r3));
+    let tw = triple(drop_w(r1), drop_w(r2), drop_w(r3));
+    let a = r0.x.mul(tx);
+    let b = r0.y.mul(ty);
+    let c = r0.z.mul(tz);
+    let d = r0.w.mul(tw);
+
+    // det = A.sub(B).add(C).sub(D)
+    // dot = A.add(r0.y.mul(ty.neg())).add(C).add(r0.w.mul(tw.neg()))
+
+    // Step 1: Convert det from sub to add(neg) form using sub_is_add_neg
+    T::axiom_sub_is_add_neg(a, b);
+    // A.sub(B) ≡ A.add(B.neg())
+    T::axiom_add_congruence_left(a.sub(b), a.add(b.neg()), c);
+    // A.sub(B).add(C) ≡ A.add(B.neg()).add(C)
+    T::axiom_sub_is_add_neg(a.sub(b).add(c), d);
+    // A.sub(B).add(C).sub(D) ≡ A.sub(B).add(C).add(D.neg())
+    T::axiom_add_congruence_left(a.sub(b).add(c), a.add(b.neg()).add(c), d.neg());
+    // A.sub(B).add(C).add(D.neg()) ≡ A.add(B.neg()).add(C).add(D.neg())
+    T::axiom_eqv_transitive(
+        a.sub(b).add(c).sub(d),
+        a.sub(b).add(c).add(d.neg()),
+        a.add(b.neg()).add(c).add(d.neg()),
+    );
+    // det ≡ A.add(B.neg()).add(C).add(D.neg())
+
+    // Step 2: Bridge B.neg() ↔ r0.y.mul(ty.neg()) and D.neg() ↔ r0.w.mul(tw.neg())
+    // mul_neg_right: a*(-b) ≡ -(a*b), so r0.y.mul(ty.neg()) ≡ (r0.y.mul(ty)).neg() = B.neg()
+    ring_lemmas::lemma_mul_neg_right(r0.y, ty);
+    // r0.y.mul(ty.neg()).eqv(b.neg())
+    T::axiom_eqv_symmetric(r0.y.mul(ty.neg()), b.neg());
+    // B.neg() ≡ r0.y.mul(ty.neg())
+
+    ring_lemmas::lemma_mul_neg_right(r0.w, tw);
+    T::axiom_eqv_symmetric(r0.w.mul(tw.neg()), d.neg());
+    // D.neg() ≡ r0.w.mul(tw.neg())
+
+    // Substitute: A.add(B.neg()) ≡ A.add(r0.y.mul(ty.neg()))
+    additive_group_lemmas::lemma_add_congruence_right::<T>(a, b.neg(), r0.y.mul(ty.neg()));
+    // .add(C) on both sides
+    T::axiom_add_congruence_left(a.add(b.neg()), a.add(r0.y.mul(ty.neg())), c);
+    // .add(D.neg()) ≡ .add(r0.w.mul(tw.neg()))
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        a.add(b.neg()).add(c), a.add(r0.y.mul(ty.neg())).add(c),
+        d.neg(), r0.w.mul(tw.neg()),
+    );
+    // A.add(B.neg()).add(C).add(D.neg()) ≡ dot(r0, cv)
+
+    // Final chain: det ≡ A.add(B.neg()).add(C).add(D.neg()) ≡ dot
+    T::axiom_eqv_transitive(
+        det(m),
+        a.add(b.neg()).add(c).add(d.neg()),
+        dot(r0, cofactor_vec(r1, r2, r3)),
+    );
+}
+
+/// Helper: 0 - 0 + 0 - 0 ≡ 0
+proof fn lemma_zero_alt_sum<T: Ring>()
+    ensures
+        T::zero().sub(T::zero()).add(T::zero()).sub(T::zero()).eqv(T::zero()),
+{
+    let z = T::zero();
+    // sub_is_add_neg: z.sub(z) ≡ z.add(z.neg())
+    T::axiom_sub_is_add_neg(z, z);
+    // neg_zero: z.neg() ≡ z
+    additive_group_lemmas::lemma_neg_zero::<T>();
+    // z.add(z.neg()) ≡ z.add(z)
+    additive_group_lemmas::lemma_add_congruence_right::<T>(z, z.neg(), z);
+    // z.add(z) ≡ z
+    T::axiom_add_zero_right(z);
+    // Chain: z.sub(z) ≡ z.add(z.neg()) ≡ z.add(z) ≡ z
+    T::axiom_eqv_transitive(z.sub(z), z.add(z.neg()), z.add(z));
+    T::axiom_eqv_transitive(z.sub(z), z.add(z), z);
+
+    // z.sub(z).add(z) ≡ z.add(z) ≡ z
+    T::axiom_add_congruence_left(z.sub(z), z, z);
+    T::axiom_eqv_transitive(z.sub(z).add(z), z.add(z), z);
+
+    // z.sub(z).add(z).sub(z): use sub_is_add_neg again
+    let s2 = z.sub(z).add(z);
+    T::axiom_sub_is_add_neg(s2, z);
+    // s2.sub(z) ≡ s2.add(z.neg())
+    // s2 ≡ z and z.neg() ≡ z, so s2.add(z.neg()) ≡ z.add(z) ≡ z
+    additive_group_lemmas::lemma_add_congruence::<T>(s2, z, z.neg(), z);
+    T::axiom_eqv_transitive(s2.add(z.neg()), z.add(z), z);
+    // Chain: s2.sub(z) ≡ s2.add(z.neg()) ≡ z
+    T::axiom_eqv_transitive(s2.sub(z), s2.add(z.neg()), z);
+}
+
+/// Helper: given all four cofactors ≡ 0, det ≡ 0.
+proof fn lemma_det_from_zero_cofactors<T: Ring>(r0: Vec4<T>, r1: Vec4<T>, r2: Vec4<T>, r3: Vec4<T>,
+    tx: T, ty: T, tz: T, tw: T)
+    requires
+        tx.eqv(triple(drop_x(r1), drop_x(r2), drop_x(r3))),
+        ty.eqv(triple(drop_y(r1), drop_y(r2), drop_y(r3))),
+        tz.eqv(triple(drop_z(r1), drop_z(r2), drop_z(r3))),
+        tw.eqv(triple(drop_w(r1), drop_w(r2), drop_w(r3))),
+        tx.eqv(T::zero()),
+        ty.eqv(T::zero()),
+        tz.eqv(T::zero()),
+        tw.eqv(T::zero()),
+    ensures
+        det(Mat4x4 { row0: r0, row1: r1, row2: r2, row3: r3 }).eqv(T::zero()),
+{
+    // Each cofactor ≡ 0 via transitivity through tx/ty/tz/tw
+    T::axiom_eqv_symmetric(tx, triple(drop_x(r1), drop_x(r2), drop_x(r3)));
+    T::axiom_eqv_transitive(triple(drop_x(r1), drop_x(r2), drop_x(r3)), tx, T::zero());
+    T::axiom_eqv_symmetric(ty, triple(drop_y(r1), drop_y(r2), drop_y(r3)));
+    T::axiom_eqv_transitive(triple(drop_y(r1), drop_y(r2), drop_y(r3)), ty, T::zero());
+    T::axiom_eqv_symmetric(tz, triple(drop_z(r1), drop_z(r2), drop_z(r3)));
+    T::axiom_eqv_transitive(triple(drop_z(r1), drop_z(r2), drop_z(r3)), tz, T::zero());
+    T::axiom_eqv_symmetric(tw, triple(drop_w(r1), drop_w(r2), drop_w(r3)));
+    T::axiom_eqv_transitive(triple(drop_w(r1), drop_w(r2), drop_w(r3)), tw, T::zero());
+
+    // r0.k * cofactor ≡ r0.k * 0 ≡ 0
+    ring_lemmas::lemma_mul_congruence_right::<T>(r0.x, triple(drop_x(r1), drop_x(r2), drop_x(r3)), T::zero());
+    T::axiom_mul_zero_right(r0.x);
+    T::axiom_eqv_transitive(r0.x.mul(triple(drop_x(r1), drop_x(r2), drop_x(r3))), r0.x.mul(T::zero()), T::zero());
+
+    ring_lemmas::lemma_mul_congruence_right::<T>(r0.y, triple(drop_y(r1), drop_y(r2), drop_y(r3)), T::zero());
+    T::axiom_mul_zero_right(r0.y);
+    T::axiom_eqv_transitive(r0.y.mul(triple(drop_y(r1), drop_y(r2), drop_y(r3))), r0.y.mul(T::zero()), T::zero());
+
+    ring_lemmas::lemma_mul_congruence_right::<T>(r0.z, triple(drop_z(r1), drop_z(r2), drop_z(r3)), T::zero());
+    T::axiom_mul_zero_right(r0.z);
+    T::axiom_eqv_transitive(r0.z.mul(triple(drop_z(r1), drop_z(r2), drop_z(r3))), r0.z.mul(T::zero()), T::zero());
+
+    ring_lemmas::lemma_mul_congruence_right::<T>(r0.w, triple(drop_w(r1), drop_w(r2), drop_w(r3)), T::zero());
+    T::axiom_mul_zero_right(r0.w);
+    T::axiom_eqv_transitive(r0.w.mul(triple(drop_w(r1), drop_w(r2), drop_w(r3))), r0.w.mul(T::zero()), T::zero());
+
+    // det = a - b + c - d where a,b,c,d all ≡ 0
+    let a = r0.x.mul(triple(drop_x(r1), drop_x(r2), drop_x(r3)));
+    let b = r0.y.mul(triple(drop_y(r1), drop_y(r2), drop_y(r3)));
+    let c = r0.z.mul(triple(drop_z(r1), drop_z(r2), drop_z(r3)));
+    let d = r0.w.mul(triple(drop_w(r1), drop_w(r2), drop_w(r3)));
+
+    additive_group_lemmas::lemma_sub_congruence(a, T::zero(), b, T::zero());
+    additive_group_lemmas::lemma_add_congruence::<T>(a.sub(b), T::zero().sub(T::zero()), c, T::zero());
+    additive_group_lemmas::lemma_sub_congruence(a.sub(b).add(c), T::zero().sub(T::zero()).add(T::zero()), d, T::zero());
+
+    lemma_zero_alt_sum::<T>();
+    T::axiom_eqv_transitive(
+        a.sub(b).add(c).sub(d),
+        T::zero().sub(T::zero()).add(T::zero()).sub(T::zero()),
+        T::zero(),
+    );
+}
+
+/// Helper: -(a - b + c - d) ≡ (-a) - (-b) + (-c) - (-d).
+/// Strategy: convert sub→add(neg) on both sides, then use neg_add decomposition.
+proof fn lemma_negate_alt_sum_4<T: Ring>(a: T, b: T, c: T, d: T)
+    ensures
+        a.sub(b).add(c).sub(d).neg().eqv(
+            a.neg().sub(b.neg()).add(c.neg()).sub(d.neg())
+        ),
+{
+    let s = a.sub(b).add(c).sub(d);
+    let t = a.neg().sub(b.neg()).add(c.neg()).sub(d.neg());
+
+    // === Convert s to add form ===
+    // s = a.sub(b).add(c).sub(d)
+    // s' = a.add(b.neg()).add(c).add(d.neg())
+    T::axiom_sub_is_add_neg(a, b);
+    T::axiom_add_congruence_left(a.sub(b), a.add(b.neg()), c);
+    T::axiom_sub_is_add_neg(a.sub(b).add(c), d);
+    T::axiom_add_congruence_left(a.sub(b).add(c), a.add(b.neg()).add(c), d.neg());
+    T::axiom_eqv_transitive(s, a.sub(b).add(c).add(d.neg()), a.add(b.neg()).add(c).add(d.neg()));
+    // s ≡ s' where s' = a.add(b.neg()).add(c).add(d.neg())
+    let sp = a.add(b.neg()).add(c).add(d.neg());
+
+    // neg_congruence: s ≡ s' → s.neg() ≡ s'.neg()
+    T::axiom_neg_congruence(s, sp);
+    // s.neg() ≡ sp.neg()
+
+    // === Decompose neg(s') using neg_add ===
+    // sp = ((a + b.neg()) + c) + d.neg()
+    // neg(sp) ≡ neg((a+b.neg())+c) + neg(d.neg())  [neg_add]
+    additive_group_lemmas::lemma_neg_add(a.add(b.neg()).add(c), d.neg());
+    // neg((a+b.neg())+c) ≡ neg(a+b.neg()) + neg(c)  [neg_add]
+    additive_group_lemmas::lemma_neg_add(a.add(b.neg()), c);
+    // neg(a+b.neg()) ≡ neg(a) + neg(b.neg())  [neg_add]
+    additive_group_lemmas::lemma_neg_add(a, b.neg());
+
+    // neg(b.neg()) ≡ b, neg(d.neg()) ≡ d
+    additive_group_lemmas::lemma_neg_involution(b);
+    additive_group_lemmas::lemma_neg_involution(d);
+
+    // Chain: neg(a+b.neg()) ≡ a.neg() + b.neg().neg() ≡ a.neg() + b
+    additive_group_lemmas::lemma_add_congruence_right::<T>(a.neg(), b.neg().neg(), b);
+    T::axiom_eqv_transitive(a.add(b.neg()).neg(), a.neg().add(b.neg().neg()), a.neg().add(b));
+
+    // neg((a+b.neg())+c) ≡ neg(a+b.neg()) + c.neg() ≡ (a.neg()+b) + c.neg()
+    T::axiom_add_congruence_left(a.add(b.neg()).neg(), a.neg().add(b), c.neg());
+    T::axiom_eqv_transitive(
+        a.add(b.neg()).add(c).neg(),
+        a.add(b.neg()).neg().add(c.neg()),
+        a.neg().add(b).add(c.neg()),
+    );
+
+    // neg(sp) ≡ neg((a+b.neg())+c) + neg(d.neg()) ≡ (a.neg()+b+c.neg()) + d
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        a.add(b.neg()).add(c).neg(), a.neg().add(b).add(c.neg()),
+        d.neg().neg(), d,
+    );
+    T::axiom_eqv_transitive(
+        sp.neg(),
+        a.add(b.neg()).add(c).neg().add(d.neg().neg()),
+        a.neg().add(b).add(c.neg()).add(d),
+    );
+    // sp.neg() ≡ a.neg().add(b).add(c.neg()).add(d)  =: u
+
+    // s.neg() ≡ sp.neg() ≡ u
+    let u = a.neg().add(b).add(c.neg()).add(d);
+    T::axiom_eqv_transitive(s.neg(), sp.neg(), u);
+
+    // === Convert t to add form ===
+    // t = a.neg().sub(b.neg()).add(c.neg()).sub(d.neg())
+    // t' = a.neg().add(b.neg().neg()).add(c.neg()).add(d.neg().neg())
+    T::axiom_sub_is_add_neg(a.neg(), b.neg());
+    T::axiom_add_congruence_left(a.neg().sub(b.neg()), a.neg().add(b.neg().neg()), c.neg());
+    T::axiom_sub_is_add_neg(a.neg().sub(b.neg()).add(c.neg()), d.neg());
+    T::axiom_add_congruence_left(a.neg().sub(b.neg()).add(c.neg()), a.neg().add(b.neg().neg()).add(c.neg()), d.neg().neg());
+    T::axiom_eqv_transitive(
+        t,
+        a.neg().sub(b.neg()).add(c.neg()).add(d.neg().neg()),
+        a.neg().add(b.neg().neg()).add(c.neg()).add(d.neg().neg()),
+    );
+    // t ≡ t' = a.neg().add(b.neg().neg()).add(c.neg()).add(d.neg().neg())
+
+    // Simplify t' → u using neg_involution: b.neg().neg() ≡ b, d.neg().neg() ≡ d
+    additive_group_lemmas::lemma_add_congruence_right::<T>(a.neg(), b.neg().neg(), b);
+    T::axiom_add_congruence_left(a.neg().add(b.neg().neg()), a.neg().add(b), c.neg());
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        a.neg().add(b.neg().neg()).add(c.neg()), a.neg().add(b).add(c.neg()),
+        d.neg().neg(), d,
+    );
+    // t' ≡ u
+    T::axiom_eqv_transitive(
+        t,
+        a.neg().add(b.neg().neg()).add(c.neg()).add(d.neg().neg()),
+        u,
+    );
+    // t ≡ u
+
+    // Final: s.neg() ≡ u, t ≡ u → s.neg() ≡ t
+    T::axiom_eqv_symmetric(t, u);
+    T::axiom_eqv_transitive(s.neg(), u, t);
+}
+
+/// Helper: if a ≡ b.neg(), then b ≡ a.neg().
+proof fn lemma_flip_neg_eqv<T: Ring>(a: T, b: T)
+    requires a.eqv(b.neg())
+    ensures b.eqv(a.neg())
+{
+    T::axiom_neg_congruence(a, b.neg());
+    // a.neg() ≡ b.neg().neg()
+    additive_group_lemmas::lemma_neg_involution(b);
+    // b.neg().neg() ≡ b
+    T::axiom_eqv_transitive(a.neg(), b.neg().neg(), b);
+    // a.neg() ≡ b
+    T::axiom_eqv_symmetric(a.neg(), b);
+    // b ≡ a.neg()
+}
+
+/// Swapping rows 1 and 2 negates the determinant.
+pub proof fn lemma_det_swap_rows_12<T: Ring>(m: Mat4x4<T>)
+    ensures
+        det(Mat4x4 { row0: m.row0, row1: m.row2, row2: m.row1, row3: m.row3 }).eqv(
+            det(m).neg()
+        ),
+{
+    let r0 = m.row0; let r1 = m.row1; let r2 = m.row2; let r3 = m.row3;
+    let tx = triple(drop_x(r1), drop_x(r2), drop_x(r3));
+    let ty = triple(drop_y(r1), drop_y(r2), drop_y(r3));
+    let tz = triple(drop_z(r1), drop_z(r2), drop_z(r3));
+    let tw = triple(drop_w(r1), drop_w(r2), drop_w(r3));
+
+    // swap_12 gives orig.eqv(swapped.neg()); flip to get swapped.eqv(orig.neg())
+    lemma_triple_swap_12(drop_x(r1), drop_x(r2), drop_x(r3));
+    lemma_flip_neg_eqv(tx, triple(drop_x(r2), drop_x(r1), drop_x(r3)));
+    lemma_triple_swap_12(drop_y(r1), drop_y(r2), drop_y(r3));
+    lemma_flip_neg_eqv(ty, triple(drop_y(r2), drop_y(r1), drop_y(r3)));
+    lemma_triple_swap_12(drop_z(r1), drop_z(r2), drop_z(r3));
+    lemma_flip_neg_eqv(tz, triple(drop_z(r2), drop_z(r1), drop_z(r3)));
+    lemma_triple_swap_12(drop_w(r1), drop_w(r2), drop_w(r3));
+    lemma_flip_neg_eqv(tw, triple(drop_w(r2), drop_w(r1), drop_w(r3)));
+    // Now: triple(swapped_k).eqv(tk.neg()) for each k
+
+    // r0.k * swapped_k ≡ r0.k * tk.neg() ≡ (r0.k * tk).neg()
+    ring_lemmas::lemma_mul_neg_right(r0.x, tx);
+    ring_lemmas::lemma_mul_congruence_right::<T>(
+        r0.x, triple(drop_x(r2), drop_x(r1), drop_x(r3)), tx.neg(),
+    );
+    T::axiom_eqv_transitive(
+        r0.x.mul(triple(drop_x(r2), drop_x(r1), drop_x(r3))),
+        r0.x.mul(tx.neg()), r0.x.mul(tx).neg(),
+    );
+
+    ring_lemmas::lemma_mul_neg_right(r0.y, ty);
+    ring_lemmas::lemma_mul_congruence_right::<T>(
+        r0.y, triple(drop_y(r2), drop_y(r1), drop_y(r3)), ty.neg(),
+    );
+    T::axiom_eqv_transitive(
+        r0.y.mul(triple(drop_y(r2), drop_y(r1), drop_y(r3))),
+        r0.y.mul(ty.neg()), r0.y.mul(ty).neg(),
+    );
+
+    ring_lemmas::lemma_mul_neg_right(r0.z, tz);
+    ring_lemmas::lemma_mul_congruence_right::<T>(
+        r0.z, triple(drop_z(r2), drop_z(r1), drop_z(r3)), tz.neg(),
+    );
+    T::axiom_eqv_transitive(
+        r0.z.mul(triple(drop_z(r2), drop_z(r1), drop_z(r3))),
+        r0.z.mul(tz.neg()), r0.z.mul(tz).neg(),
+    );
+
+    ring_lemmas::lemma_mul_neg_right(r0.w, tw);
+    ring_lemmas::lemma_mul_congruence_right::<T>(
+        r0.w, triple(drop_w(r2), drop_w(r1), drop_w(r3)), tw.neg(),
+    );
+    T::axiom_eqv_transitive(
+        r0.w.mul(triple(drop_w(r2), drop_w(r1), drop_w(r3))),
+        r0.w.mul(tw.neg()), r0.w.mul(tw).neg(),
+    );
+
+    let a = r0.x.mul(tx); let b = r0.y.mul(ty); let c = r0.z.mul(tz); let d = r0.w.mul(tw);
+    let a2 = r0.x.mul(triple(drop_x(r2), drop_x(r1), drop_x(r3)));
+    let b2 = r0.y.mul(triple(drop_y(r2), drop_y(r1), drop_y(r3)));
+    let c2 = r0.z.mul(triple(drop_z(r2), drop_z(r1), drop_z(r3)));
+    let d2 = r0.w.mul(triple(drop_w(r2), drop_w(r1), drop_w(r3)));
+
+    // a2 ≡ a.neg(), b2 ≡ b.neg(), c2 ≡ c.neg(), d2 ≡ d.neg()
+    // det(swapped) = a2 - b2 + c2 - d2 ≡ a.neg() - b.neg() + c.neg() - d.neg()
+    additive_group_lemmas::lemma_sub_congruence(a2, a.neg(), b2, b.neg());
+    additive_group_lemmas::lemma_add_congruence::<T>(a2.sub(b2), a.neg().sub(b.neg()), c2, c.neg());
+    additive_group_lemmas::lemma_sub_congruence(a2.sub(b2).add(c2), a.neg().sub(b.neg()).add(c.neg()), d2, d.neg());
+
+    // (-a) - (-b) + (-c) - (-d) ≡ -(a - b + c - d)
+    lemma_negate_alt_sum_4(a, b, c, d);
+    T::axiom_eqv_symmetric(a.sub(b).add(c).sub(d).neg(), a.neg().sub(b.neg()).add(c.neg()).sub(d.neg()));
+
+    T::axiom_eqv_transitive(
+        a2.sub(b2).add(c2).sub(d2),
+        a.neg().sub(b.neg()).add(c.neg()).sub(d.neg()),
+        a.sub(b).add(c).sub(d).neg(),
+    );
+}
+
+/// Swapping rows 2 and 3 negates the determinant.
+pub proof fn lemma_det_swap_rows_23<T: Ring>(m: Mat4x4<T>)
+    ensures
+        det(Mat4x4 { row0: m.row0, row1: m.row1, row2: m.row3, row3: m.row2 }).eqv(
+            det(m).neg()
+        ),
+{
+    let r0 = m.row0; let r1 = m.row1; let r2 = m.row2; let r3 = m.row3;
+    lemma_triple_swap_23(drop_x(r1), drop_x(r2), drop_x(r3));
+    lemma_triple_swap_23(drop_y(r1), drop_y(r2), drop_y(r3));
+    lemma_triple_swap_23(drop_z(r1), drop_z(r2), drop_z(r3));
+    lemma_triple_swap_23(drop_w(r1), drop_w(r2), drop_w(r3));
+
+    let tx = triple(drop_x(r1), drop_x(r2), drop_x(r3));
+    let ty = triple(drop_y(r1), drop_y(r2), drop_y(r3));
+    let tz = triple(drop_z(r1), drop_z(r2), drop_z(r3));
+    let tw = triple(drop_w(r1), drop_w(r2), drop_w(r3));
+
+    ring_lemmas::lemma_mul_neg_right(r0.x, tx);
+    ring_lemmas::lemma_mul_neg_right(r0.y, ty);
+    ring_lemmas::lemma_mul_neg_right(r0.z, tz);
+    ring_lemmas::lemma_mul_neg_right(r0.w, tw);
+
+    ring_lemmas::lemma_mul_congruence_right::<T>(
+        r0.x, triple(drop_x(r1), drop_x(r3), drop_x(r2)),
+        triple(drop_x(r1), drop_x(r2), drop_x(r3)).neg(),
+    );
+    T::axiom_eqv_transitive(
+        r0.x.mul(triple(drop_x(r1), drop_x(r3), drop_x(r2))),
+        r0.x.mul(triple(drop_x(r1), drop_x(r2), drop_x(r3)).neg()),
+        r0.x.mul(tx).neg(),
+    );
+
+    ring_lemmas::lemma_mul_congruence_right::<T>(
+        r0.y, triple(drop_y(r1), drop_y(r3), drop_y(r2)),
+        triple(drop_y(r1), drop_y(r2), drop_y(r3)).neg(),
+    );
+    T::axiom_eqv_transitive(
+        r0.y.mul(triple(drop_y(r1), drop_y(r3), drop_y(r2))),
+        r0.y.mul(triple(drop_y(r1), drop_y(r2), drop_y(r3)).neg()),
+        r0.y.mul(ty).neg(),
+    );
+
+    ring_lemmas::lemma_mul_congruence_right::<T>(
+        r0.z, triple(drop_z(r1), drop_z(r3), drop_z(r2)),
+        triple(drop_z(r1), drop_z(r2), drop_z(r3)).neg(),
+    );
+    T::axiom_eqv_transitive(
+        r0.z.mul(triple(drop_z(r1), drop_z(r3), drop_z(r2))),
+        r0.z.mul(triple(drop_z(r1), drop_z(r2), drop_z(r3)).neg()),
+        r0.z.mul(tz).neg(),
+    );
+
+    ring_lemmas::lemma_mul_congruence_right::<T>(
+        r0.w, triple(drop_w(r1), drop_w(r3), drop_w(r2)),
+        triple(drop_w(r1), drop_w(r2), drop_w(r3)).neg(),
+    );
+    T::axiom_eqv_transitive(
+        r0.w.mul(triple(drop_w(r1), drop_w(r3), drop_w(r2))),
+        r0.w.mul(triple(drop_w(r1), drop_w(r2), drop_w(r3)).neg()),
+        r0.w.mul(tw).neg(),
+    );
+
+    let a = r0.x.mul(tx); let b = r0.y.mul(ty); let c = r0.z.mul(tz); let d = r0.w.mul(tw);
+    let a2 = r0.x.mul(triple(drop_x(r1), drop_x(r3), drop_x(r2)));
+    let b2 = r0.y.mul(triple(drop_y(r1), drop_y(r3), drop_y(r2)));
+    let c2 = r0.z.mul(triple(drop_z(r1), drop_z(r3), drop_z(r2)));
+    let d2 = r0.w.mul(triple(drop_w(r1), drop_w(r3), drop_w(r2)));
+
+    additive_group_lemmas::lemma_sub_congruence(a2, a.neg(), b2, b.neg());
+    additive_group_lemmas::lemma_add_congruence::<T>(a2.sub(b2), a.neg().sub(b.neg()), c2, c.neg());
+    additive_group_lemmas::lemma_sub_congruence(a2.sub(b2).add(c2), a.neg().sub(b.neg()).add(c.neg()), d2, d.neg());
+
+    lemma_negate_alt_sum_4(a, b, c, d);
+    T::axiom_eqv_symmetric(a.sub(b).add(c).sub(d).neg(), a.neg().sub(b.neg()).add(c.neg()).sub(d.neg()));
+
+    T::axiom_eqv_transitive(
+        a2.sub(b2).add(c2).sub(d2),
+        a.neg().sub(b.neg()).add(c.neg()).sub(d.neg()),
+        a.sub(b).add(c).sub(d).neg(),
+    );
+}
+
+/// If rows 1 and 2 are equal, det is zero.
+pub proof fn lemma_det_zero_repeated_row_12<T: Ring>(r0: Vec4<T>, a: Vec4<T>, b: Vec4<T>)
+    ensures
+        det(Mat4x4 { row0: r0, row1: a, row2: a, row3: b }).eqv(T::zero()),
+{
+    lemma_triple_self_zero_12(drop_x(a), drop_x(b));
+    lemma_triple_self_zero_12(drop_y(a), drop_y(b));
+    lemma_triple_self_zero_12(drop_z(a), drop_z(b));
+    lemma_triple_self_zero_12(drop_w(a), drop_w(b));
+    let tx = triple(drop_x(a), drop_x(a), drop_x(b));
+    let ty = triple(drop_y(a), drop_y(a), drop_y(b));
+    let tz = triple(drop_z(a), drop_z(a), drop_z(b));
+    let tw = triple(drop_w(a), drop_w(a), drop_w(b));
+    T::axiom_eqv_reflexive(tx);
+    T::axiom_eqv_reflexive(ty);
+    T::axiom_eqv_reflexive(tz);
+    T::axiom_eqv_reflexive(tw);
+    lemma_det_from_zero_cofactors(r0, a, a, b, tx, ty, tz, tw);
+}
+
+/// If rows 2 and 3 are equal, det is zero.
+pub proof fn lemma_det_zero_repeated_row_23<T: Ring>(r0: Vec4<T>, a: Vec4<T>, b: Vec4<T>)
+    ensures
+        det(Mat4x4 { row0: r0, row1: a, row2: b, row3: b }).eqv(T::zero()),
+{
+    lemma_triple_self_zero_23(drop_x(a), drop_x(b));
+    lemma_triple_self_zero_23(drop_y(a), drop_y(b));
+    lemma_triple_self_zero_23(drop_z(a), drop_z(b));
+    lemma_triple_self_zero_23(drop_w(a), drop_w(b));
+    let tx = triple(drop_x(a), drop_x(b), drop_x(b));
+    let ty = triple(drop_y(a), drop_y(b), drop_y(b));
+    let tz = triple(drop_z(a), drop_z(b), drop_z(b));
+    let tw = triple(drop_w(a), drop_w(b), drop_w(b));
+    T::axiom_eqv_reflexive(tx);
+    T::axiom_eqv_reflexive(ty);
+    T::axiom_eqv_reflexive(tz);
+    T::axiom_eqv_reflexive(tw);
+    lemma_det_from_zero_cofactors(r0, a, b, b, tx, ty, tz, tw);
+}
+
+/// Determinant is linear in the first row.
+pub proof fn lemma_det_linear_first_row<T: Ring>(a: Vec4<T>, b: Vec4<T>,
+    r1: Vec4<T>, r2: Vec4<T>, r3: Vec4<T>)
+    ensures
+        det(Mat4x4 { row0: a.add(b), row1: r1, row2: r2, row3: r3 }).eqv(
+            det(Mat4x4 { row0: a, row1: r1, row2: r2, row3: r3 }).add(
+                det(Mat4x4 { row0: b, row1: r1, row2: r2, row3: r3 })
+            )
+        ),
+{
+    let cv = cofactor_vec(r1, r2, r3);
+    lemma_det_as_dot(Mat4x4 { row0: a.add(b), row1: r1, row2: r2, row3: r3 });
+    lemma_det_as_dot(Mat4x4 { row0: a, row1: r1, row2: r2, row3: r3 });
+    lemma_det_as_dot(Mat4x4 { row0: b, row1: r1, row2: r2, row3: r3 });
+
+    // dot(a+b, cv) ≡ dot(a, cv) + dot(b, cv)
+    crate::vec4::ops::lemma_dot_distributes_left(a, b, cv);
+
+    // det([a+b,...]) ≡ dot(a+b, cv) ≡ dot(a,cv) + dot(b,cv)
+    T::axiom_eqv_transitive(
+        det(Mat4x4 { row0: a.add(b), row1: r1, row2: r2, row3: r3 }),
+        dot(a.add(b), cv),
+        dot(a, cv).add(dot(b, cv)),
+    );
+
+    // dot(a,cv) ≡ det([a,...]) and dot(b,cv) ≡ det([b,...])
+    T::axiom_eqv_symmetric(
+        det(Mat4x4 { row0: a, row1: r1, row2: r2, row3: r3 }),
+        dot(a, cv),
+    );
+    T::axiom_eqv_symmetric(
+        det(Mat4x4 { row0: b, row1: r1, row2: r2, row3: r3 }),
+        dot(b, cv),
+    );
+
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        dot(a, cv),
+        det(Mat4x4 { row0: a, row1: r1, row2: r2, row3: r3 }),
+        dot(b, cv),
+        det(Mat4x4 { row0: b, row1: r1, row2: r2, row3: r3 }),
+    );
+
+    T::axiom_eqv_transitive(
+        det(Mat4x4 { row0: a.add(b), row1: r1, row2: r2, row3: r3 }),
+        dot(a, cv).add(dot(b, cv)),
+        det(Mat4x4 { row0: a, row1: r1, row2: r2, row3: r3 }).add(
+            det(Mat4x4 { row0: b, row1: r1, row2: r2, row3: r3 })
+        ),
+    );
 }
 
 } // verus!
