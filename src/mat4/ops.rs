@@ -1231,7 +1231,7 @@ pub proof fn lemma_det_as_dot<T: Ring>(m: Mat4x4<T>)
 }
 
 /// Helper: 0 - 0 + 0 - 0 ≡ 0
-proof fn lemma_zero_alt_sum<T: Ring>()
+pub proof fn lemma_zero_alt_sum<T: Ring>()
     ensures
         T::zero().sub(T::zero()).add(T::zero()).sub(T::zero()).eqv(T::zero()),
 {
@@ -1264,7 +1264,7 @@ proof fn lemma_zero_alt_sum<T: Ring>()
 }
 
 /// Helper: given all four cofactors ≡ 0, det ≡ 0.
-proof fn lemma_det_from_zero_cofactors<T: Ring>(r0: Vec4<T>, r1: Vec4<T>, r2: Vec4<T>, r3: Vec4<T>,
+pub proof fn lemma_det_from_zero_cofactors<T: Ring>(r0: Vec4<T>, r1: Vec4<T>, r2: Vec4<T>, r3: Vec4<T>,
     tx: T, ty: T, tz: T, tw: T)
     requires
         tx.eqv(triple(drop_x(r1), drop_x(r2), drop_x(r3))),
@@ -1325,7 +1325,7 @@ proof fn lemma_det_from_zero_cofactors<T: Ring>(r0: Vec4<T>, r1: Vec4<T>, r2: Ve
 
 /// Helper: -(a - b + c - d) ≡ (-a) - (-b) + (-c) - (-d).
 /// Strategy: convert sub→add(neg) on both sides, then use neg_add decomposition.
-proof fn lemma_negate_alt_sum_4<T: Ring>(a: T, b: T, c: T, d: T)
+pub proof fn lemma_negate_alt_sum_4<T: Ring>(a: T, b: T, c: T, d: T)
     ensures
         a.sub(b).add(c).sub(d).neg().eqv(
             a.neg().sub(b.neg()).add(c.neg()).sub(d.neg())
@@ -1425,7 +1425,7 @@ proof fn lemma_negate_alt_sum_4<T: Ring>(a: T, b: T, c: T, d: T)
 }
 
 /// Helper: if a ≡ b.neg(), then b ≡ a.neg().
-proof fn lemma_flip_neg_eqv<T: Ring>(a: T, b: T)
+pub proof fn lemma_flip_neg_eqv<T: Ring>(a: T, b: T)
     requires a.eqv(b.neg())
     ensures b.eqv(a.neg())
 {
