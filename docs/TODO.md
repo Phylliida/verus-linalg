@@ -18,7 +18,7 @@ verus-algebra (Ring, OrderedRing, Field traits + lemmas)
 
 ## What we have now
 
-242 verified items, 0 errors, 0 assumes/admits.
+602 verified items, 0 errors, 0 assumes/admits.
 
 | Module | Type | Operations | Lemmas | Status |
 |---|---|---|---|---|
@@ -27,8 +27,11 @@ verus-algebra (Ring, OrderedRing, Field traits + lemmas)
 | `vec4` | `Vec4<T>` | scale, dot, norm_sq, lerp, cwise_min/max | 54 | Done |
 | `mat2` | `Mat2x2<T>` | identity, mat_vec_mul, transpose, det, mat_mul, adjugate, inverse | 23 | Done |
 | `mat3` | `Mat3x3<T>` | identity, mat_vec_mul, transpose, det, mat_mul, adjugate, inverse | 28 | Done |
+| `quat` | `Quat<T>` | mul, conjugate, norm_sq, inverse, rotation, basis | 80+ | Done |
+| `runtime` | `RuntimeVec2/3/4, RuntimeQuat, RuntimeMat2x2/3x3` | exec wrappers for all spec ops | 70+ | Done |
 
-All types implement `Equivalence + AdditiveCommutativeMonoid + AdditiveGroup`.
+All spec types implement `Equivalence + AdditiveCommutativeMonoid + AdditiveGroup`.
+Runtime types use `Ghost<SpecType<Rational>>` + `wf_spec()` pattern with exec ops ensuring `out@ == spec_fn(args@)`.
 
 ### Key proven properties
 

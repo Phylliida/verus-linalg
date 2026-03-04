@@ -34,6 +34,20 @@ jobs:
           path: verus-algebra
           persist-credentials: false
 
+      - name: Checkout verus-bigint
+        uses: actions/checkout@v4.2.2
+        with:
+          repository: Phylliida/verus-bigint
+          path: verus-bigint
+          persist-credentials: false
+
+      - name: Checkout verus-rational
+        uses: actions/checkout@v4.2.2
+        with:
+          repository: Phylliida/verus-rational
+          path: verus-rational
+          persist-credentials: false
+
       - name: Install required Rust toolchain
         run: |
           set -euo pipefail

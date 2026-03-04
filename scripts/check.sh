@@ -411,9 +411,13 @@ check_ci_workflow_checkout_wiring() {
   local checkout_linalg_step=""
   local checkout_verus_step=""
   local checkout_algebra_step=""
+  local checkout_bigint_step=""
+  local checkout_rational_step=""
   local checkout_linalg_line=""
   local checkout_verus_line=""
   local checkout_algebra_line=""
+  local checkout_bigint_line=""
+  local checkout_rational_line=""
   local build_line=""
   local strict_line=""
 
@@ -425,12 +429,14 @@ check_ci_workflow_checkout_wiring() {
   checkout_linalg_line="$(grep -nE '^[[:space:]]*- name:[[:space:]]*Checkout verus-linalg[[:space:]]*$' "$workflow_file" | head -n 1 | cut -d: -f1)"
   checkout_verus_line="$(grep -nE '^[[:space:]]*- name:[[:space:]]*Checkout Verus[[:space:]]*$' "$workflow_file" | head -n 1 | cut -d: -f1)"
   checkout_algebra_line="$(grep -nE '^[[:space:]]*- name:[[:space:]]*Checkout verus-algebra[[:space:]]*$' "$workflow_file" | head -n 1 | cut -d: -f1)"
+  checkout_bigint_line="$(grep -nE '^[[:space:]]*- name:[[:space:]]*Checkout verus-bigint[[:space:]]*$' "$workflow_file" | head -n 1 | cut -d: -f1)"
+  checkout_rational_line="$(grep -nE '^[[:space:]]*- name:[[:space:]]*Checkout verus-rational[[:space:]]*$' "$workflow_file" | head -n 1 | cut -d: -f1)"
   build_line="$(grep -nE '^[[:space:]]*- name:[[:space:]]*Build Verus tools[[:space:]]*$' "$workflow_file" | head -n 1 | cut -d: -f1)"
   strict_line="$(grep -nE '^[[:space:]]*- name:[[:space:]]*Run strict checks[[:space:]]*$' "$workflow_file" | head -n 1 | cut -d: -f1)"
 
-  if [[ -z "$checkout_linalg_line" || -z "$checkout_verus_line" || -z "$checkout_algebra_line" ]]; then
+  if [[ -z "$checkout_linalg_line" || -z "$checkout_verus_line" || -z "$checkout_algebra_line" || -z "$checkout_bigint_line" || -z "$checkout_rational_line" ]]; then
     echo "error: required checkout steps missing in $workflow_file"
-    echo "expected steps: 'Checkout verus-linalg', 'Checkout Verus', and 'Checkout verus-algebra'"
+    echo "expected steps: 'Checkout verus-linalg', 'Checkout Verus', 'Checkout verus-algebra', 'Checkout verus-bigint', and 'Checkout verus-rational'"
     exit 1
   fi
   if [[ -z "$build_line" || -z "$strict_line" ]]; then
@@ -453,11 +459,23 @@ check_ci_workflow_checkout_wiring() {
     echo "expected it to run before 'Build Verus tools' and 'Run strict checks'"
     exit 1
   fi
+  if (( checkout_bigint_line >= build_line || checkout_bigint_line >= strict_line )); then
+    echo "error: workflow checkout step order invalid for 'Checkout verus-bigint'"
+    echo "expected it to run before 'Build Verus tools' and 'Run strict checks'"
+    exit 1
+  fi
+  if (( checkout_rational_line >= build_line || checkout_rational_line >= strict_line )); then
+    echo "error: workflow checkout step order invalid for 'Checkout verus-rational'"
+    echo "expected it to run before 'Build Verus tools' and 'Run strict checks'"
+    exit 1
+  fi
 
   checkout_linalg_step="$(extract_named_workflow_step_block "$workflow_file" "Checkout verus-linalg")"
   checkout_verus_step="$(extract_named_workflow_step_block "$workflow_file" "Checkout Verus")"
   checkout_algebra_step="$(extract_named_workflow_step_block "$workflow_file" "Checkout verus-algebra")"
-  if [[ -z "$checkout_linalg_step" || -z "$checkout_verus_step" || -z "$checkout_algebra_step" ]]; then
+  checkout_bigint_step="$(extract_named_workflow_step_block "$workflow_file" "Checkout verus-bigint")"
+  checkout_rational_step="$(extract_named_workflow_step_block "$workflow_file" "Checkout verus-rational")"
+  if [[ -z "$checkout_linalg_step" || -z "$checkout_verus_step" || -z "$checkout_algebra_step" || -z "$checkout_bigint_step" || -z "$checkout_rational_step" ]]; then
     echo "error: failed to parse required checkout step block(s) in $workflow_file"
     exit 1
   fi
@@ -506,6 +524,40 @@ check_ci_workflow_checkout_wiring() {
   fi
   if ! printf '%s\n' "$checkout_algebra_step" | grep -qE 'persist-credentials:[[:space:]]*false'; then
     echo "error: workflow 'Checkout verus-algebra' step must set persist-credentials: false"
+    exit 1
+  fi
+
+  if ! printf '%s\n' "$checkout_bigint_step" | grep -Fq "uses: $CHECKOUT_ACTION_REF"; then
+    echo "error: workflow 'Checkout verus-bigint' step must pin uses: $CHECKOUT_ACTION_REF"
+    exit 1
+  fi
+  if ! printf '%s\n' "$checkout_bigint_step" | grep -qE 'repository:[[:space:]]*Phylliida/verus-bigint'; then
+    echo "error: workflow 'Checkout verus-bigint' step must set repository: Phylliida/verus-bigint"
+    exit 1
+  fi
+  if ! printf '%s\n' "$checkout_bigint_step" | grep -qE 'path:[[:space:]]*verus-bigint'; then
+    echo "error: workflow 'Checkout verus-bigint' step must set path: verus-bigint"
+    exit 1
+  fi
+  if ! printf '%s\n' "$checkout_bigint_step" | grep -qE 'persist-credentials:[[:space:]]*false'; then
+    echo "error: workflow 'Checkout verus-bigint' step must set persist-credentials: false"
+    exit 1
+  fi
+
+  if ! printf '%s\n' "$checkout_rational_step" | grep -Fq "uses: $CHECKOUT_ACTION_REF"; then
+    echo "error: workflow 'Checkout verus-rational' step must pin uses: $CHECKOUT_ACTION_REF"
+    exit 1
+  fi
+  if ! printf '%s\n' "$checkout_rational_step" | grep -qE 'repository:[[:space:]]*Phylliida/verus-rational'; then
+    echo "error: workflow 'Checkout verus-rational' step must set repository: Phylliida/verus-rational"
+    exit 1
+  fi
+  if ! printf '%s\n' "$checkout_rational_step" | grep -qE 'path:[[:space:]]*verus-rational'; then
+    echo "error: workflow 'Checkout verus-rational' step must set path: verus-rational"
+    exit 1
+  fi
+  if ! printf '%s\n' "$checkout_rational_step" | grep -qE 'persist-credentials:[[:space:]]*false'; then
+    echo "error: workflow 'Checkout verus-rational' step must set persist-credentials: false"
     exit 1
   fi
 }

@@ -3104,4 +3104,132 @@ pub proof fn lemma_cwise_max_ge_right<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
     min_max::lemma_max_ge_right::<T>(a.z, b.z);
 }
 
+/// triple(a.neg(), b, c) ≡ triple(a, b, c).neg()
+pub proof fn lemma_triple_neg_first<T: Ring>(
+    a: Vec3<T>, b: Vec3<T>, c: Vec3<T>,
+)
+    ensures
+        triple(a.neg(), b, c).eqv(triple(a, b, c).neg()),
+{
+    // Step 1: cyclic: triple(a.neg(), b, c) ≡ triple(b, c, a.neg())
+    lemma_triple_cyclic::<T>(a.neg(), b, c);
+    // Step 2: neg_third: triple(b, c, a.neg()) ≡ triple(b, c, a).neg()
+    lemma_triple_neg_third::<T>(b, c, a);
+    T::axiom_eqv_transitive(
+        triple(a.neg(), b, c),
+        triple(b, c, a.neg()),
+        triple(b, c, a).neg(),
+    );
+    // Step 3: cyclic reversed: triple(a, b, c) ≡ triple(b, c, a), so triple(b, c, a) ≡ triple(a, b, c)
+    lemma_triple_cyclic::<T>(a, b, c);
+    T::axiom_eqv_symmetric(triple(a, b, c), triple(b, c, a));
+    // Step 4: neg_congruence: triple(b, c, a).neg() ≡ triple(a, b, c).neg()
+    T::axiom_neg_congruence(triple(b, c, a), triple(a, b, c));
+    T::axiom_eqv_transitive(
+        triple(a.neg(), b, c),
+        triple(b, c, a).neg(),
+        triple(a, b, c).neg(),
+    );
+}
+
+/// triple(a, b.neg(), c) ≡ triple(a, b, c).neg()
+pub proof fn lemma_triple_neg_second<T: Ring>(
+    a: Vec3<T>, b: Vec3<T>, c: Vec3<T>,
+)
+    ensures
+        triple(a, b.neg(), c).eqv(triple(a, b, c).neg()),
+{
+    // swap_12: triple(a, b.neg(), c) ≡ -triple(b.neg(), a, c)
+    lemma_triple_swap_12::<T>(a, b.neg(), c);
+    // neg_first: triple(b.neg(), a, c) ≡ -triple(b, a, c)
+    lemma_triple_neg_first::<T>(b, a, c);
+    // So -triple(b.neg(), a, c) ≡ -(-triple(b, a, c)) ≡ triple(b, a, c)
+    T::axiom_neg_congruence(triple(b.neg(), a, c), triple(b, a, c).neg());
+    T::axiom_eqv_transitive(
+        triple(a, b.neg(), c),
+        triple(b.neg(), a, c).neg(),
+        triple(b, a, c).neg().neg(),
+    );
+    additive_group_lemmas::lemma_neg_involution::<T>(triple(b, a, c));
+    T::axiom_eqv_transitive(
+        triple(a, b.neg(), c),
+        triple(b, a, c).neg().neg(),
+        triple(b, a, c),
+    );
+    // swap_12: triple(b, a, c) ≡ -triple(a, b, c)
+    lemma_triple_swap_12::<T>(b, a, c);
+    T::axiom_eqv_transitive(
+        triple(a, b.neg(), c),
+        triple(b, a, c),
+        triple(a, b, c).neg(),
+    );
+}
+
+/// Triple product congruence in first argument:
+/// if a1 ≡ a2 then triple(a1, b, c) ≡ triple(a2, b, c).
+pub proof fn lemma_triple_congruence_first<T: Ring>(
+    a1: Vec3<T>, a2: Vec3<T>, b: Vec3<T>, c: Vec3<T>,
+)
+    requires a1.eqv(a2),
+    ensures
+        triple(a1, b, c).eqv(triple(a2, b, c)),
+{
+    // cyclic to third position, use congruence_third, cyclic back
+    // triple(a1, b, c) ≡ triple(b, c, a1) [cyclic twice]
+    lemma_triple_cyclic::<T>(a1, b, c);
+    lemma_triple_cyclic::<T>(b, c, a1);
+    T::axiom_eqv_transitive(
+        triple(a1, b, c),
+        triple(b, c, a1),
+        triple(c, a1, b),
+    );
+    // Hmm, need to go to third position. Use single cyclic:
+    // triple(a1, b, c) ≡ triple(b, c, a1)
+    // triple(a2, b, c) ≡ triple(b, c, a2)
+    // triple(b, c, a1) ≡ triple(b, c, a2) [congruence_third]
+    lemma_triple_congruence_third::<T>(b, c, a1, a2);
+    // Need: triple(a1, b, c) ≡ triple(b, c, a1) ≡ triple(b, c, a2)
+    T::axiom_eqv_transitive(
+        triple(a1, b, c),
+        triple(b, c, a1),
+        triple(b, c, a2),
+    );
+    // And triple(b, c, a2) ≡ triple(a2, b, c) [cyclic reversed]
+    lemma_triple_cyclic::<T>(a2, b, c);
+    T::axiom_eqv_symmetric(triple(a2, b, c), triple(b, c, a2));
+    T::axiom_eqv_transitive(
+        triple(a1, b, c),
+        triple(b, c, a2),
+        triple(a2, b, c),
+    );
+}
+
+/// Triple product congruence in second argument:
+/// if b1 ≡ b2 then triple(a, b1, c) ≡ triple(a, b2, c).
+pub proof fn lemma_triple_congruence_second<T: Ring>(
+    a: Vec3<T>, b1: Vec3<T>, b2: Vec3<T>, c: Vec3<T>,
+)
+    requires b1.eqv(b2),
+    ensures
+        triple(a, b1, c).eqv(triple(a, b2, c)),
+{
+    // cyclic: triple(a, b1, c) ≡ triple(b1, c, a)
+    lemma_triple_cyclic::<T>(a, b1, c);
+    // congruence_first: triple(b1, c, a) ≡ triple(b2, c, a)
+    lemma_triple_congruence_first::<T>(b1, b2, c, a);
+    T::axiom_eqv_transitive(
+        triple(a, b1, c),
+        triple(b1, c, a),
+        triple(b2, c, a),
+    );
+    // cyclic reversed: triple(b2, c, a) ≡ triple(a, b2, c)
+    lemma_triple_cyclic::<T>(a, b2, c);
+    T::axiom_eqv_symmetric(triple(a, b2, c), triple(b2, c, a));
+    T::axiom_eqv_transitive(
+        triple(a, b1, c),
+        triple(b2, c, a),
+        triple(a, b2, c),
+    );
+}
+
 } // verus!
