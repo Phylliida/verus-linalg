@@ -239,17 +239,64 @@ proof fn lemma_zero_add_zero<T: Ring>(a: T, b: T)
     T::axiom_eqv_transitive(a.add(b), T::zero().add(T::zero()), T::zero());
 }
 
+/// a*(b*m1) ≡ -(b*(a*m2)) when m1 ≡ -m2 (Type B cross-product pair)
+proof fn lemma_type_b_eqv<T: Ring>(a: T, b: T, m1: T, m2: T)
+    requires m1.eqv(m2.neg())
+    ensures a.mul(b.mul(m1)).eqv(b.mul(a.mul(m2)).neg())
+{
+    lemma_product_swap(a, b, m1);
+    ring_lemmas::lemma_mul_congruence_right(a, m1, m2.neg());
+    ring_lemmas::lemma_mul_neg_right(a, m2);
+    T::axiom_eqv_transitive(a.mul(m1), a.mul(m2.neg()), a.mul(m2).neg());
+    ring_lemmas::lemma_mul_congruence_right(b, a.mul(m1), a.mul(m2).neg());
+    ring_lemmas::lemma_mul_neg_right(b, a.mul(m2));
+    T::axiom_eqv_transitive(b.mul(a.mul(m1)), b.mul(a.mul(m2).neg()), b.mul(a.mul(m2)).neg());
+    T::axiom_eqv_transitive(a.mul(b.mul(m1)), b.mul(a.mul(m1)), b.mul(a.mul(m2)).neg());
+}
+
+/// (a-b)+(c+d) ≡ 0 when a ≡ -c and b ≡ d
+proof fn lemma_sub_add_pair_cancel<T: Ring>(a: T, b: T, c: T, d: T)
+    requires a.eqv(c.neg()), b.eqv(d)
+    ensures a.sub(b).add(c.add(d)).eqv(T::zero())
+{
+    // Convert a-b to a+(-b), rearrange to (a+c)+((-b)+d), show both ≡ 0
+    T::axiom_sub_is_add_neg(a, b);
+    T::axiom_eqv_reflexive(c.add(d));
+    additive_group_lemmas::lemma_add_congruence(
+        a.sub(b), a.add(b.neg()), c.add(d), c.add(d),
+    );
+    additive_group_lemmas::lemma_add_rearrange_2x2(a, b.neg(), c, d);
+    T::axiom_eqv_transitive(
+        a.sub(b).add(c.add(d)),
+        a.add(b.neg()).add(c.add(d)),
+        a.add(c).add(b.neg().add(d)),
+    );
+    // a+c ≡ 0 (since a ≡ -c)
+    lemma_add_neg_cancel(a, c);
+    // (-b)+d ≡ 0 (since b ≡ d → -b ≡ -d → (-b)+d ≡ (-d)+d ≡ 0)
+    additive_group_lemmas::lemma_neg_congruence(b, d);
+    T::axiom_add_congruence_left(b.neg(), d.neg(), d);
+    additive_group_lemmas::lemma_add_inverse_left(d);
+    T::axiom_eqv_transitive(b.neg().add(d), d.neg().add(d), T::zero());
+    // Sum of zeros
+    lemma_zero_add_zero(a.add(c), b.neg().add(d));
+    T::axiom_eqv_transitive(
+        a.sub(b).add(c.add(d)),
+        a.add(c).add(b.neg().add(d)),
+        T::zero(),
+    );
+}
+
 // ---------------------------------------------------------------------------
 // The core proof: det(a, a, c, d) ≡ 0
 //
-// Strategy: det(a, a, c, d) = dot(a, cofactor_vec(a, c, d)).
-// Each cofactor triple(drop_k(a), drop_k(c), drop_k(d)) = dot(drop_k(a), cross(drop_k(c), drop_k(d))).
-// The full expression expands to 12 terms that cancel in 6 pairs
-// by Ring commutativity (a.i * a.j ≡ a.j * a.i) and the fact that
-// certain cross-product components are structurally identical.
+// The 12-term expansion cancels in 6 pairs:
+//   4 Type A pairs (structurally equal cross components): xy, xw, yz, zw
+//   2 Type B pairs (negated cross components): xz, yw
 //
-// 4 pairs have structurally equal cross components: (xy), (xw), (yz), (zw)
-// 2 pairs have negated cross components: (xz), (yw)
+// Phase B: Distribute A and B, cancel xy pair → residual (T2-T5)+(T3-T6)
+// Phase C: Add C, rearrange, cancel xz and yz pairs → residual (T3-T6)+T9
+// Phase D: Subtract D, cancel xw, yw, zw pairs → 0
 // ---------------------------------------------------------------------------
 
 /// If rows 0 and 1 are equal, det is zero.
@@ -257,22 +304,164 @@ pub proof fn lemma_det_zero_repeated_row_01<T: Ring>(a: Vec4<T>, c: Vec4<T>, d: 
     ensures
         det(Mat4x4 { row0: a, row1: a, row2: c, row3: d }).eqv(T::zero()),
 {
-    // We prove this by expanding det = dot(a, cofactor_vec(a, c, d))
-    // and showing the 12-term expansion cancels pairwise.
-    //
-    // Key structural equalities of cross-product components:
-    //   cross(drop_x(c), drop_x(d)).x == cross(drop_y(c), drop_y(d)).x  (both = c.z*d.w - c.w*d.z)
-    //   cross(drop_x(c), drop_x(d)).z == cross(drop_w(c), drop_w(d)).x  (both = c.y*d.z - c.z*d.y)  [note: was labeled wrong, this is for pair (x,w)]
-    //   cross(drop_y(c), drop_y(d)).y == cross(drop_z(c), drop_z(d)).y  (both = c.w*d.x - c.x*d.w)  [pair (y,z)]
-    //   cross(drop_z(c), drop_z(d)).z == cross(drop_w(c), drop_w(d)).z  (both = c.x*d.y - c.y*d.x)  [pair (z,w)]
-    //
-    // And negation relations:
-    //   cross(drop_x(c), drop_x(d)).y ≡ -cross(drop_z(c), drop_z(d)).x  [pair (x,z)]
-    //   cross(drop_y(c), drop_y(d)).z ≡ -cross(drop_w(c), drop_w(d)).y  [pair (y,w)]
+    // Cross products of lower two rows
+    let sx = cross(drop_x(c), drop_x(d));
+    let sy = cross(drop_y(c), drop_y(d));
+    let sz = cross(drop_z(c), drop_z(d));
+    let sw = cross(drop_w(c), drop_w(d));
 
-    // This proof requires a detailed algebraic expansion.
-    // For now, we mark this as proof debt to be resolved.
-    assume(false);
+    // The 12 distributed terms: Ti = a.k * (a.j * S_k.component)
+    let t1 = a.x.mul(a.y.mul(sx.x));  let t4  = a.y.mul(a.x.mul(sy.x));
+    let t2 = a.x.mul(a.z.mul(sx.y));  let t5  = a.y.mul(a.z.mul(sy.y));
+    let t3 = a.x.mul(a.w.mul(sx.z));  let t6  = a.y.mul(a.w.mul(sy.z));
+    let t7 = a.z.mul(a.x.mul(sz.x));  let t10 = a.w.mul(a.x.mul(sw.x));
+    let t8 = a.z.mul(a.y.mul(sz.y));  let t11 = a.w.mul(a.y.mul(sw.y));
+    let t9 = a.z.mul(a.w.mul(sz.z));  let t12 = a.w.mul(a.z.mul(sw.z));
+
+    let a_dist = t1.add(t2).add(t3);
+    let b_dist = t4.add(t5).add(t6);
+    let c_dist = t7.add(t8).add(t9);
+    let d_dist = t10.add(t11).add(t12);
+
+    // === Distribution: det ≡ a_dist.sub(b_dist).add(c_dist).sub(d_dist) ===
+    lemma_distribute_mul_over_add3(a.x, a.y.mul(sx.x), a.z.mul(sx.y), a.w.mul(sx.z));
+    lemma_distribute_mul_over_add3(a.y, a.x.mul(sy.x), a.z.mul(sy.y), a.w.mul(sy.z));
+    lemma_distribute_mul_over_add3(a.z, a.x.mul(sz.x), a.y.mul(sz.y), a.w.mul(sz.z));
+    lemma_distribute_mul_over_add3(a.w, a.x.mul(sw.x), a.y.mul(sw.y), a.z.mul(sw.z));
+
+    let big_a = a.x.mul(triple(drop_x(a), drop_x(c), drop_x(d)));
+    let big_b = a.y.mul(triple(drop_y(a), drop_y(c), drop_y(d)));
+    let big_c = a.z.mul(triple(drop_z(a), drop_z(c), drop_z(d)));
+    let big_d = a.w.mul(triple(drop_w(a), drop_w(c), drop_w(d)));
+
+    // Propagate distribution: det ≡ dist
+    additive_group_lemmas::lemma_sub_congruence(big_a, a_dist, big_b, b_dist);
+    additive_group_lemmas::lemma_add_congruence(
+        big_a.sub(big_b), a_dist.sub(b_dist), big_c, c_dist,
+    );
+    additive_group_lemmas::lemma_sub_congruence(
+        big_a.sub(big_b).add(big_c), a_dist.sub(b_dist).add(c_dist),
+        big_d, d_dist,
+    );
+    let det_val = det(Mat4x4 { row0: a, row1: a, row2: c, row3: d });
+    let dist = a_dist.sub(b_dist).add(c_dist).sub(d_dist);
+    // det_val == big_a.sub(big_b).add(big_c).sub(big_d) structurally
+    // → det_val.eqv(dist)
+
+    // === Phase B: Cancel xy pair ===
+    // T1 ≡ T4: product_swap + sx.x == sy.x structurally
+    lemma_product_swap(a.x, a.y, sx.x);
+    lemma_add3_sub_add3_cancel_first(t1, t2, t3, t4, t5, t6);
+    let r_ab = t2.sub(t5).add(t3.sub(t6));
+    // a_dist.sub(b_dist) ≡ r_ab
+
+    // === Phase C: Cancel xz and yz pairs ===
+    // Rearrange: r_ab + c_dist → (left_group) + r_abc
+    let r_abc = t3.sub(t6).add(t9);
+    additive_group_lemmas::lemma_add_rearrange_2x2(
+        t2.sub(t5), t3.sub(t6), t7.add(t8), t9,
+    );
+    // r_ab.add(c_dist) ≡ left_group.add(r_abc)
+    // where left_group = t2.sub(t5).add(t7.add(t8))
+
+    // Show left_group ≡ 0
+    // xz pair (Type B): sx.y ≡ -sz.x
+    additive_group_lemmas::lemma_sub_antisymmetric(c.w.mul(d.y), c.y.mul(d.w));
+    lemma_type_b_eqv(a.x, a.z, sx.y, sz.x);
+    // t2 ≡ t7.neg()
+
+    // yz pair (Type A): sy.y == sz.y structurally
+    lemma_product_swap(a.y, a.z, sy.y);
+    // t5 ≡ t8
+
+    lemma_sub_add_pair_cancel(t2, t5, t7, t8);
+    // left_group ≡ 0
+
+    // 0 + r_abc ≡ r_abc
+    T::axiom_eqv_reflexive(r_abc);
+    additive_group_lemmas::lemma_add_congruence(
+        t2.sub(t5).add(t7.add(t8)), T::zero(), r_abc, r_abc,
+    );
+    additive_group_lemmas::lemma_add_zero_left(r_abc);
+    T::axiom_eqv_transitive(
+        t2.sub(t5).add(t7.add(t8)).add(r_abc),
+        T::zero().add(r_abc),
+        r_abc,
+    );
+    // r_ab.add(c_dist) ≡ r_abc
+    T::axiom_eqv_transitive(r_ab.add(c_dist),
+        t2.sub(t5).add(t7.add(t8)).add(r_abc), r_abc);
+
+    // === Propagate Phase B+C through dist ===
+    // a_dist.sub(b_dist).add(c_dist) ≡ r_abc
+    T::axiom_eqv_reflexive(c_dist);
+    additive_group_lemmas::lemma_add_congruence(
+        a_dist.sub(b_dist), r_ab, c_dist, c_dist,
+    );
+    T::axiom_eqv_transitive(
+        a_dist.sub(b_dist).add(c_dist), r_ab.add(c_dist), r_abc,
+    );
+
+    // dist ≡ r_abc.sub(d_dist)
+    T::axiom_eqv_reflexive(d_dist);
+    additive_group_lemmas::lemma_sub_congruence(
+        a_dist.sub(b_dist).add(c_dist), r_abc, d_dist, d_dist,
+    );
+
+    // === Phase D: Cancel xw, yw, zw pairs ===
+    // Convert r_abc to add3 form for add3_sub_add3_cancel_first
+    T::axiom_sub_is_add_neg(t3, t6);
+    T::axiom_add_congruence_left(t3.sub(t6), t3.add(t6.neg()), t9);
+    // r_abc ≡ t3.add(t6.neg()).add(t9)
+
+    T::axiom_eqv_reflexive(d_dist);
+    additive_group_lemmas::lemma_sub_congruence(
+        r_abc, t3.add(t6.neg()).add(t9), d_dist, d_dist,
+    );
+    // r_abc.sub(d_dist) ≡ t3.add(t6.neg()).add(t9).sub(d_dist)
+
+    // xw pair (Type A): sx.z == sw.x structurally
+    lemma_product_swap(a.x, a.w, sx.z);
+    // t3 ≡ t10
+
+    lemma_add3_sub_add3_cancel_first(t3, t6.neg(), t9, t10, t11, t12);
+    // ≡ t6.neg().sub(t11).add(t9.sub(t12))
+
+    // yw pair (Type B): sy.z ≡ -sw.y
+    additive_group_lemmas::lemma_sub_antisymmetric(c.x.mul(d.z), c.z.mul(d.x));
+    lemma_type_b_eqv(a.y, a.w, sy.z, sw.y);
+    // t6 ≡ t11.neg() → t6.neg() ≡ t11
+    additive_group_lemmas::lemma_neg_congruence(t6, t11.neg());
+    additive_group_lemmas::lemma_neg_involution(t11);
+    T::axiom_eqv_transitive(t6.neg(), t11.neg().neg(), t11);
+    lemma_sub_self_eqv(t6.neg(), t11);
+
+    // zw pair (Type A): sz.z == sw.z structurally
+    lemma_product_swap(a.z, a.w, sz.z);
+    // t9 ≡ t12
+    lemma_sub_self_eqv(t9, t12);
+
+    // Sum of zeros
+    lemma_zero_add_zero(t6.neg().sub(t11), t9.sub(t12));
+
+    // === Final chain ===
+    // r_abc.sub(d_dist) ≡ t3.add(t6.neg()).add(t9).sub(d_dist)
+    //                    ≡ t6.neg().sub(t11).add(t9.sub(t12)) ≡ 0
+    T::axiom_eqv_transitive(
+        r_abc.sub(d_dist),
+        t3.add(t6.neg()).add(t9).sub(d_dist),
+        t6.neg().sub(t11).add(t9.sub(t12)),
+    );
+    T::axiom_eqv_transitive(
+        r_abc.sub(d_dist),
+        t6.neg().sub(t11).add(t9.sub(t12)),
+        T::zero(),
+    );
+
+    // dist ≡ r_abc.sub(d_dist) ≡ 0
+    T::axiom_eqv_transitive(dist, r_abc.sub(d_dist), T::zero());
+    // det_val ≡ dist ≡ 0
+    T::axiom_eqv_transitive(det_val, dist, T::zero());
 }
 
 // ---------------------------------------------------------------------------
