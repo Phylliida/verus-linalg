@@ -4,6 +4,7 @@ use crate::vec4::Vec4;
 
 pub mod ops;
 pub mod det_advanced;
+pub mod adjugate;
 
 verus! {
 
