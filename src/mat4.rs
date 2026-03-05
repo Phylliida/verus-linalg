@@ -3,6 +3,7 @@ use verus_algebra::traits::*;
 use crate::vec4::Vec4;
 
 pub mod ops;
+pub mod det_advanced;
 
 verus! {
 

@@ -3,7 +3,7 @@ use verus_algebra::traits::*;
 use verus_algebra::lemmas::additive_group_lemmas;
 use verus_algebra::lemmas::ring_lemmas;
 use crate::vec3::Vec3;
-use crate::vec3::ops::{triple, lemma_triple_congruence_first, lemma_triple_congruence_second, lemma_triple_congruence_third, lemma_triple_swap_12, lemma_triple_swap_23, lemma_triple_self_zero_12, lemma_triple_self_zero_23, lemma_triple_self_zero_13, lemma_triple_linear_first, lemma_triple_scale_first};
+use crate::vec3::ops::{triple, lemma_triple_congruence_first, lemma_triple_congruence_second, lemma_triple_congruence_third, lemma_triple_swap_12, lemma_triple_swap_23, lemma_triple_self_zero_12, lemma_triple_self_zero_23, lemma_triple_self_zero_13, lemma_triple_linear_first, lemma_triple_scale_first, lemma_triple_neg_first};
 use crate::vec4::Vec4;
 use crate::vec4::ops::{dot, scale};
 use super::Mat4x4;
@@ -1695,6 +1695,367 @@ pub proof fn lemma_det_linear_first_row<T: Ring>(a: Vec4<T>, b: Vec4<T>,
             det(Mat4x4 { row0: b, row1: r1, row2: r2, row3: r3 })
         ),
     );
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2: Additional det properties
+// ---------------------------------------------------------------------------
+
+/// det(scale(s, r0), r1, r2, r3) ≡ s * det(r0, r1, r2, r3)
+pub proof fn lemma_det_scale_first_row<T: Ring>(s: T, r0: Vec4<T>,
+    r1: Vec4<T>, r2: Vec4<T>, r3: Vec4<T>)
+    ensures
+        det(Mat4x4 { row0: scale(s, r0), row1: r1, row2: r2, row3: r3 }).eqv(
+            s.mul(det(Mat4x4 { row0: r0, row1: r1, row2: r2, row3: r3 }))
+        ),
+{
+    let cv = cofactor_vec(r1, r2, r3);
+    let m_scaled = Mat4x4 { row0: scale(s, r0), row1: r1, row2: r2, row3: r3 };
+    let m_orig = Mat4x4 { row0: r0, row1: r1, row2: r2, row3: r3 };
+
+    // det(m_scaled) ≡ dot(scale(s, r0), cv)
+    lemma_det_as_dot(m_scaled);
+
+    // dot(scale(s, r0), cv) ≡ s * dot(r0, cv)
+    crate::vec4::ops::lemma_dot_scale_left(s, r0, cv);
+
+    // det(m_scaled) ≡ s * dot(r0, cv)
+    T::axiom_eqv_transitive(det(m_scaled), dot(scale(s, r0), cv), s.mul(dot(r0, cv)));
+
+    // det(m_orig) ≡ dot(r0, cv)
+    lemma_det_as_dot(m_orig);
+
+    // s * dot(r0, cv) ≡ s * det(m_orig)
+    T::axiom_eqv_symmetric(det(m_orig), dot(r0, cv));
+    ring_lemmas::lemma_mul_congruence_right::<T>(s, dot(r0, cv), det(m_orig));
+
+    // chain: det(m_scaled) ≡ s * dot(r0, cv) ≡ s * det(m_orig)
+    T::axiom_eqv_transitive(det(m_scaled), s.mul(dot(r0, cv)), s.mul(det(m_orig)));
+}
+
+/// If rows 1 and 3 are equal, det is zero.
+pub proof fn lemma_det_zero_repeated_row_13<T: Ring>(r0: Vec4<T>, a: Vec4<T>, b: Vec4<T>)
+    ensures
+        det(Mat4x4 { row0: r0, row1: a, row2: b, row3: a }).eqv(T::zero()),
+{
+    // swap_23 on {r0, a, b, a}: det(r0, a, a, b) ≡ -det(r0, a, b, a)
+    let m = Mat4x4 { row0: r0, row1: a, row2: b, row3: a };
+    lemma_det_swap_rows_23(m);
+    // det(r0, a, a, b) ≡ det(r0, a, b, a).neg()
+
+    // det(r0, a, a, b) ≡ 0
+    lemma_det_zero_repeated_row_12(r0, a, b);
+
+    // det(r0, a, b, a).neg() ≡ det(r0, a, a, b) ≡ 0
+    T::axiom_eqv_symmetric(
+        det(Mat4x4 { row0: r0, row1: a, row2: a, row3: b }),
+        det(m).neg(),
+    );
+    T::axiom_eqv_transitive(det(m).neg(),
+        det(Mat4x4 { row0: r0, row1: a, row2: a, row3: b }),
+        T::zero(),
+    );
+
+    // det(m).neg() ≡ 0 → det(m) ≡ 0
+    T::axiom_neg_congruence(det(m).neg(), T::zero());
+    additive_group_lemmas::lemma_neg_involution(det(m));
+    T::axiom_eqv_symmetric(det(m).neg().neg(), det(m));
+    T::axiom_eqv_transitive(det(m), det(m).neg().neg(), T::zero().neg());
+    additive_group_lemmas::lemma_neg_zero::<T>();
+    T::axiom_eqv_transitive(det(m), T::zero().neg(), T::zero());
+}
+
+/// Swapping rows 1 and 3 negates the determinant.
+/// Proof: compose swap_12, swap_23, swap_12 (three adjacent swaps = one transposition).
+pub proof fn lemma_det_swap_rows_13<T: Ring>(m: Mat4x4<T>)
+    ensures
+        det(Mat4x4 { row0: m.row0, row1: m.row3, row2: m.row2, row3: m.row1 }).eqv(
+            det(m).neg()
+        ),
+{
+    let r0 = m.row0; let r1 = m.row1; let r2 = m.row2; let r3 = m.row3;
+
+    // Step 1: swap_12 on m: det(r0, r2, r1, r3) ≡ det(m).neg()
+    lemma_det_swap_rows_12(m);
+    let m2 = Mat4x4 { row0: r0, row1: r2, row2: r1, row3: r3 };
+
+    // Step 2: swap_23 on m2: det(r0, r2, r3, r1) ≡ det(m2).neg()
+    lemma_det_swap_rows_23(m2);
+    let m3 = Mat4x4 { row0: r0, row1: r2, row2: r3, row3: r1 };
+
+    // Chain: det(m2).neg() ≡ det(m).neg().neg() ≡ det(m)
+    T::axiom_neg_congruence(det(m2), det(m).neg());
+    additive_group_lemmas::lemma_neg_involution(det(m));
+    T::axiom_eqv_transitive(det(m2).neg(), det(m).neg().neg(), det(m));
+
+    // det(m3) ≡ det(m2).neg() ≡ det(m)
+    T::axiom_eqv_transitive(det(m3), det(m2).neg(), det(m));
+
+    // Step 3: swap_12 on m3: det(r0, r3, r2, r1) ≡ det(m3).neg()
+    lemma_det_swap_rows_12(m3);
+
+    // det(m3).neg() ≡ det(m).neg()
+    T::axiom_neg_congruence(det(m3), det(m));
+
+    // Final chain: det(r0, r3, r2, r1) ≡ det(m3).neg() ≡ det(m).neg()
+    T::axiom_eqv_transitive(
+        det(Mat4x4 { row0: r0, row1: r3, row2: r2, row3: r1 }),
+        det(m3).neg(),
+        det(m).neg(),
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Cofactor vec linearity/scaling/negation in first argument
+// ---------------------------------------------------------------------------
+
+/// cofactor_vec(a + b, c, d) ≡ cofactor_vec(a, c, d) + cofactor_vec(b, c, d)
+pub proof fn lemma_cofactor_vec_linear_first<T: Ring>(
+    a: Vec4<T>, b: Vec4<T>, c: Vec4<T>, d: Vec4<T>,
+)
+    ensures
+        cofactor_vec(a.add(b), c, d).eqv(
+            cofactor_vec(a, c, d).add(cofactor_vec(b, c, d))
+        ),
+{
+    // x component: triple_linear_first (structural drop_k(a+b) == drop_k(a) + drop_k(b))
+    lemma_triple_linear_first(drop_x(a), drop_x(b), drop_x(c), drop_x(d));
+    // z component: same
+    lemma_triple_linear_first(drop_z(a), drop_z(b), drop_z(c), drop_z(d));
+
+    // y component: triple_linear_first + neg_add
+    lemma_triple_linear_first(drop_y(a), drop_y(b), drop_y(c), drop_y(d));
+    // (T_a + T_b).neg() ≡ T_a.neg() + T_b.neg()
+    let ty_a = triple(drop_y(a), drop_y(c), drop_y(d));
+    let ty_b = triple(drop_y(b), drop_y(c), drop_y(d));
+    T::axiom_neg_congruence(
+        triple(drop_y(a.add(b)), drop_y(c), drop_y(d)),
+        ty_a.add(ty_b),
+    );
+    additive_group_lemmas::lemma_neg_add(ty_a, ty_b);
+    T::axiom_eqv_transitive(
+        triple(drop_y(a.add(b)), drop_y(c), drop_y(d)).neg(),
+        ty_a.add(ty_b).neg(),
+        ty_a.neg().add(ty_b.neg()),
+    );
+
+    // w component: same pattern as y
+    lemma_triple_linear_first(drop_w(a), drop_w(b), drop_w(c), drop_w(d));
+    let tw_a = triple(drop_w(a), drop_w(c), drop_w(d));
+    let tw_b = triple(drop_w(b), drop_w(c), drop_w(d));
+    T::axiom_neg_congruence(
+        triple(drop_w(a.add(b)), drop_w(c), drop_w(d)),
+        tw_a.add(tw_b),
+    );
+    additive_group_lemmas::lemma_neg_add(tw_a, tw_b);
+    T::axiom_eqv_transitive(
+        triple(drop_w(a.add(b)), drop_w(c), drop_w(d)).neg(),
+        tw_a.add(tw_b).neg(),
+        tw_a.neg().add(tw_b.neg()),
+    );
+}
+
+/// cofactor_vec(scale(s, a), b, c) ≡ scale(s, cofactor_vec(a, b, c))
+pub proof fn lemma_cofactor_vec_scale_first<T: Ring>(
+    s: T, a: Vec4<T>, b: Vec4<T>, c: Vec4<T>,
+)
+    ensures
+        cofactor_vec(scale(s, a), b, c).eqv(
+            scale(s, cofactor_vec(a, b, c))
+        ),
+{
+    // x component: triple_scale_first (structural drop_k(scale(s,a)) == scale(s, drop_k(a)))
+    lemma_triple_scale_first(s, drop_x(a), drop_x(b), drop_x(c));
+    // z component: same
+    lemma_triple_scale_first(s, drop_z(a), drop_z(b), drop_z(c));
+
+    // y component: triple_scale_first + s * (T.neg()) ≡ (s * T).neg()
+    lemma_triple_scale_first(s, drop_y(a), drop_y(b), drop_y(c));
+    let ty = triple(drop_y(a), drop_y(b), drop_y(c));
+    // triple(scale(s, drop_y(a)), ...) ≡ s * ty
+    // LHS.neg() ≡ (s * ty).neg()
+    T::axiom_neg_congruence(
+        triple(drop_y(scale(s, a)), drop_y(b), drop_y(c)),
+        s.mul(ty),
+    );
+    // RHS: s * (ty.neg()) — need s * (-ty) ≡ -(s * ty)
+    ring_lemmas::lemma_mul_neg_right(s, ty);
+    // s * ty.neg() ≡ (s * ty).neg()
+    T::axiom_eqv_symmetric(s.mul(ty).neg(), s.mul(ty.neg()));
+    // chain: LHS.neg() ≡ (s*ty).neg() ≡ s * ty.neg()
+    T::axiom_eqv_transitive(
+        triple(drop_y(scale(s, a)), drop_y(b), drop_y(c)).neg(),
+        s.mul(ty).neg(),
+        s.mul(ty.neg()),
+    );
+
+    // w component: same pattern as y
+    lemma_triple_scale_first(s, drop_w(a), drop_w(b), drop_w(c));
+    let tw = triple(drop_w(a), drop_w(b), drop_w(c));
+    T::axiom_neg_congruence(
+        triple(drop_w(scale(s, a)), drop_w(b), drop_w(c)),
+        s.mul(tw),
+    );
+    ring_lemmas::lemma_mul_neg_right(s, tw);
+    T::axiom_eqv_symmetric(s.mul(tw).neg(), s.mul(tw.neg()));
+    T::axiom_eqv_transitive(
+        triple(drop_w(scale(s, a)), drop_w(b), drop_w(c)).neg(),
+        s.mul(tw).neg(),
+        s.mul(tw.neg()),
+    );
+}
+
+/// cofactor_vec(a.neg(), b, c) ≡ cofactor_vec(a, b, c).neg()
+pub proof fn lemma_cofactor_vec_neg_first<T: Ring>(
+    a: Vec4<T>, b: Vec4<T>, c: Vec4<T>,
+)
+    ensures
+        cofactor_vec(a.neg(), b, c).eqv(
+            cofactor_vec(a, b, c).neg()
+        ),
+{
+    // x: triple_neg_first
+    lemma_triple_neg_first(drop_x(a), drop_x(b), drop_x(c));
+    // z: triple_neg_first
+    lemma_triple_neg_first(drop_z(a), drop_z(b), drop_z(c));
+
+    // y: triple_neg_first + neg(neg(T)) ≡ T
+    lemma_triple_neg_first(drop_y(a), drop_y(b), drop_y(c));
+    let ty = triple(drop_y(a), drop_y(b), drop_y(c));
+    // triple(drop_y(a).neg(), ...) ≡ ty.neg()
+    // LHS.neg() ≡ ty.neg().neg() ≡ ty
+    T::axiom_neg_congruence(
+        triple(drop_y(a.neg()), drop_y(b), drop_y(c)),
+        ty.neg(),
+    );
+    additive_group_lemmas::lemma_neg_involution(ty);
+    T::axiom_eqv_transitive(
+        triple(drop_y(a.neg()), drop_y(b), drop_y(c)).neg(),
+        ty.neg().neg(),
+        ty,
+    );
+    // RHS.y = cofactor_vec(a, b, c).neg().y = ty.neg().neg() ≡ ty
+    // But wait: cofactor_vec(a,b,c).neg() = Vec4{..., y: ty.neg().neg(), ...}
+    // And we showed LHS.y = triple(drop_y(a.neg()), ...).neg() ≡ ty
+    // Need to show ty ≡ ty.neg().neg() → already have neg_involution: ty.neg().neg() ≡ ty
+    // So LHS.y ≡ ty and RHS.y = ty.neg().neg(), need LHS.y ≡ RHS.y
+    // ty ≡ ty.neg().neg() by symmetric of neg_involution
+    T::axiom_eqv_symmetric(ty.neg().neg(), ty);
+    T::axiom_eqv_transitive(
+        triple(drop_y(a.neg()), drop_y(b), drop_y(c)).neg(),
+        ty,
+        ty.neg().neg(),
+    );
+
+    // w: same pattern as y
+    lemma_triple_neg_first(drop_w(a), drop_w(b), drop_w(c));
+    let tw = triple(drop_w(a), drop_w(b), drop_w(c));
+    T::axiom_neg_congruence(
+        triple(drop_w(a.neg()), drop_w(b), drop_w(c)),
+        tw.neg(),
+    );
+    additive_group_lemmas::lemma_neg_involution(tw);
+    T::axiom_eqv_transitive(
+        triple(drop_w(a.neg()), drop_w(b), drop_w(c)).neg(),
+        tw.neg().neg(),
+        tw,
+    );
+    T::axiom_eqv_symmetric(tw.neg().neg(), tw);
+    T::axiom_eqv_transitive(
+        triple(drop_w(a.neg()), drop_w(b), drop_w(c)).neg(),
+        tw,
+        tw.neg().neg(),
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Determinant linearity/scaling in the second row
+// ---------------------------------------------------------------------------
+
+/// det(r0, a + b, r2, r3) ≡ det(r0, a, r2, r3) + det(r0, b, r2, r3)
+pub proof fn lemma_det_linear_second_row<T: Ring>(r0: Vec4<T>,
+    a: Vec4<T>, b: Vec4<T>, r2: Vec4<T>, r3: Vec4<T>)
+    ensures
+        det(Mat4x4 { row0: r0, row1: a.add(b), row2: r2, row3: r3 }).eqv(
+            det(Mat4x4 { row0: r0, row1: a, row2: r2, row3: r3 }).add(
+                det(Mat4x4 { row0: r0, row1: b, row2: r2, row3: r3 })
+            )
+        ),
+{
+    let m_ab = Mat4x4 { row0: r0, row1: a.add(b), row2: r2, row3: r3 };
+    let m_a = Mat4x4 { row0: r0, row1: a, row2: r2, row3: r3 };
+    let m_b = Mat4x4 { row0: r0, row1: b, row2: r2, row3: r3 };
+    let cv_ab = cofactor_vec(a.add(b), r2, r3);
+    let cv_a = cofactor_vec(a, r2, r3);
+    let cv_b = cofactor_vec(b, r2, r3);
+
+    // det ≡ dot(r0, cv) for each
+    lemma_det_as_dot(m_ab);
+    lemma_det_as_dot(m_a);
+    lemma_det_as_dot(m_b);
+
+    // cv_ab ≡ cv_a + cv_b
+    lemma_cofactor_vec_linear_first(a, b, r2, r3);
+
+    // dot(r0, cv_ab) ≡ dot(r0, cv_a + cv_b)
+    Vec4::axiom_eqv_reflexive(r0);
+    crate::vec4::ops::lemma_dot_congruence(r0, r0, cv_ab, cv_a.add(cv_b));
+
+    // dot(r0, cv_a + cv_b) ≡ dot(r0, cv_a) + dot(r0, cv_b)
+    crate::vec4::ops::lemma_dot_distributes_right(r0, cv_a, cv_b);
+
+    // Chain: det(m_ab) ≡ dot(r0, cv_ab) ≡ dot(r0, cv_a + cv_b) ≡ dot(r0, cv_a) + dot(r0, cv_b)
+    T::axiom_eqv_transitive(det(m_ab), dot(r0, cv_ab), dot(r0, cv_a.add(cv_b)));
+    T::axiom_eqv_transitive(det(m_ab), dot(r0, cv_a.add(cv_b)),
+        dot(r0, cv_a).add(dot(r0, cv_b)));
+
+    // dot(r0, cv_a) ≡ det(m_a), dot(r0, cv_b) ≡ det(m_b)
+    T::axiom_eqv_symmetric(det(m_a), dot(r0, cv_a));
+    T::axiom_eqv_symmetric(det(m_b), dot(r0, cv_b));
+    additive_group_lemmas::lemma_add_congruence::<T>(
+        dot(r0, cv_a), det(m_a), dot(r0, cv_b), det(m_b),
+    );
+
+    // Final chain
+    T::axiom_eqv_transitive(det(m_ab),
+        dot(r0, cv_a).add(dot(r0, cv_b)),
+        det(m_a).add(det(m_b)));
+}
+
+/// det(r0, scale(s, r1), r2, r3) ≡ s * det(r0, r1, r2, r3)
+pub proof fn lemma_det_scale_second_row<T: Ring>(s: T, r0: Vec4<T>,
+    r1: Vec4<T>, r2: Vec4<T>, r3: Vec4<T>)
+    ensures
+        det(Mat4x4 { row0: r0, row1: scale(s, r1), row2: r2, row3: r3 }).eqv(
+            s.mul(det(Mat4x4 { row0: r0, row1: r1, row2: r2, row3: r3 }))
+        ),
+{
+    let m_s = Mat4x4 { row0: r0, row1: scale(s, r1), row2: r2, row3: r3 };
+    let m = Mat4x4 { row0: r0, row1: r1, row2: r2, row3: r3 };
+    let cv_s = cofactor_vec(scale(s, r1), r2, r3);
+    let cv = cofactor_vec(r1, r2, r3);
+
+    lemma_det_as_dot(m_s);
+    lemma_det_as_dot(m);
+
+    // cv_s ≡ scale(s, cv)
+    lemma_cofactor_vec_scale_first(s, r1, r2, r3);
+
+    // dot(r0, cv_s) ≡ dot(r0, scale(s, cv))
+    Vec4::axiom_eqv_reflexive(r0);
+    crate::vec4::ops::lemma_dot_congruence(r0, r0, cv_s, scale(s, cv));
+
+    // dot(r0, scale(s, cv)) ≡ s * dot(r0, cv)
+    crate::vec4::ops::lemma_dot_scale_right(s, r0, cv);
+
+    // Chain: det(m_s) ≡ dot(r0, cv_s) ≡ dot(r0, scale(s, cv)) ≡ s * dot(r0, cv)
+    T::axiom_eqv_transitive(det(m_s), dot(r0, cv_s), dot(r0, scale(s, cv)));
+    T::axiom_eqv_transitive(det(m_s), dot(r0, scale(s, cv)), s.mul(dot(r0, cv)));
+
+    // s * dot(r0, cv) ≡ s * det(m)
+    T::axiom_eqv_symmetric(det(m), dot(r0, cv));
+    ring_lemmas::lemma_mul_congruence_right::<T>(s, dot(r0, cv), det(m));
+    T::axiom_eqv_transitive(det(m_s), s.mul(dot(r0, cv)), s.mul(det(m)));
 }
 
 } // verus!
