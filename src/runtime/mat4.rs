@@ -14,7 +14,9 @@ use super::copy_rational;
 #[cfg(verus_keep_ghost)]
 use crate::mat4::Mat4x4;
 #[cfg(verus_keep_ghost)]
-use crate::mat4::ops::{identity, mat_vec_mul, transpose, det, mat_mul, drop_x, drop_y, drop_z, drop_w};
+use crate::mat4::ops::{identity, mat_vec_mul, transpose, det, mat_mul, drop_x, drop_y, drop_z, drop_w, cofactor_vec};
+#[cfg(verus_keep_ghost)]
+use crate::mat4::adjugate::adjugate;
 #[cfg(verus_keep_ghost)]
 use crate::vec3::Vec3;
 #[cfg(verus_keep_ghost)]
@@ -222,6 +224,112 @@ impl RuntimeMat4x4 {
         let row2 = RuntimeVec4::new(r20, r21, r22, r23);
         let row3 = RuntimeVec4::new(r30, r31, r32, r33);
         let ghost model = mat_mul::<RationalModel>(self@, rhs@);
+        RuntimeMat4x4 { row0, row1, row2, row3, model: Ghost(model) }
+    }
+    /// Adjugate: transpose of cofactor matrix
+    pub fn adjugate_exec(&self) -> (out: Self)
+        requires
+            self.wf_spec(),
+        ensures
+            out.wf_spec(),
+            out@ == adjugate::<RationalModel>(self@),
+    {
+        // cofactor_vec(r1, r2, r3) = (+triple(drop_x), -triple(drop_y), +triple(drop_z), -triple(drop_w))
+
+        // cv0 = cofactor_vec(row1, row2, row3)
+        let cv0x = RuntimeVec3::new(copy_rational(&self.row1.y), copy_rational(&self.row1.z), copy_rational(&self.row1.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row2.y), copy_rational(&self.row2.z), copy_rational(&self.row2.w)),
+                &RuntimeVec3::new(copy_rational(&self.row3.y), copy_rational(&self.row3.z), copy_rational(&self.row3.w)),
+            );
+        let cv0y = RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.z), copy_rational(&self.row1.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.z), copy_rational(&self.row2.w)),
+                &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.z), copy_rational(&self.row3.w)),
+            ).neg();
+        let cv0z = RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.y), copy_rational(&self.row1.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.y), copy_rational(&self.row2.w)),
+                &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.y), copy_rational(&self.row3.w)),
+            );
+        let cv0w = RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.y), copy_rational(&self.row1.z))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.y), copy_rational(&self.row2.z)),
+                &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.y), copy_rational(&self.row3.z)),
+            ).neg();
+
+        // cv1 = cofactor_vec(row0, row2, row3)
+        let cv1x = RuntimeVec3::new(copy_rational(&self.row0.y), copy_rational(&self.row0.z), copy_rational(&self.row0.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row2.y), copy_rational(&self.row2.z), copy_rational(&self.row2.w)),
+                &RuntimeVec3::new(copy_rational(&self.row3.y), copy_rational(&self.row3.z), copy_rational(&self.row3.w)),
+            );
+        let cv1y = RuntimeVec3::new(copy_rational(&self.row0.x), copy_rational(&self.row0.z), copy_rational(&self.row0.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.z), copy_rational(&self.row2.w)),
+                &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.z), copy_rational(&self.row3.w)),
+            ).neg();
+        let cv1z = RuntimeVec3::new(copy_rational(&self.row0.x), copy_rational(&self.row0.y), copy_rational(&self.row0.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.y), copy_rational(&self.row2.w)),
+                &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.y), copy_rational(&self.row3.w)),
+            );
+        let cv1w = RuntimeVec3::new(copy_rational(&self.row0.x), copy_rational(&self.row0.y), copy_rational(&self.row0.z))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.y), copy_rational(&self.row2.z)),
+                &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.y), copy_rational(&self.row3.z)),
+            ).neg();
+
+        // cv2 = cofactor_vec(row0, row1, row3)
+        let cv2x = RuntimeVec3::new(copy_rational(&self.row0.y), copy_rational(&self.row0.z), copy_rational(&self.row0.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row1.y), copy_rational(&self.row1.z), copy_rational(&self.row1.w)),
+                &RuntimeVec3::new(copy_rational(&self.row3.y), copy_rational(&self.row3.z), copy_rational(&self.row3.w)),
+            );
+        let cv2y = RuntimeVec3::new(copy_rational(&self.row0.x), copy_rational(&self.row0.z), copy_rational(&self.row0.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.z), copy_rational(&self.row1.w)),
+                &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.z), copy_rational(&self.row3.w)),
+            ).neg();
+        let cv2z = RuntimeVec3::new(copy_rational(&self.row0.x), copy_rational(&self.row0.y), copy_rational(&self.row0.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.y), copy_rational(&self.row1.w)),
+                &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.y), copy_rational(&self.row3.w)),
+            );
+        let cv2w = RuntimeVec3::new(copy_rational(&self.row0.x), copy_rational(&self.row0.y), copy_rational(&self.row0.z))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.y), copy_rational(&self.row1.z)),
+                &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.y), copy_rational(&self.row3.z)),
+            ).neg();
+
+        // cv3 = cofactor_vec(row0, row1, row2)
+        let cv3x = RuntimeVec3::new(copy_rational(&self.row0.y), copy_rational(&self.row0.z), copy_rational(&self.row0.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row1.y), copy_rational(&self.row1.z), copy_rational(&self.row1.w)),
+                &RuntimeVec3::new(copy_rational(&self.row2.y), copy_rational(&self.row2.z), copy_rational(&self.row2.w)),
+            );
+        let cv3y = RuntimeVec3::new(copy_rational(&self.row0.x), copy_rational(&self.row0.z), copy_rational(&self.row0.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.z), copy_rational(&self.row1.w)),
+                &RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.z), copy_rational(&self.row2.w)),
+            ).neg();
+        let cv3z = RuntimeVec3::new(copy_rational(&self.row0.x), copy_rational(&self.row0.y), copy_rational(&self.row0.w))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.y), copy_rational(&self.row1.w)),
+                &RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.y), copy_rational(&self.row2.w)),
+            );
+        let cv3w = RuntimeVec3::new(copy_rational(&self.row0.x), copy_rational(&self.row0.y), copy_rational(&self.row0.z))
+            .triple_exec(
+                &RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.y), copy_rational(&self.row1.z)),
+                &RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.y), copy_rational(&self.row2.z)),
+            ).neg();
+
+        // Transpose of [cv0, -cv1, cv2, -cv3]: negate columns 1,3
+        let row0 = RuntimeVec4::new(cv0x, cv1x.neg(), cv2x, cv3x.neg());
+        let row1 = RuntimeVec4::new(cv0y, cv1y.neg(), cv2y, cv3y.neg());
+        let row2 = RuntimeVec4::new(cv0z, cv1z.neg(), cv2z, cv3z.neg());
+        let row3 = RuntimeVec4::new(cv0w, cv1w.neg(), cv2w, cv3w.neg());
+        let ghost model = adjugate::<RationalModel>(self@);
         RuntimeMat4x4 { row0, row1, row2, row3, model: Ghost(model) }
     }
 }
