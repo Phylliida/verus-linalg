@@ -1,6 +1,6 @@
-use vstd::prelude::*;
-use verus_algebra::traits::*;
 use super::Vec3;
+use verus_algebra::traits::*;
+use vstd::prelude::*;
 
 verus! {
 
@@ -25,6 +25,14 @@ impl<T: Ring> Equivalence for Vec3<T> {
         T::axiom_eqv_transitive(a.x, b.x, c.x);
         T::axiom_eqv_transitive(a.y, b.y, c.y);
         T::axiom_eqv_transitive(a.z, b.z, c.z);
+    }
+
+    proof fn axiom_eq_implies_eqv(a: Self, b: Self) {
+        if a == b {
+            T::axiom_eq_implies_eqv(a.x, b.x);
+            T::axiom_eq_implies_eqv(a.y, b.y);
+            T::axiom_eq_implies_eqv(a.z, b.z);
+        }
     }
 }
 
