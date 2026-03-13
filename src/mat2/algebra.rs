@@ -1,7 +1,7 @@
-use vstd::prelude::*;
-use verus_algebra::traits::*;
-use crate::vec2::Vec2;
 use super::Mat2x2;
+use crate::vec2::Vec2;
+use verus_algebra::traits::*;
+use vstd::prelude::*;
 
 verus! {
 
@@ -23,6 +23,13 @@ impl<T: Ring> Equivalence for Mat2x2<T> {
     proof fn axiom_eqv_transitive(a: Self, b: Self, c: Self) {
         Vec2::<T>::axiom_eqv_transitive(a.row0, b.row0, c.row0);
         Vec2::<T>::axiom_eqv_transitive(a.row1, b.row1, c.row1);
+    }
+
+    proof fn axiom_eq_implies_eqv(a: Self, b: Self) {
+        if a == b {
+            Vec2::<T>::axiom_eq_implies_eqv(a.row0, b.row0);
+            Vec2::<T>::axiom_eq_implies_eqv(a.row1, b.row1);
+        }
     }
 }
 
