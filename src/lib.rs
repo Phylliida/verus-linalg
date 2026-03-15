@@ -19,4 +19,5 @@ pub mod mat4;
 #[cfg(verus_keep_ghost)]
 pub mod quat;
 
+#[cfg(verus_keep_ghost)]
 pub mod runtime;
