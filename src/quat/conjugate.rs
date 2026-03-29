@@ -12,11 +12,11 @@ use super::assoc::{basis_decompose, lemma_basis_decompose_eqv};
 
 verus! {
 
-// ===========================================================================
-// Basic conjugate lemmas
-// ===========================================================================
+//  ===========================================================================
+//  Basic conjugate lemmas
+//  ===========================================================================
 
-/// conj preserves equivalence
+///  conj preserves equivalence
 pub proof fn lemma_conjugate_congruence<T: Ring>(a: Quat<T>, b: Quat<T>)
     requires a.eqv(b),
     ensures conjugate(a).eqv(conjugate(b)),
@@ -26,7 +26,7 @@ pub proof fn lemma_conjugate_congruence<T: Ring>(a: Quat<T>, b: Quat<T>)
     additive_group_lemmas::lemma_neg_congruence::<T>(a.z, b.z);
 }
 
-/// conj distributes over addition: conj(a+b) ≡ conj(a)+conj(b)
+///  conj distributes over addition: conj(a+b) ≡ conj(a)+conj(b)
 pub proof fn lemma_conjugate_add<T: Ring>(a: Quat<T>, b: Quat<T>)
     ensures conjugate(a.add(b)).eqv(conjugate(a).add(conjugate(b))),
 {
@@ -36,13 +36,13 @@ pub proof fn lemma_conjugate_add<T: Ring>(a: Quat<T>, b: Quat<T>)
     additive_group_lemmas::lemma_neg_add::<T>(a.z, b.z);
 }
 
-/// conj commutes with scale: conj(scale(k,q)) ≡ scale(k, conj(q))
+///  conj commutes with scale: conj(scale(k,q)) ≡ scale(k, conj(q))
 pub proof fn lemma_conjugate_scale<T: Ring>(k: T, q: Quat<T>)
     ensures conjugate(scale(k, q)).eqv(scale(k, conjugate(q))),
 {
     T::axiom_eqv_reflexive(k.mul(q.w));
-    // LHS comp = (k*q.x).neg(), RHS comp = k*(q.x.neg())
-    // mul_neg_right: k*(q.x.neg()) ≡ (k*q.x).neg(); need symmetric
+    //  LHS comp = (k*q.x).neg(), RHS comp = k*(q.x.neg())
+    //  mul_neg_right: k*(q.x.neg()) ≡ (k*q.x).neg(); need symmetric
     ring_lemmas::lemma_mul_neg_right::<T>(k, q.x);
     T::axiom_eqv_symmetric(k.mul(q.x.neg()), k.mul(q.x).neg());
     ring_lemmas::lemma_mul_neg_right::<T>(k, q.y);
@@ -51,7 +51,7 @@ pub proof fn lemma_conjugate_scale<T: Ring>(k: T, q: Quat<T>)
     T::axiom_eqv_symmetric(k.mul(q.z.neg()), k.mul(q.z).neg());
 }
 
-/// conj is involutory: conj(conj(q)) ≡ q
+///  conj is involutory: conj(conj(q)) ≡ q
 pub proof fn lemma_conjugate_involution<T: Ring>(q: Quat<T>)
     ensures conjugate(conjugate(q)).eqv(q),
 {
@@ -61,7 +61,7 @@ pub proof fn lemma_conjugate_involution<T: Ring>(q: Quat<T>)
     additive_group_lemmas::lemma_neg_involution::<T>(q.z);
 }
 
-/// conj(one()) ≡ one()
+///  conj(one()) ≡ one()
 pub proof fn lemma_conjugate_one<T: Ring>()
     ensures conjugate::<T>(one()).eqv(one()),
 {
@@ -69,34 +69,34 @@ pub proof fn lemma_conjugate_one<T: Ring>()
     additive_group_lemmas::lemma_neg_zero::<T>();
 }
 
-/// For imaginary basis (i≥1): conj(basis(i)) ≡ basis(i).neg()
+///  For imaginary basis (i≥1): conj(basis(i)) ≡ basis(i).neg()
 pub proof fn lemma_conjugate_imag_basis<T: Ring>(i: int)
     requires 1 <= i < 4,
     ensures conjugate::<T>(basis(i)).eqv(basis::<T>(i).neg()),
 {
-    // w: 0 ≡ 0.neg()
+    //  w: 0 ≡ 0.neg()
     additive_group_lemmas::lemma_neg_zero::<T>();
     T::axiom_eqv_symmetric(T::zero().neg(), T::zero());
-    // remaining components: x.neg() ≡ x.neg() by reflexive
+    //  remaining components: x.neg() ≡ x.neg() by reflexive
     T::axiom_eqv_reflexive(T::one().neg());
     T::axiom_eqv_reflexive(T::zero().neg());
 }
 
-// ===========================================================================
-// Quaternion neg-mul helpers (via scale(-1, ...))
-// ===========================================================================
+//  ===========================================================================
+//  Quaternion neg-mul helpers (via scale(-1, ...))
+//  ===========================================================================
 
-/// q.neg() ≡ scale(-1, q)
+///  q.neg() ≡ scale(-1, q)
 pub proof fn lemma_neg_eq_scale_neg_one<T: Ring>(q: Quat<T>)
     ensures q.neg().eqv(scale(T::one().neg(), q)),
 {
-    // scale(1, q) ≡ q
+    //  scale(1, q) ≡ q
     lemma_scale_identity(q);
-    // scale(1, q).neg() ≡ q.neg()
+    //  scale(1, q).neg() ≡ q.neg()
     additive_group_lemmas::lemma_neg_congruence::<Quat<T>>(scale(T::one(), q), q);
-    // scale(-1, q) ≡ scale(1, q).neg()
+    //  scale(-1, q) ≡ scale(1, q).neg()
     lemma_scale_neg_scalar(T::one(), q);
-    // Chain: scale(-1, q) ≡ scale(1,q).neg() ≡ q.neg()
+    //  Chain: scale(-1, q) ≡ scale(1,q).neg() ≡ q.neg()
     Quat::<T>::axiom_eqv_transitive(
         scale(T::one().neg(), q),
         scale(T::one(), q).neg(),
@@ -105,7 +105,7 @@ pub proof fn lemma_neg_eq_scale_neg_one<T: Ring>(q: Quat<T>)
     Quat::<T>::axiom_eqv_symmetric(scale(T::one().neg(), q), q.neg());
 }
 
-/// mul(a.neg(), b) ≡ mul(a, b).neg()
+///  mul(a.neg(), b) ≡ mul(a, b).neg()
 pub proof fn lemma_qmul_neg_left<T: Ring>(a: Quat<T>, b: Quat<T>)
     ensures mul(a.neg(), b).eqv(mul(a, b).neg()),
 {
@@ -126,7 +126,7 @@ pub proof fn lemma_qmul_neg_left<T: Ring>(a: Quat<T>, b: Quat<T>)
     );
 }
 
-/// mul(a, b.neg()) ≡ mul(a, b).neg()
+///  mul(a, b.neg()) ≡ mul(a, b).neg()
 pub proof fn lemma_qmul_neg_right<T: Ring>(a: Quat<T>, b: Quat<T>)
     ensures mul(a, b.neg()).eqv(mul(a, b).neg()),
 {
@@ -147,7 +147,7 @@ pub proof fn lemma_qmul_neg_right<T: Ring>(a: Quat<T>, b: Quat<T>)
     );
 }
 
-/// mul(a.neg(), b.neg()) ≡ mul(a, b)
+///  mul(a.neg(), b.neg()) ≡ mul(a, b)
 pub proof fn lemma_qneg_mul_neg<T: Ring>(a: Quat<T>, b: Quat<T>)
     ensures mul(a.neg(), b.neg()).eqv(mul(a, b)),
 {
@@ -167,11 +167,11 @@ pub proof fn lemma_qneg_mul_neg<T: Ring>(a: Quat<T>, b: Quat<T>)
     );
 }
 
-// ===========================================================================
-// Scale-neg interaction
-// ===========================================================================
+//  ===========================================================================
+//  Scale-neg interaction
+//  ===========================================================================
 
-/// scale(s, q.neg()) ≡ scale(s.neg(), q)
+///  scale(s, q.neg()) ≡ scale(s.neg(), q)
 pub proof fn lemma_scale_neg_swap<T: Ring>(s: T, q: Quat<T>)
     ensures scale(s, q.neg()).eqv(scale(s.neg(), q)),
 {
@@ -185,7 +185,7 @@ pub proof fn lemma_scale_neg_swap<T: Ring>(s: T, q: Quat<T>)
     );
 }
 
-/// sign_value(-s) ≡ sign_value(s).neg()
+///  sign_value(-s) ≡ sign_value(s).neg()
 pub proof fn lemma_sign_value_neg<T: Ring>(s: int)
     requires s == 1 || s == -1,
     ensures sign_value::<T>(-s).eqv(sign_value::<T>(s).neg()),
@@ -198,25 +198,25 @@ pub proof fn lemma_sign_value_neg<T: Ring>(s: int)
     }
 }
 
-// ===========================================================================
-// Conjugate-mul-reverse: bilinear lifting
-// ===========================================================================
+//  ===========================================================================
+//  Conjugate-mul-reverse: bilinear lifting
+//  ===========================================================================
 
-/// Instance predicate: conj(a*b) ≡ conj(b)*conj(a)
+///  Instance predicate: conj(a*b) ≡ conj(b)*conj(a)
 pub open spec fn conj_mul_rev<T: Ring>(a: Quat<T>, b: Quat<T>) -> bool {
     conjugate(mul(a, b)).eqv(mul(conjugate(b), conjugate(a)))
 }
 
-/// Basis case: conj(basis(i)*basis(j)) ≡ conj(basis(j))*conj(basis(i))
+///  Basis case: conj(basis(i)*basis(j)) ≡ conj(basis(j))*conj(basis(i))
 pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
     requires 0 <= i < 4, 0 <= j < 4,
     ensures conj_mul_rev::<T>(basis(i), basis(j)),
 {
     if i == 0 {
-        // LHS: conj(mul(one(), bj)) ≡ conj(bj) via mul_one_left
+        //  LHS: conj(mul(one(), bj)) ≡ conj(bj) via mul_one_left
         lemma_mul_one_left::<T>(basis(j));
         lemma_conjugate_congruence(mul(one::<T>(), basis(j)), basis(j));
-        // RHS: mul(conj(bj), conj(one())) ≡ mul(conj(bj), one()) ≡ conj(bj)
+        //  RHS: mul(conj(bj), conj(one())) ≡ mul(conj(bj), one()) ≡ conj(bj)
         lemma_conjugate_one::<T>();
         lemma_mul_congruence_right(conjugate(basis::<T>(j)), conjugate(one::<T>()), one());
         lemma_mul_one_right(conjugate(basis::<T>(j)));
@@ -225,7 +225,7 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
             mul(conjugate(basis(j)), one()),
             conjugate(basis(j)),
         );
-        // Connect: LHS ≡ conj(bj) ≡ RHS
+        //  Connect: LHS ≡ conj(bj) ≡ RHS
         Quat::<T>::axiom_eqv_symmetric(
             mul(conjugate(basis(j)), conjugate(one())),
             conjugate(basis(j)),
@@ -236,10 +236,10 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
             mul(conjugate(basis(j)), conjugate(one())),
         );
     } else if j == 0 {
-        // LHS: conj(mul(bi, one())) ≡ conj(bi)
+        //  LHS: conj(mul(bi, one())) ≡ conj(bi)
         lemma_mul_one_right::<T>(basis(i));
         lemma_conjugate_congruence(mul(basis::<T>(i), one()), basis(i));
-        // RHS: mul(conj(one()), conj(bi)) ≡ mul(one(), conj(bi)) ≡ conj(bi)
+        //  RHS: mul(conj(one()), conj(bi)) ≡ mul(one(), conj(bi)) ≡ conj(bi)
         lemma_conjugate_one::<T>();
         lemma_mul_congruence_left(conjugate(one::<T>()), one(), conjugate(basis::<T>(i)));
         lemma_mul_one_left(conjugate(basis::<T>(i)));
@@ -258,7 +258,7 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
             mul(conjugate(one()), conjugate(basis(i))),
         );
     } else {
-        // i, j >= 1
+        //  i, j >= 1
         let bi = basis::<T>(i);
         let bj = basis::<T>(j);
         let s_ij = basis_mul_sign(i, j);
@@ -266,11 +266,11 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
         let s_ji = basis_mul_sign(j, i);
         let k_ji = basis_mul_idx(j, i);
 
-        // === RHS chain ===
-        // conj(bj) ≡ bj.neg(), conj(bi) ≡ bi.neg()
+        //  === RHS chain ===
+        //  conj(bj) ≡ bj.neg(), conj(bi) ≡ bi.neg()
         lemma_conjugate_imag_basis::<T>(i);
         lemma_conjugate_imag_basis::<T>(j);
-        // mul(conj(bj), conj(bi)) ≡ mul(bj.neg(), bi.neg())
+        //  mul(conj(bj), conj(bi)) ≡ mul(bj.neg(), bi.neg())
         lemma_mul_congruence_left(conjugate(bj), bj.neg(), conjugate(bi));
         lemma_mul_congruence_right(bj.neg(), conjugate(bi), bi.neg());
         Quat::<T>::axiom_eqv_transitive(
@@ -278,14 +278,14 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
             mul(bj.neg(), conjugate(bi)),
             mul(bj.neg(), bi.neg()),
         );
-        // ≡ mul(bj, bi)
+        //  ≡ mul(bj, bi)
         lemma_qneg_mul_neg(bj, bi);
         Quat::<T>::axiom_eqv_transitive(
             mul(conjugate(bj), conjugate(bi)),
             mul(bj.neg(), bi.neg()),
             mul(bj, bi),
         );
-        // ≡ signed_basis(s_ji, k_ji)
+        //  ≡ signed_basis(s_ji, k_ji)
         lemma_basis_mul_to_signed::<T>(j, i);
         Quat::<T>::axiom_eqv_transitive(
             mul(conjugate(bj), conjugate(bi)),
@@ -293,14 +293,14 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
             scale(sign_value(s_ji), basis(k_ji)),
         );
 
-        // === LHS chain ===
-        // mul(bi, bj) ≡ signed_basis(s_ij, k_ij)
+        //  === LHS chain ===
+        //  mul(bi, bj) ≡ signed_basis(s_ij, k_ij)
         lemma_basis_mul_to_signed::<T>(i, j);
         lemma_conjugate_congruence(
             mul(bi, bj),
             scale(sign_value(s_ij), basis(k_ij)),
         );
-        // conj(scale(sv, basis(k))) ≡ scale(sv, conj(basis(k)))
+        //  conj(scale(sv, basis(k))) ≡ scale(sv, conj(basis(k)))
         lemma_conjugate_scale(sign_value::<T>(s_ij), basis(k_ij));
         Quat::<T>::axiom_eqv_transitive(
             conjugate(mul(bi, bj)),
@@ -309,7 +309,7 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
         );
 
         if i == j {
-            // k_ij = 0: conj(basis(0)) = conj(one()) ≡ one()
+            //  k_ij = 0: conj(basis(0)) = conj(one()) ≡ one()
             lemma_conjugate_one::<T>();
             lemma_scale_congruence(sign_value::<T>(s_ij), conjugate(basis::<T>(k_ij)), one());
             Quat::<T>::axiom_eqv_transitive(
@@ -317,9 +317,9 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
                 scale(sign_value(s_ij), conjugate(basis(k_ij))),
                 scale(sign_value(s_ij), one()),
             );
-            // LHS ≡ scale(sv(s_ij), one())
-            // RHS ≡ scale(sv(s_ji), basis(k_ji))
-            // When i==j: s_ji=s_ij, k_ji=0, basis(0)=one() → same expression
+            //  LHS ≡ scale(sv(s_ij), one())
+            //  RHS ≡ scale(sv(s_ji), basis(k_ji))
+            //  When i==j: s_ji=s_ij, k_ji=0, basis(0)=one() → same expression
             Quat::<T>::axiom_eqv_symmetric(
                 mul(conjugate(bj), conjugate(bi)),
                 scale(sign_value(s_ji), basis(k_ji)),
@@ -330,7 +330,7 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
                 mul(conjugate(bj), conjugate(bi)),
             );
         } else {
-            // k_ij >= 1: conj(basis(k)) ≡ basis(k).neg()
+            //  k_ij >= 1: conj(basis(k)) ≡ basis(k).neg()
             lemma_conjugate_imag_basis::<T>(k_ij);
             lemma_scale_congruence(sign_value::<T>(s_ij), conjugate(basis::<T>(k_ij)), basis::<T>(k_ij).neg());
             Quat::<T>::axiom_eqv_transitive(
@@ -338,14 +338,14 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
                 scale(sign_value(s_ij), conjugate(basis(k_ij))),
                 scale(sign_value(s_ij), basis::<T>(k_ij).neg()),
             );
-            // scale(sv, basis(k).neg()) ≡ scale(sv.neg(), basis(k))
+            //  scale(sv, basis(k).neg()) ≡ scale(sv.neg(), basis(k))
             lemma_scale_neg_swap(sign_value::<T>(s_ij), basis(k_ij));
             Quat::<T>::axiom_eqv_transitive(
                 conjugate(mul(bi, bj)),
                 scale(sign_value(s_ij), basis::<T>(k_ij).neg()),
                 scale(sign_value::<T>(s_ij).neg(), basis(k_ij)),
             );
-            // sv(s_ij).neg() ≡ sv(-s_ij)
+            //  sv(s_ij).neg() ≡ sv(-s_ij)
             lemma_sign_value_neg::<T>(s_ij);
             T::axiom_eqv_symmetric(sign_value::<T>(-s_ij), sign_value::<T>(s_ij).neg());
             lemma_scale_congruence_scalar(sign_value::<T>(s_ij).neg(), sign_value::<T>(-s_ij), basis(k_ij));
@@ -354,9 +354,9 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
                 scale(sign_value::<T>(s_ij).neg(), basis(k_ij)),
                 scale(sign_value(-s_ij), basis(k_ij)),
             );
-            // LHS ≡ scale(sv(-s_ij), basis(k_ij))
-            // RHS ≡ scale(sv(s_ji), basis(k_ji))
-            // When i≠j: s_ji = -s_ij, k_ji = k_ij → same expression
+            //  LHS ≡ scale(sv(-s_ij), basis(k_ij))
+            //  RHS ≡ scale(sv(s_ji), basis(k_ji))
+            //  When i≠j: s_ji = -s_ij, k_ji = k_ij → same expression
             Quat::<T>::axiom_eqv_symmetric(
                 mul(conjugate(bj), conjugate(bi)),
                 scale(sign_value(s_ji), basis(k_ji)),
@@ -370,17 +370,17 @@ pub proof fn lemma_conj_mul_rev_basis<T: Ring>(i: int, j: int)
     }
 }
 
-// ===========================================================================
-// Linear lifting: right
-// ===========================================================================
+//  ===========================================================================
+//  Linear lifting: right
+//  ===========================================================================
 
 pub proof fn lemma_conj_mul_rev_linear_right_add<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat<T>)
     requires conj_mul_rev(a, b1), conj_mul_rev(a, b2),
     ensures conj_mul_rev(a, b1.add(b2)),
 {
     let ca = conjugate(a);
-    // LHS: conj(mul(a, b1+b2)) ≡ conj(mul(a,b1)) + conj(mul(a,b2))
-    //   ≡ mul(conj(b1),ca) + mul(conj(b2),ca)
+    //  LHS: conj(mul(a, b1+b2)) ≡ conj(mul(a,b1)) + conj(mul(a,b2))
+    //    ≡ mul(conj(b1),ca) + mul(conj(b2),ca)
     lemma_mul_distributes_right(a, b1, b2);
     lemma_conjugate_congruence(mul(a, b1.add(b2)), mul(a, b1).add(mul(a, b2)));
     lemma_conjugate_add(mul(a, b1), mul(a, b2));
@@ -398,7 +398,7 @@ pub proof fn lemma_conj_mul_rev_linear_right_add<T: Ring>(a: Quat<T>, b1: Quat<T
         conjugate(mul(a, b1)).add(conjugate(mul(a, b2))),
         mul(conjugate(b1), ca).add(mul(conjugate(b2), ca)),
     );
-    // RHS: mul(conj(b1+b2), ca) ≡ mul(conj(b1)+conj(b2), ca) ≡ same
+    //  RHS: mul(conj(b1+b2), ca) ≡ mul(conj(b1)+conj(b2), ca) ≡ same
     lemma_conjugate_add(b1, b2);
     lemma_mul_congruence_left(conjugate(b1.add(b2)), conjugate(b1).add(conjugate(b2)), ca);
     lemma_mul_distributes_left(conjugate(b1), conjugate(b2), ca);
@@ -407,7 +407,7 @@ pub proof fn lemma_conj_mul_rev_linear_right_add<T: Ring>(a: Quat<T>, b1: Quat<T
         mul(conjugate(b1).add(conjugate(b2)), ca),
         mul(conjugate(b1), ca).add(mul(conjugate(b2), ca)),
     );
-    // Connect
+    //  Connect
     Quat::<T>::axiom_eqv_symmetric(
         mul(conjugate(b1.add(b2)), ca),
         mul(conjugate(b1), ca).add(mul(conjugate(b2), ca)),
@@ -424,7 +424,7 @@ pub proof fn lemma_conj_mul_rev_linear_right_scale<T: Ring>(a: Quat<T>, b: Quat<
     ensures conj_mul_rev(a, scale(k, b)),
 {
     let ca = conjugate(a);
-    // LHS: conj(mul(a, scale(k,b))) ≡ scale(k, conj(mul(a,b))) ≡ scale(k, mul(conj(b),ca))
+    //  LHS: conj(mul(a, scale(k,b))) ≡ scale(k, conj(mul(a,b))) ≡ scale(k, mul(conj(b),ca))
     lemma_mul_scale_right(a, k, b);
     lemma_conjugate_congruence(mul(a, scale(k, b)), scale(k, mul(a, b)));
     lemma_conjugate_scale(k, mul(a, b));
@@ -439,7 +439,7 @@ pub proof fn lemma_conj_mul_rev_linear_right_scale<T: Ring>(a: Quat<T>, b: Quat<
         scale(k, conjugate(mul(a, b))),
         scale(k, mul(conjugate(b), ca)),
     );
-    // RHS: mul(conj(scale(k,b)), ca) ≡ mul(scale(k,conj(b)), ca) ≡ scale(k, mul(conj(b),ca))
+    //  RHS: mul(conj(scale(k,b)), ca) ≡ mul(scale(k,conj(b)), ca) ≡ scale(k, mul(conj(b),ca))
     lemma_conjugate_scale(k, b);
     lemma_mul_congruence_left(conjugate(scale(k, b)), scale(k, conjugate(b)), ca);
     lemma_mul_scale_left(k, conjugate(b), ca);
@@ -448,7 +448,7 @@ pub proof fn lemma_conj_mul_rev_linear_right_scale<T: Ring>(a: Quat<T>, b: Quat<
         mul(scale(k, conjugate(b)), ca),
         scale(k, mul(conjugate(b), ca)),
     );
-    // Connect
+    //  Connect
     Quat::<T>::axiom_eqv_symmetric(
         mul(conjugate(scale(k, b)), ca),
         scale(k, mul(conjugate(b), ca)),
@@ -460,16 +460,16 @@ pub proof fn lemma_conj_mul_rev_linear_right_scale<T: Ring>(a: Quat<T>, b: Quat<
     );
 }
 
-// ===========================================================================
-// Linear lifting: left
-// ===========================================================================
+//  ===========================================================================
+//  Linear lifting: left
+//  ===========================================================================
 
 pub proof fn lemma_conj_mul_rev_linear_left_add<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Quat<T>)
     requires conj_mul_rev(a1, b), conj_mul_rev(a2, b),
     ensures conj_mul_rev(a1.add(a2), b),
 {
     let cb = conjugate(b);
-    // LHS chain
+    //  LHS chain
     lemma_mul_distributes_left(a1, a2, b);
     lemma_conjugate_congruence(mul(a1.add(a2), b), mul(a1, b).add(mul(a2, b)));
     lemma_conjugate_add(mul(a1, b), mul(a2, b));
@@ -487,7 +487,7 @@ pub proof fn lemma_conj_mul_rev_linear_left_add<T: Ring>(a1: Quat<T>, a2: Quat<T
         conjugate(mul(a1, b)).add(conjugate(mul(a2, b))),
         mul(cb, conjugate(a1)).add(mul(cb, conjugate(a2))),
     );
-    // RHS chain
+    //  RHS chain
     lemma_conjugate_add(a1, a2);
     lemma_mul_congruence_right(cb, conjugate(a1.add(a2)), conjugate(a1).add(conjugate(a2)));
     lemma_mul_distributes_right(cb, conjugate(a1), conjugate(a2));
@@ -496,7 +496,7 @@ pub proof fn lemma_conj_mul_rev_linear_left_add<T: Ring>(a1: Quat<T>, a2: Quat<T
         mul(cb, conjugate(a1).add(conjugate(a2))),
         mul(cb, conjugate(a1)).add(mul(cb, conjugate(a2))),
     );
-    // Connect
+    //  Connect
     Quat::<T>::axiom_eqv_symmetric(
         mul(cb, conjugate(a1.add(a2))),
         mul(cb, conjugate(a1)).add(mul(cb, conjugate(a2))),
@@ -513,7 +513,7 @@ pub proof fn lemma_conj_mul_rev_linear_left_scale<T: Ring>(a: Quat<T>, b: Quat<T
     ensures conj_mul_rev(scale(k, a), b),
 {
     let cb = conjugate(b);
-    // LHS chain
+    //  LHS chain
     lemma_mul_scale_left(k, a, b);
     lemma_conjugate_congruence(mul(scale(k, a), b), scale(k, mul(a, b)));
     lemma_conjugate_scale(k, mul(a, b));
@@ -528,7 +528,7 @@ pub proof fn lemma_conj_mul_rev_linear_left_scale<T: Ring>(a: Quat<T>, b: Quat<T
         scale(k, conjugate(mul(a, b))),
         scale(k, mul(cb, conjugate(a))),
     );
-    // RHS chain
+    //  RHS chain
     lemma_conjugate_scale(k, a);
     lemma_mul_congruence_right(cb, conjugate(scale(k, a)), scale(k, conjugate(a)));
     lemma_mul_scale_right(cb, k, conjugate(a));
@@ -537,7 +537,7 @@ pub proof fn lemma_conj_mul_rev_linear_left_scale<T: Ring>(a: Quat<T>, b: Quat<T
         mul(cb, scale(k, conjugate(a))),
         scale(k, mul(cb, conjugate(a))),
     );
-    // Connect
+    //  Connect
     Quat::<T>::axiom_eqv_symmetric(
         mul(cb, conjugate(scale(k, a))),
         scale(k, mul(cb, conjugate(a))),
@@ -549,9 +549,9 @@ pub proof fn lemma_conj_mul_rev_linear_left_scale<T: Ring>(a: Quat<T>, b: Quat<T
     );
 }
 
-// ===========================================================================
-// Equivalence transfer
-// ===========================================================================
+//  ===========================================================================
+//  Equivalence transfer
+//  ===========================================================================
 
 pub proof fn lemma_conj_mul_rev_eqv_right<T: Ring>(a: Quat<T>, b1: Quat<T>, b2: Quat<T>)
     requires conj_mul_rev(a, b1), b1.eqv(b2),
@@ -589,9 +589,9 @@ pub proof fn lemma_conj_mul_rev_eqv_left<T: Ring>(a1: Quat<T>, a2: Quat<T>, b: Q
     );
 }
 
-// ===========================================================================
-// Assembly
-// ===========================================================================
+//  ===========================================================================
+//  Assembly
+//  ===========================================================================
 
 pub proof fn lemma_linearize_right<T: Ring>(a: Quat<T>, b: Quat<T>)
     requires forall|j: int| 0 <= j < 4 ==> conj_mul_rev::<T>(a, basis(j)),
@@ -626,7 +626,7 @@ pub proof fn lemma_conj_basis_any<T: Ring>(i: int, b: Quat<T>)
     lemma_linearize_right(basis(i), b);
 }
 
-/// Top-level: conj(a*b) ≡ conj(b)*conj(a)
+///  Top-level: conj(a*b) ≡ conj(b)*conj(a)
 pub proof fn lemma_conjugate_mul_reverse<T: Ring>(a: Quat<T>, b: Quat<T>)
     ensures conj_mul_rev(a, b),
 {
@@ -634,7 +634,7 @@ pub proof fn lemma_conjugate_mul_reverse<T: Ring>(a: Quat<T>, b: Quat<T>)
     lemma_conj_basis_any::<T>(1, b);
     lemma_conj_basis_any::<T>(2, b);
     lemma_conj_basis_any::<T>(3, b);
-    // Linearize left
+    //  Linearize left
     lemma_conj_mul_rev_linear_left_scale(basis(0), b, a.w);
     lemma_conj_mul_rev_linear_left_scale(basis(1), b, a.x);
     lemma_conj_mul_rev_linear_left_scale(basis(2), b, a.y);
@@ -655,4 +655,4 @@ pub proof fn lemma_conjugate_mul_reverse<T: Ring>(a: Quat<T>, b: Quat<T>)
     lemma_conj_mul_rev_eqv_left(basis_decompose(a), a, b);
 }
 
-} // verus!
+} //  verus!

@@ -19,4 +19,4 @@ impl<T: Ring> Vec4<T> {
     }
 }
 
-} // verus!
+} //  verus!

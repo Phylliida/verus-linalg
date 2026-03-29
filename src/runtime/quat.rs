@@ -21,9 +21,9 @@ use verus_algebra::traits::*;
 #[cfg(verus_keep_ghost)]
 verus! {
 
-// ---------------------------------------------------------------------------
-// RuntimeQuat
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  RuntimeQuat
+//  ---------------------------------------------------------------------------
 
 pub struct RuntimeQuat {
     pub w: RuntimeRational,
@@ -81,11 +81,11 @@ impl RuntimeQuat {
         Self::new(rw, rx, ry, rz)
     }
 
-    // -----------------------------------------------------------------------
-    // Algebraic operations
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Algebraic operations
+    //  -----------------------------------------------------------------------
 
-    /// Quaternion addition
+    ///  Quaternion addition
     pub fn add_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -102,7 +102,7 @@ impl RuntimeQuat {
         RuntimeQuat { w, x, y, z, model: Ghost(model) }
     }
 
-    /// Quaternion subtraction
+    ///  Quaternion subtraction
     pub fn sub_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -119,7 +119,7 @@ impl RuntimeQuat {
         RuntimeQuat { w, x, y, z, model: Ghost(model) }
     }
 
-    /// Quaternion negation
+    ///  Quaternion negation
     pub fn neg_exec(&self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -135,7 +135,7 @@ impl RuntimeQuat {
         RuntimeQuat { w, x, y, z, model: Ghost(model) }
     }
 
-    /// Zero quaternion
+    ///  Zero quaternion
     pub fn zero_exec() -> (out: Self)
         ensures
             out.wf_spec(),
@@ -149,7 +149,7 @@ impl RuntimeQuat {
         RuntimeQuat { w, x, y, z, model: Ghost(model) }
     }
 
-    /// Unit quaternion (1, 0, 0, 0)
+    ///  Unit quaternion (1, 0, 0, 0)
     pub fn one_exec() -> (out: Self)
         ensures
             out.wf_spec(),
@@ -163,11 +163,11 @@ impl RuntimeQuat {
         RuntimeQuat { w, x, y, z, model: Ghost(model) }
     }
 
-    // -----------------------------------------------------------------------
-    // Ops
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Ops
+    //  -----------------------------------------------------------------------
 
-    /// Scalar multiplication: s * q
+    ///  Scalar multiplication: s * q
     pub fn scale_exec(s: &RuntimeRational, q: &Self) -> (out: Self)
         requires
             s.wf_spec(),
@@ -184,7 +184,7 @@ impl RuntimeQuat {
         RuntimeQuat { w, x, y, z, model: Ghost(model) }
     }
 
-    /// Hamilton product: a * b
+    ///  Hamilton product: a * b
     pub fn mul_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -193,28 +193,28 @@ impl RuntimeQuat {
             out.wf_spec(),
             out@ == quat_mul::<RationalModel>(self@, rhs@),
     {
-        // w = aw*bw - ax*bx - ay*by - az*bz
+        //  w = aw*bw - ax*bx - ay*by - az*bz
         let ww = self.w.mul(&rhs.w);
         let xx = self.x.mul(&rhs.x);
         let yy = self.y.mul(&rhs.y);
         let zz = self.z.mul(&rhs.z);
         let rw = ww.sub(&xx).sub(&yy).sub(&zz);
 
-        // x = aw*bx + ax*bw + ay*bz - az*by
+        //  x = aw*bx + ax*bw + ay*bz - az*by
         let wx = self.w.mul(&rhs.x);
         let xw = self.x.mul(&rhs.w);
         let yz = self.y.mul(&rhs.z);
         let zy = self.z.mul(&rhs.y);
         let rx = wx.add(&xw).add(&yz).sub(&zy);
 
-        // y = aw*by - ax*bz + ay*bw + az*bx
+        //  y = aw*by - ax*bz + ay*bw + az*bx
         let wy = self.w.mul(&rhs.y);
         let xz = self.x.mul(&rhs.z);
         let yw = self.y.mul(&rhs.w);
         let zx = self.z.mul(&rhs.x);
         let ry = wy.sub(&xz).add(&yw).add(&zx);
 
-        // z = aw*bz + ax*by - ay*bx + az*bw
+        //  z = aw*bz + ax*by - ay*bx + az*bw
         let wz = self.w.mul(&rhs.z);
         let xy = self.x.mul(&rhs.y);
         let yx = self.y.mul(&rhs.x);
@@ -225,7 +225,7 @@ impl RuntimeQuat {
         RuntimeQuat { w: rw, x: rx, y: ry, z: rz, model: Ghost(model) }
     }
 
-    /// Conjugate: (w, -x, -y, -z)
+    ///  Conjugate: (w, -x, -y, -z)
     pub fn conjugate_exec(&self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -241,7 +241,7 @@ impl RuntimeQuat {
         RuntimeQuat { w, x, y, z, model: Ghost(model) }
     }
 
-    /// Squared norm: w² + x² + y² + z²
+    ///  Squared norm: w² + x² + y² + z²
     pub fn norm_sq_exec(&self) -> (out: RuntimeRational)
         requires
             self.wf_spec(),
@@ -258,7 +258,7 @@ impl RuntimeQuat {
         s2.add(&zz)
     }
 
-    /// Convert to Vec4: (w, x, y, z)
+    ///  Convert to Vec4: (w, x, y, z)
     pub fn as_vec4_exec(&self) -> (out: RuntimeVec4)
         requires
             self.wf_spec(),
@@ -275,4 +275,4 @@ impl RuntimeQuat {
     }
 }
 
-} // verus!
+} //  verus!

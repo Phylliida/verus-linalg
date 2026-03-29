@@ -15,9 +15,9 @@ use verus_algebra::traits::*;
 #[cfg(verus_keep_ghost)]
 verus! {
 
-// ---------------------------------------------------------------------------
-// RuntimeVec4
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  RuntimeVec4
+//  ---------------------------------------------------------------------------
 
 pub struct RuntimeVec4 {
     pub x: RuntimeRational,
@@ -75,11 +75,11 @@ impl RuntimeVec4 {
         Self::new(rx, ry, rz, rw)
     }
 
-    // -----------------------------------------------------------------------
-    // Algebraic operations
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Algebraic operations
+    //  -----------------------------------------------------------------------
 
-    /// Vector addition
+    ///  Vector addition
     pub fn add_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -96,7 +96,7 @@ impl RuntimeVec4 {
         RuntimeVec4 { x, y, z, w, model: Ghost(model) }
     }
 
-    /// Vector subtraction
+    ///  Vector subtraction
     pub fn sub_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -113,7 +113,7 @@ impl RuntimeVec4 {
         RuntimeVec4 { x, y, z, w, model: Ghost(model) }
     }
 
-    /// Vector negation
+    ///  Vector negation
     pub fn neg_exec(&self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -129,7 +129,7 @@ impl RuntimeVec4 {
         RuntimeVec4 { x, y, z, w, model: Ghost(model) }
     }
 
-    /// Zero vector
+    ///  Zero vector
     pub fn zero_exec() -> (out: Self)
         ensures
             out.wf_spec(),
@@ -143,11 +143,11 @@ impl RuntimeVec4 {
         RuntimeVec4 { x, y, z, w, model: Ghost(model) }
     }
 
-    // -----------------------------------------------------------------------
-    // Ops
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Ops
+    //  -----------------------------------------------------------------------
 
-    /// Scalar multiplication: s * v
+    ///  Scalar multiplication: s * v
     pub fn scale_exec(s: &RuntimeRational, v: &Self) -> (out: Self)
         requires
             s.wf_spec(),
@@ -164,7 +164,7 @@ impl RuntimeVec4 {
         RuntimeVec4 { x, y, z, w, model: Ghost(model) }
     }
 
-    /// Dot product: a · b
+    ///  Dot product: a · b
     pub fn dot_exec(&self, rhs: &Self) -> (out: RuntimeRational)
         requires
             self.wf_spec(),
@@ -182,7 +182,7 @@ impl RuntimeVec4 {
         s123.add(&t4)
     }
 
-    /// Squared norm: ||v||²
+    ///  Squared norm: ||v||²
     pub fn norm_sq_exec(&self) -> (out: RuntimeRational)
         requires
             self.wf_spec(),
@@ -193,7 +193,7 @@ impl RuntimeVec4 {
         self.dot_exec(self)
     }
 
-    /// Linear interpolation: (1-t)*a + t*b
+    ///  Linear interpolation: (1-t)*a + t*b
     pub fn lerp_exec(&self, other: &Self, t: &RuntimeRational) -> (out: Self)
         requires
             self.wf_spec(),
@@ -210,7 +210,7 @@ impl RuntimeVec4 {
         sa.add_exec(&sb)
     }
 
-    /// Component-wise minimum
+    ///  Component-wise minimum
     pub fn cwise_min_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -227,7 +227,7 @@ impl RuntimeVec4 {
         RuntimeVec4 { x, y, z, w, model: Ghost(model) }
     }
 
-    /// Component-wise maximum
+    ///  Component-wise maximum
     pub fn cwise_max_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -245,4 +245,4 @@ impl RuntimeVec4 {
     }
 }
 
-} // verus!
+} //  verus!

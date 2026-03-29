@@ -6,14 +6,14 @@ use vstd::prelude::*;
 #[cfg(verus_keep_ghost)]
 use verus_rational::rational::Rational;
 
-/// The scalar model type for all runtime linalg: verified rational numbers.
+///  The scalar model type for all runtime linalg: verified rational numbers.
 #[cfg(verus_keep_ghost)]
 pub type RationalModel = Rational;
 
 #[cfg(verus_keep_ghost)]
 verus! {
 
-/// Copy a RuntimeRational by copying its internal witnesses.
+///  Copy a RuntimeRational by copying its internal witnesses.
 pub fn copy_rational(r: &RuntimeRational) -> (out: RuntimeRational)
     requires
         r.wf_spec(),
@@ -30,7 +30,7 @@ pub fn copy_rational(r: &RuntimeRational) -> (out: RuntimeRational)
     }
 }
 
-} // verus!
+} //  verus!
 
 pub mod vec2;
 pub mod vec3;

@@ -15,9 +15,9 @@ use verus_algebra::traits::*;
 #[cfg(verus_keep_ghost)]
 verus! {
 
-// ---------------------------------------------------------------------------
-// RuntimeVec3
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  RuntimeVec3
+//  ---------------------------------------------------------------------------
 
 pub struct RuntimeVec3 {
     pub x: RuntimeRational,
@@ -69,11 +69,11 @@ impl RuntimeVec3 {
         Self::new(rx, ry, rz)
     }
 
-    // -----------------------------------------------------------------------
-    // Algebraic operations
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Algebraic operations
+    //  -----------------------------------------------------------------------
 
-    /// Vector addition
+    ///  Vector addition
     pub fn add_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -89,7 +89,7 @@ impl RuntimeVec3 {
         RuntimeVec3 { x, y, z, model: Ghost(model) }
     }
 
-    /// Vector subtraction
+    ///  Vector subtraction
     pub fn sub_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -105,7 +105,7 @@ impl RuntimeVec3 {
         RuntimeVec3 { x, y, z, model: Ghost(model) }
     }
 
-    /// Vector negation
+    ///  Vector negation
     pub fn neg_exec(&self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -120,7 +120,7 @@ impl RuntimeVec3 {
         RuntimeVec3 { x, y, z, model: Ghost(model) }
     }
 
-    /// Zero vector
+    ///  Zero vector
     pub fn zero_exec() -> (out: Self)
         ensures
             out.wf_spec(),
@@ -133,11 +133,11 @@ impl RuntimeVec3 {
         RuntimeVec3 { x, y, z, model: Ghost(model) }
     }
 
-    // -----------------------------------------------------------------------
-    // Ops
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Ops
+    //  -----------------------------------------------------------------------
 
-    /// Scalar multiplication: s * v
+    ///  Scalar multiplication: s * v
     pub fn scale_exec(s: &RuntimeRational, v: &Self) -> (out: Self)
         requires
             s.wf_spec(),
@@ -153,7 +153,7 @@ impl RuntimeVec3 {
         RuntimeVec3 { x, y, z, model: Ghost(model) }
     }
 
-    /// Dot product: a · b
+    ///  Dot product: a · b
     pub fn dot_exec(&self, rhs: &Self) -> (out: RuntimeRational)
         requires
             self.wf_spec(),
@@ -169,7 +169,7 @@ impl RuntimeVec3 {
         s12.add(&t3)
     }
 
-    /// Squared norm: ||v||²
+    ///  Squared norm: ||v||²
     pub fn norm_sq_exec(&self) -> (out: RuntimeRational)
         requires
             self.wf_spec(),
@@ -180,7 +180,7 @@ impl RuntimeVec3 {
         self.dot_exec(self)
     }
 
-    /// Cross product: a × b
+    ///  Cross product: a × b
     pub fn cross_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -189,17 +189,17 @@ impl RuntimeVec3 {
             out.wf_spec(),
             out@ == cross::<RationalModel>(self@, rhs@),
     {
-        // x = a.y * b.z - a.z * b.y
+        //  x = a.y * b.z - a.z * b.y
         let t1 = self.y.mul(&rhs.z);
         let t2 = self.z.mul(&rhs.y);
         let cx = t1.sub(&t2);
 
-        // y = a.z * b.x - a.x * b.z
+        //  y = a.z * b.x - a.x * b.z
         let t3 = self.z.mul(&rhs.x);
         let t4 = self.x.mul(&rhs.z);
         let cy = t3.sub(&t4);
 
-        // z = a.x * b.y - a.y * b.x
+        //  z = a.x * b.y - a.y * b.x
         let t5 = self.x.mul(&rhs.y);
         let t6 = self.y.mul(&rhs.x);
         let cz = t5.sub(&t6);
@@ -208,7 +208,7 @@ impl RuntimeVec3 {
         RuntimeVec3 { x: cx, y: cy, z: cz, model: Ghost(model) }
     }
 
-    /// Scalar triple product: a · (b × c)
+    ///  Scalar triple product: a · (b × c)
     pub fn triple_exec(&self, b: &Self, c: &Self) -> (out: RuntimeRational)
         requires
             self.wf_spec(),
@@ -222,7 +222,7 @@ impl RuntimeVec3 {
         self.dot_exec(&bc)
     }
 
-    /// Linear interpolation: (1-t)*a + t*b
+    ///  Linear interpolation: (1-t)*a + t*b
     pub fn lerp_exec(&self, other: &Self, t: &RuntimeRational) -> (out: Self)
         requires
             self.wf_spec(),
@@ -239,7 +239,7 @@ impl RuntimeVec3 {
         sa.add_exec(&sb)
     }
 
-    /// Component-wise minimum
+    ///  Component-wise minimum
     pub fn cwise_min_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -255,7 +255,7 @@ impl RuntimeVec3 {
         RuntimeVec3 { x, y, z, model: Ghost(model) }
     }
 
-    /// Component-wise maximum
+    ///  Component-wise maximum
     pub fn cwise_max_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -272,4 +272,4 @@ impl RuntimeVec3 {
     }
 }
 
-} // verus!
+} //  verus!

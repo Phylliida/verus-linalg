@@ -23,9 +23,9 @@ use verus_algebra::traits::*;
 #[cfg(verus_keep_ghost)]
 verus! {
 
-// ---------------------------------------------------------------------------
-// RuntimeMat3x3
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  RuntimeMat3x3
+//  ---------------------------------------------------------------------------
 
 pub struct RuntimeMat3x3 {
     pub row0: RuntimeVec3,
@@ -67,11 +67,11 @@ impl RuntimeMat3x3 {
         RuntimeMat3x3 { row0, row1, row2, model: Ghost(model) }
     }
 
-    // -----------------------------------------------------------------------
-    // Ops
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Ops
+    //  -----------------------------------------------------------------------
 
-    /// Identity matrix
+    ///  Identity matrix
     pub fn identity_exec() -> (out: Self)
         ensures
             out.wf_spec(),
@@ -90,7 +90,7 @@ impl RuntimeMat3x3 {
         RuntimeMat3x3 { row0, row1, row2, model: Ghost(model) }
     }
 
-    /// Matrix-vector multiplication: M * v
+    ///  Matrix-vector multiplication: M * v
     pub fn mat_vec_mul_exec(&self, v: &RuntimeVec3) -> (out: RuntimeVec3)
         requires
             self.wf_spec(),
@@ -106,7 +106,7 @@ impl RuntimeMat3x3 {
         RuntimeVec3 { x, y, z, model: Ghost(model) }
     }
 
-    /// Transpose
+    ///  Transpose
     pub fn transpose_exec(&self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -127,7 +127,7 @@ impl RuntimeMat3x3 {
         RuntimeMat3x3 { row0, row1, row2, model: Ghost(model) }
     }
 
-    /// Determinant: triple(row0, row1, row2)
+    ///  Determinant: triple(row0, row1, row2)
     pub fn det_exec(&self) -> (out: RuntimeRational)
         requires
             self.wf_spec(),
@@ -138,7 +138,7 @@ impl RuntimeMat3x3 {
         self.row0.triple_exec(&self.row1, &self.row2)
     }
 
-    /// Matrix multiplication: A * B
+    ///  Matrix multiplication: A * B
     pub fn mat_mul_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -164,7 +164,7 @@ impl RuntimeMat3x3 {
         RuntimeMat3x3 { row0, row1, row2, model: Ghost(model) }
     }
 
-    /// Adjugate: transpose of cofactor matrix using cross products
+    ///  Adjugate: transpose of cofactor matrix using cross products
     pub fn adjugate_exec(&self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -175,7 +175,7 @@ impl RuntimeMat3x3 {
         let c12 = self.row1.cross_exec(&self.row2);
         let c20 = self.row2.cross_exec(&self.row0);
         let c01 = self.row0.cross_exec(&self.row1);
-        // Transpose of [c12, c20, c01]
+        //  Transpose of [c12, c20, c01]
         let row0 = RuntimeVec3::new(
             copy_rational(&c12.x), copy_rational(&c20.x), copy_rational(&c01.x),
         );
@@ -190,4 +190,4 @@ impl RuntimeMat3x3 {
     }
 }
 
-} // verus!
+} //  verus!

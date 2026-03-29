@@ -12,9 +12,9 @@ use super::Vec3;
 
 verus! {
 
-// ---------------------------------------------------------------------------
-// Spec functions
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Spec functions
+//  ---------------------------------------------------------------------------
 
 pub open spec fn scale<T: Ring>(s: T, v: Vec3<T>) -> Vec3<T> {
     Vec3 { x: s.mul(v.x), y: s.mul(v.y), z: s.mul(v.z) }
@@ -44,11 +44,11 @@ pub open spec fn triple<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>) -> T {
     dot(a, cross(b, c))
 }
 
-// ---------------------------------------------------------------------------
-// Scale lemmas
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Scale lemmas
+//  ---------------------------------------------------------------------------
 
-/// scale(s, a + b) ≡ scale(s, a) + scale(s, b)
+///  scale(s, a + b) ≡ scale(s, a) + scale(s, b)
 pub proof fn lemma_scale_distributes_over_add<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
     ensures
         scale(s, a.add(b)).eqv(scale(s, a).add(scale(s, b))),
@@ -58,7 +58,7 @@ pub proof fn lemma_scale_distributes_over_add<T: Ring>(s: T, a: Vec3<T>, b: Vec3
     T::axiom_mul_distributes_left(s, a.z, b.z);
 }
 
-/// scale(s + t, a) ≡ scale(s, a) + scale(t, a)
+///  scale(s + t, a) ≡ scale(s, a) + scale(t, a)
 pub proof fn lemma_scale_add_distributes<T: Ring>(s: T, t: T, a: Vec3<T>)
     ensures
         scale(s.add(t), a).eqv(scale(s, a).add(scale(t, a))),
@@ -68,7 +68,7 @@ pub proof fn lemma_scale_add_distributes<T: Ring>(s: T, t: T, a: Vec3<T>)
     ring_lemmas::lemma_mul_distributes_right::<T>(s, t, a.z);
 }
 
-/// scale(1, a) ≡ a
+///  scale(1, a) ≡ a
 pub proof fn lemma_scale_identity<T: Ring>(a: Vec3<T>)
     ensures
         scale(T::one(), a).eqv(a),
@@ -78,7 +78,7 @@ pub proof fn lemma_scale_identity<T: Ring>(a: Vec3<T>)
     ring_lemmas::lemma_mul_one_left::<T>(a.z);
 }
 
-/// scale(0, a) ≡ zero
+///  scale(0, a) ≡ zero
 pub proof fn lemma_scale_zero_scalar<T: Ring>(a: Vec3<T>)
     ensures
         scale(T::zero(), a).eqv(Vec3 { x: T::zero(), y: T::zero(), z: T::zero() }),
@@ -88,7 +88,7 @@ pub proof fn lemma_scale_zero_scalar<T: Ring>(a: Vec3<T>)
     ring_lemmas::lemma_mul_zero_left::<T>(a.z);
 }
 
-/// scale(s, zero) ≡ zero
+///  scale(s, zero) ≡ zero
 pub proof fn lemma_scale_zero_vec<T: Ring>(s: T)
     ensures
         scale(s, Vec3 { x: T::zero(), y: T::zero(), z: T::zero() })
@@ -97,7 +97,7 @@ pub proof fn lemma_scale_zero_vec<T: Ring>(s: T)
     T::axiom_mul_zero_right(s);
 }
 
-/// a ≡ b implies scale(s, a) ≡ scale(s, b)
+///  a ≡ b implies scale(s, a) ≡ scale(s, b)
 pub proof fn lemma_scale_congruence<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
     requires
         a.eqv(b),
@@ -109,7 +109,7 @@ pub proof fn lemma_scale_congruence<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
     ring_lemmas::lemma_mul_congruence_right::<T>(s, a.z, b.z);
 }
 
-/// scale(s, scale(t, a)) ≡ scale(s * t, a)
+///  scale(s, scale(t, a)) ≡ scale(s * t, a)
 pub proof fn lemma_scale_associative<T: Ring>(s: T, t: T, a: Vec3<T>)
     ensures
         scale(s, scale(t, a)).eqv(scale(s.mul(t), a)),
@@ -122,7 +122,7 @@ pub proof fn lemma_scale_associative<T: Ring>(s: T, t: T, a: Vec3<T>)
     T::axiom_eqv_symmetric(s.mul(t).mul(a.z), s.mul(t.mul(a.z)));
 }
 
-/// scale(-s, a) ≡ -scale(s, a)
+///  scale(-s, a) ≡ -scale(s, a)
 pub proof fn lemma_scale_neg_scalar<T: Ring>(s: T, a: Vec3<T>)
     ensures
         scale(s.neg(), a).eqv(scale(s, a).neg()),
@@ -132,7 +132,7 @@ pub proof fn lemma_scale_neg_scalar<T: Ring>(s: T, a: Vec3<T>)
     ring_lemmas::lemma_mul_neg_left::<T>(s, a.z);
 }
 
-/// scale(s, -a) ≡ -scale(s, a)
+///  scale(s, -a) ≡ -scale(s, a)
 pub proof fn lemma_scale_neg_vec<T: Ring>(s: T, a: Vec3<T>)
     ensures
         scale(s, a.neg()).eqv(scale(s, a).neg()),
@@ -142,7 +142,7 @@ pub proof fn lemma_scale_neg_vec<T: Ring>(s: T, a: Vec3<T>)
     ring_lemmas::lemma_mul_neg_right::<T>(s, a.z);
 }
 
-/// scale(s, a - b) ≡ scale(s, a) - scale(s, b)
+///  scale(s, a - b) ≡ scale(s, a) - scale(s, b)
 pub proof fn lemma_scale_sub_distributes<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
     ensures
         scale(s, a.sub(b)).eqv(scale(s, a).sub(scale(s, b))),
@@ -152,11 +152,11 @@ pub proof fn lemma_scale_sub_distributes<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
     ring_lemmas::lemma_mul_distributes_over_sub::<T>(s, a.z, b.z);
 }
 
-// ---------------------------------------------------------------------------
-// Dot lemmas
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Dot lemmas
+//  ---------------------------------------------------------------------------
 
-/// dot(a, b) ≡ dot(b, a)
+///  dot(a, b) ≡ dot(b, a)
 pub proof fn lemma_dot_commutative<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         dot(a, b).eqv(dot(b, a)),
@@ -176,7 +176,7 @@ pub proof fn lemma_dot_commutative<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// dot(a, zero) ≡ 0
+///  dot(a, zero) ≡ 0
 pub proof fn lemma_dot_zero_right<T: Ring>(a: Vec3<T>)
     ensures
         dot(a, Vec3 { x: T::zero(), y: T::zero(), z: T::zero() }).eqv(T::zero()),
@@ -184,25 +184,25 @@ pub proof fn lemma_dot_zero_right<T: Ring>(a: Vec3<T>)
     T::axiom_mul_zero_right(a.x);
     T::axiom_mul_zero_right(a.y);
     T::axiom_mul_zero_right(a.z);
-    // a.x*0 + a.y*0 ≡ 0 + 0
+    //  a.x*0 + a.y*0 ≡ 0 + 0
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.x.mul(T::zero()), T::zero(),
         a.y.mul(T::zero()), T::zero(),
     );
-    // 0 + 0 ≡ 0
+    //  0 + 0 ≡ 0
     T::axiom_add_zero_right(T::zero());
-    // a.x*0 + a.y*0 ≡ 0
+    //  a.x*0 + a.y*0 ≡ 0
     T::axiom_eqv_transitive(
         a.x.mul(T::zero()).add(a.y.mul(T::zero())),
         T::zero().add(T::zero()),
         T::zero(),
     );
-    // (a.x*0 + a.y*0) + a.z*0 ≡ 0 + 0
+    //  (a.x*0 + a.y*0) + a.z*0 ≡ 0 + 0
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.x.mul(T::zero()).add(a.y.mul(T::zero())), T::zero(),
         a.z.mul(T::zero()), T::zero(),
     );
-    // (a.x*0 + a.y*0) + a.z*0 ≡ 0
+    //  (a.x*0 + a.y*0) + a.z*0 ≡ 0
     T::axiom_eqv_transitive(
         a.x.mul(T::zero()).add(a.y.mul(T::zero())).add(a.z.mul(T::zero())),
         T::zero().add(T::zero()),
@@ -210,7 +210,7 @@ pub proof fn lemma_dot_zero_right<T: Ring>(a: Vec3<T>)
     );
 }
 
-/// dot(zero, a) ≡ 0
+///  dot(zero, a) ≡ 0
 pub proof fn lemma_dot_zero_left<T: Ring>(a: Vec3<T>)
     ensures
         dot(Vec3 { x: T::zero(), y: T::zero(), z: T::zero() }, a).eqv(T::zero()),
@@ -218,25 +218,25 @@ pub proof fn lemma_dot_zero_left<T: Ring>(a: Vec3<T>)
     ring_lemmas::lemma_mul_zero_left::<T>(a.x);
     ring_lemmas::lemma_mul_zero_left::<T>(a.y);
     ring_lemmas::lemma_mul_zero_left::<T>(a.z);
-    // 0*a.x + 0*a.y ≡ 0 + 0
+    //  0*a.x + 0*a.y ≡ 0 + 0
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         T::zero().mul(a.x), T::zero(),
         T::zero().mul(a.y), T::zero(),
     );
-    // 0 + 0 ≡ 0
+    //  0 + 0 ≡ 0
     T::axiom_add_zero_right(T::zero());
-    // 0*a.x + 0*a.y ≡ 0
+    //  0*a.x + 0*a.y ≡ 0
     T::axiom_eqv_transitive(
         T::zero().mul(a.x).add(T::zero().mul(a.y)),
         T::zero().add(T::zero()),
         T::zero(),
     );
-    // (0*a.x + 0*a.y) + 0*a.z ≡ 0 + 0
+    //  (0*a.x + 0*a.y) + 0*a.z ≡ 0 + 0
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         T::zero().mul(a.x).add(T::zero().mul(a.y)), T::zero(),
         T::zero().mul(a.z), T::zero(),
     );
-    // (0*a.x + 0*a.y) + 0*a.z ≡ 0
+    //  (0*a.x + 0*a.y) + 0*a.z ≡ 0
     T::axiom_eqv_transitive(
         T::zero().mul(a.x).add(T::zero().mul(a.y)).add(T::zero().mul(a.z)),
         T::zero().add(T::zero()),
@@ -244,43 +244,43 @@ pub proof fn lemma_dot_zero_left<T: Ring>(a: Vec3<T>)
     );
 }
 
-/// dot(a, b + c) ≡ dot(a, b) + dot(a, c)
+///  dot(a, b + c) ≡ dot(a, b) + dot(a, c)
 pub proof fn lemma_dot_distributes_right<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     ensures
         dot(a, b.add(c)).eqv(dot(a, b).add(dot(a, c))),
 {
-    // Distribute each component
+    //  Distribute each component
     T::axiom_mul_distributes_left(a.x, b.x, c.x);
     T::axiom_mul_distributes_left(a.y, b.y, c.y);
     T::axiom_mul_distributes_left(a.z, b.z, c.z);
 
-    // Propagate first two
+    //  Propagate first two
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.x.mul(b.x.add(c.x)), a.x.mul(b.x).add(a.x.mul(c.x)),
         a.y.mul(b.y.add(c.y)), a.y.mul(b.y).add(a.y.mul(c.y)),
     );
-    // Propagate with third
+    //  Propagate with third
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.x.mul(b.x.add(c.x)).add(a.y.mul(b.y.add(c.y))),
         a.x.mul(b.x).add(a.x.mul(c.x)).add(a.y.mul(b.y).add(a.y.mul(c.y))),
         a.z.mul(b.z.add(c.z)),
         a.z.mul(b.z).add(a.z.mul(c.z)),
     );
-    // LHS ≡ ((axbx+axcx)+(ayby+aycy))+(azbz+azcz)
+    //  LHS ≡ ((axbx+axcx)+(ayby+aycy))+(azbz+azcz)
 
-    // Rearrange inner: (axbx+axcx)+(ayby+aycy) ≡ (axbx+ayby)+(axcx+aycy)
+    //  Rearrange inner: (axbx+axcx)+(ayby+aycy) ≡ (axbx+ayby)+(axcx+aycy)
     additive_group_lemmas::lemma_add_rearrange_2x2::<T>(
         a.x.mul(b.x), a.x.mul(c.x), a.y.mul(b.y), a.y.mul(c.y),
     );
-    // Propagate through z add
+    //  Propagate through z add
     T::axiom_add_congruence_left(
         a.x.mul(b.x).add(a.x.mul(c.x)).add(a.y.mul(b.y).add(a.y.mul(c.y))),
         a.x.mul(b.x).add(a.y.mul(b.y)).add(a.x.mul(c.x).add(a.y.mul(c.y))),
         a.z.mul(b.z).add(a.z.mul(c.z)),
     );
 
-    // Rearrange outer: ((axbx+ayby)+(axcx+aycy))+(azbz+azcz)
-    //   ≡ ((axbx+ayby)+azbz)+((axcx+aycy)+azcz)
+    //  Rearrange outer: ((axbx+ayby)+(axcx+aycy))+(azbz+azcz)
+    //    ≡ ((axbx+ayby)+azbz)+((axcx+aycy)+azcz)
     additive_group_lemmas::lemma_add_rearrange_2x2::<T>(
         a.x.mul(b.x).add(a.y.mul(b.y)),
         a.x.mul(c.x).add(a.y.mul(c.y)),
@@ -288,7 +288,7 @@ pub proof fn lemma_dot_distributes_right<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec
         a.z.mul(c.z),
     );
 
-    // Chain: LHS ≡ E1 ≡ E2 ≡ RHS
+    //  Chain: LHS ≡ E1 ≡ E2 ≡ RHS
     T::axiom_eqv_transitive(
         dot(a, b.add(c)),
         a.x.mul(b.x).add(a.x.mul(c.x)).add(a.y.mul(b.y).add(a.y.mul(c.y))).add(a.z.mul(b.z).add(a.z.mul(c.z))),
@@ -301,22 +301,22 @@ pub proof fn lemma_dot_distributes_right<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec
     );
 }
 
-/// dot(a + b, c) ≡ dot(a, c) + dot(b, c)
+///  dot(a + b, c) ≡ dot(a, c) + dot(b, c)
 pub proof fn lemma_dot_distributes_left<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     ensures
         dot(a.add(b), c).eqv(dot(a, c).add(dot(b, c))),
 {
-    // Distribute each component
+    //  Distribute each component
     ring_lemmas::lemma_mul_distributes_right::<T>(a.x, b.x, c.x);
     ring_lemmas::lemma_mul_distributes_right::<T>(a.y, b.y, c.y);
     ring_lemmas::lemma_mul_distributes_right::<T>(a.z, b.z, c.z);
 
-    // Propagate first two
+    //  Propagate first two
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.x.add(b.x).mul(c.x), a.x.mul(c.x).add(b.x.mul(c.x)),
         a.y.add(b.y).mul(c.y), a.y.mul(c.y).add(b.y.mul(c.y)),
     );
-    // Propagate with third
+    //  Propagate with third
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.x.add(b.x).mul(c.x).add(a.y.add(b.y).mul(c.y)),
         a.x.mul(c.x).add(b.x.mul(c.x)).add(a.y.mul(c.y).add(b.y.mul(c.y))),
@@ -324,7 +324,7 @@ pub proof fn lemma_dot_distributes_left<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3
         a.z.mul(c.z).add(b.z.mul(c.z)),
     );
 
-    // Rearrange inner
+    //  Rearrange inner
     additive_group_lemmas::lemma_add_rearrange_2x2::<T>(
         a.x.mul(c.x), b.x.mul(c.x), a.y.mul(c.y), b.y.mul(c.y),
     );
@@ -334,7 +334,7 @@ pub proof fn lemma_dot_distributes_left<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3
         a.z.mul(c.z).add(b.z.mul(c.z)),
     );
 
-    // Rearrange outer
+    //  Rearrange outer
     additive_group_lemmas::lemma_add_rearrange_2x2::<T>(
         a.x.mul(c.x).add(a.y.mul(c.y)),
         b.x.mul(c.x).add(b.y.mul(c.y)),
@@ -342,7 +342,7 @@ pub proof fn lemma_dot_distributes_left<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3
         b.z.mul(c.z),
     );
 
-    // Chain
+    //  Chain
     T::axiom_eqv_transitive(
         dot(a.add(b), c),
         a.x.mul(c.x).add(b.x.mul(c.x)).add(a.y.mul(c.y).add(b.y.mul(c.y))).add(a.z.mul(c.z).add(b.z.mul(c.z))),
@@ -355,17 +355,17 @@ pub proof fn lemma_dot_distributes_left<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3
     );
 }
 
-/// dot(scale(s, a), b) ≡ s * dot(a, b)
+///  dot(scale(s, a), b) ≡ s * dot(a, b)
 pub proof fn lemma_dot_scale_left<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
     ensures
         dot(scale(s, a), b).eqv(s.mul(dot(a, b))),
 {
-    // (s*ai)*bi ≡ s*(ai*bi)
+    //  (s*ai)*bi ≡ s*(ai*bi)
     T::axiom_mul_associative(s, a.x, b.x);
     T::axiom_mul_associative(s, a.y, b.y);
     T::axiom_mul_associative(s, a.z, b.z);
 
-    // Propagate through additions
+    //  Propagate through additions
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         s.mul(a.x).mul(b.x), s.mul(a.x.mul(b.x)),
         s.mul(a.y).mul(b.y), s.mul(a.y.mul(b.y)),
@@ -376,29 +376,29 @@ pub proof fn lemma_dot_scale_left<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
         s.mul(a.z).mul(b.z),
         s.mul(a.z.mul(b.z)),
     );
-    // LHS ≡ s*(ax*bx) + s*(ay*by) + s*(az*bz)
+    //  LHS ≡ s*(ax*bx) + s*(ay*by) + s*(az*bz)
 
-    // Factor inner: s*(ax*bx) + s*(ay*by) ≡ s*(ax*bx + ay*by)
+    //  Factor inner: s*(ax*bx) + s*(ay*by) ≡ s*(ax*bx + ay*by)
     T::axiom_mul_distributes_left(s, a.x.mul(b.x), a.y.mul(b.y));
     T::axiom_eqv_symmetric(
         s.mul(a.x.mul(b.x).add(a.y.mul(b.y))),
         s.mul(a.x.mul(b.x)).add(s.mul(a.y.mul(b.y))),
     );
-    // Propagate: (s*(ax*bx) + s*(ay*by)) + s*(az*bz) ≡ s*(ax*bx + ay*by) + s*(az*bz)
+    //  Propagate: (s*(ax*bx) + s*(ay*by)) + s*(az*bz) ≡ s*(ax*bx + ay*by) + s*(az*bz)
     T::axiom_add_congruence_left(
         s.mul(a.x.mul(b.x)).add(s.mul(a.y.mul(b.y))),
         s.mul(a.x.mul(b.x).add(a.y.mul(b.y))),
         s.mul(a.z.mul(b.z)),
     );
 
-    // Factor outer: s*(ax*bx + ay*by) + s*(az*bz) ≡ s*((ax*bx + ay*by) + az*bz)
+    //  Factor outer: s*(ax*bx + ay*by) + s*(az*bz) ≡ s*((ax*bx + ay*by) + az*bz)
     T::axiom_mul_distributes_left(s, a.x.mul(b.x).add(a.y.mul(b.y)), a.z.mul(b.z));
     T::axiom_eqv_symmetric(
         s.mul(a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z))),
         s.mul(a.x.mul(b.x).add(a.y.mul(b.y))).add(s.mul(a.z.mul(b.z))),
     );
 
-    // Chain: LHS ≡ E1 ≡ E2 ≡ RHS
+    //  Chain: LHS ≡ E1 ≡ E2 ≡ RHS
     T::axiom_eqv_transitive(
         dot(scale(s, a), b),
         s.mul(a.x.mul(b.x)).add(s.mul(a.y.mul(b.y))).add(s.mul(a.z.mul(b.z))),
@@ -411,7 +411,7 @@ pub proof fn lemma_dot_scale_left<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// dot(a, scale(s, b)) ≡ s * dot(a, b)
+///  dot(a, scale(s, b)) ≡ s * dot(a, b)
 pub proof fn lemma_dot_scale_right<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
     ensures
         dot(a, scale(s, b)).eqv(s.mul(dot(a, b))),
@@ -432,16 +432,16 @@ pub proof fn lemma_dot_scale_right<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-// ---------------------------------------------------------------------------
-// Cross lemmas
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Cross lemmas
+//  ---------------------------------------------------------------------------
 
-/// cross(a, b) ≡ -cross(b, a)
+///  cross(a, b) ≡ -cross(b, a)
 pub proof fn lemma_cross_anticommutative<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         cross(a, b).eqv(cross(b, a).neg()),
 {
-    // x component: a.y*b.z - a.z*b.y ≡ -(b.y*a.z - b.z*a.y)
+    //  x component: a.y*b.z - a.z*b.y ≡ -(b.y*a.z - b.z*a.y)
     additive_group_lemmas::lemma_sub_antisymmetric::<T>(a.y.mul(b.z), a.z.mul(b.y));
     T::axiom_mul_commutative(a.z, b.y);
     T::axiom_mul_commutative(a.y, b.z);
@@ -459,7 +459,7 @@ pub proof fn lemma_cross_anticommutative<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         b.y.mul(a.z).sub(b.z.mul(a.y)).neg(),
     );
 
-    // y component: a.z*b.x - a.x*b.z ≡ -(b.z*a.x - b.x*a.z)
+    //  y component: a.z*b.x - a.x*b.z ≡ -(b.z*a.x - b.x*a.z)
     additive_group_lemmas::lemma_sub_antisymmetric::<T>(a.z.mul(b.x), a.x.mul(b.z));
     T::axiom_mul_commutative(a.x, b.z);
     T::axiom_mul_commutative(a.z, b.x);
@@ -477,7 +477,7 @@ pub proof fn lemma_cross_anticommutative<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         b.z.mul(a.x).sub(b.x.mul(a.z)).neg(),
     );
 
-    // z component: a.x*b.y - a.y*b.x ≡ -(b.x*a.y - b.y*a.x)
+    //  z component: a.x*b.y - a.y*b.x ≡ -(b.x*a.y - b.y*a.x)
     additive_group_lemmas::lemma_sub_antisymmetric::<T>(a.x.mul(b.y), a.y.mul(b.x));
     T::axiom_mul_commutative(a.y, b.x);
     T::axiom_mul_commutative(a.x, b.y);
@@ -496,7 +496,7 @@ pub proof fn lemma_cross_anticommutative<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// cross respects equivalence: a1 ≡ a2 ∧ b1 ≡ b2 → cross(a1,b1) ≡ cross(a2,b2)
+///  cross respects equivalence: a1 ≡ a2 ∧ b1 ≡ b2 → cross(a1,b1) ≡ cross(a2,b2)
 pub proof fn lemma_cross_congruence<T: Ring>(a1: Vec3<T>, a2: Vec3<T>, b1: Vec3<T>, b2: Vec3<T>)
     requires
         a1.eqv(a2),
@@ -504,22 +504,22 @@ pub proof fn lemma_cross_congruence<T: Ring>(a1: Vec3<T>, a2: Vec3<T>, b1: Vec3<
     ensures
         cross(a1, b1).eqv(cross(a2, b2)),
 {
-    // Each component of cross is a.i*b.j - a.k*b.l, so use mul_congruence + sub_congruence.
-    // x: a1.y*b1.z - a1.z*b1.y ≡ a2.y*b2.z - a2.z*b2.y
+    //  Each component of cross is a.i*b.j - a.k*b.l, so use mul_congruence + sub_congruence.
+    //  x: a1.y*b1.z - a1.z*b1.y ≡ a2.y*b2.z - a2.z*b2.y
     ring_lemmas::lemma_mul_congruence::<T>(a1.y, a2.y, b1.z, b2.z);
     ring_lemmas::lemma_mul_congruence::<T>(a1.z, a2.z, b1.y, b2.y);
     additive_group_lemmas::lemma_sub_congruence::<T>(
         a1.y.mul(b1.z), a2.y.mul(b2.z),
         a1.z.mul(b1.y), a2.z.mul(b2.y),
     );
-    // y: a1.z*b1.x - a1.x*b1.z ≡ a2.z*b2.x - a2.x*b2.z
+    //  y: a1.z*b1.x - a1.x*b1.z ≡ a2.z*b2.x - a2.x*b2.z
     ring_lemmas::lemma_mul_congruence::<T>(a1.z, a2.z, b1.x, b2.x);
     ring_lemmas::lemma_mul_congruence::<T>(a1.x, a2.x, b1.z, b2.z);
     additive_group_lemmas::lemma_sub_congruence::<T>(
         a1.z.mul(b1.x), a2.z.mul(b2.x),
         a1.x.mul(b1.z), a2.x.mul(b2.z),
     );
-    // z: a1.x*b1.y - a1.y*b1.x ≡ a2.x*b2.y - a2.y*b2.x
+    //  z: a1.x*b1.y - a1.y*b1.x ≡ a2.x*b2.y - a2.y*b2.x
     ring_lemmas::lemma_mul_congruence::<T>(a1.x, a2.x, b1.y, b2.y);
     ring_lemmas::lemma_mul_congruence::<T>(a1.y, a2.y, b1.x, b2.x);
     additive_group_lemmas::lemma_sub_congruence::<T>(
@@ -528,35 +528,35 @@ pub proof fn lemma_cross_congruence<T: Ring>(a1: Vec3<T>, a2: Vec3<T>, b1: Vec3<
     );
 }
 
-/// cross(a, a) ≡ zero
+///  cross(a, a) ≡ zero
 pub proof fn lemma_cross_self_zero<T: Ring>(a: Vec3<T>)
     ensures
         cross(a, a).eqv(Vec3 { x: T::zero(), y: T::zero(), z: T::zero() }),
 {
-    // x: a.y*a.z - a.z*a.y ≡ 0
+    //  x: a.y*a.z - a.z*a.y ≡ 0
     T::axiom_mul_commutative(a.y, a.z);
     additive_group_lemmas::lemma_eqv_implies_sub_eqv_zero::<T>(a.y.mul(a.z), a.z.mul(a.y));
-    // y: a.z*a.x - a.x*a.z ≡ 0
+    //  y: a.z*a.x - a.x*a.z ≡ 0
     T::axiom_mul_commutative(a.z, a.x);
     additive_group_lemmas::lemma_eqv_implies_sub_eqv_zero::<T>(a.z.mul(a.x), a.x.mul(a.z));
-    // z: a.x*a.y - a.y*a.x ≡ 0
+    //  z: a.x*a.y - a.y*a.x ≡ 0
     T::axiom_mul_commutative(a.x, a.y);
     additive_group_lemmas::lemma_eqv_implies_sub_eqv_zero::<T>(a.x.mul(a.y), a.y.mul(a.x));
 }
 
-// ---------------------------------------------------------------------------
-// Helper: (a + b) - (c + d) ≡ (a - c) + (b - d)
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Helper: (a + b) - (c + d) ≡ (a - c) + (b - d)
+//  ---------------------------------------------------------------------------
 
 pub proof fn lemma_sub_sum_distributes<T: Ring>(a: T, b: T, c: T, d: T)
     ensures
         a.add(b).sub(c.add(d)).eqv(a.sub(c).add(b.sub(d))),
 {
-    // (a+b) - (c+d) ≡ (a+b) + (-(c+d))
+    //  (a+b) - (c+d) ≡ (a+b) + (-(c+d))
     T::axiom_sub_is_add_neg(a.add(b), c.add(d));
-    // -(c+d) ≡ -c + -d
+    //  -(c+d) ≡ -c + -d
     additive_group_lemmas::lemma_neg_add::<T>(c, d);
-    // (a+b) + (-(c+d)) ≡ (a+b) + (-c + -d)
+    //  (a+b) + (-(c+d)) ≡ (a+b) + (-c + -d)
     additive_group_lemmas::lemma_add_congruence_right::<T>(
         a.add(b), c.add(d).neg(), c.neg().add(d.neg()),
     );
@@ -565,20 +565,20 @@ pub proof fn lemma_sub_sum_distributes<T: Ring>(a: T, b: T, c: T, d: T)
         a.add(b).add(c.add(d).neg()),
         a.add(b).add(c.neg().add(d.neg())),
     );
-    // (a+b) + (-c + -d) ≡ (a + -c) + (b + -d)
+    //  (a+b) + (-c + -d) ≡ (a + -c) + (b + -d)
     additive_group_lemmas::lemma_add_rearrange_2x2::<T>(a, b, c.neg(), d.neg());
     T::axiom_eqv_transitive(
         a.add(b).sub(c.add(d)),
         a.add(b).add(c.neg().add(d.neg())),
         a.add(c.neg()).add(b.add(d.neg())),
     );
-    // (a + -c) ≡ a - c
+    //  (a + -c) ≡ a - c
     T::axiom_sub_is_add_neg(a, c);
     T::axiom_eqv_symmetric(a.sub(c), a.add(c.neg()));
-    // (b + -d) ≡ b - d
+    //  (b + -d) ≡ b - d
     T::axiom_sub_is_add_neg(b, d);
     T::axiom_eqv_symmetric(b.sub(d), b.add(d.neg()));
-    // (a + -c) + (b + -d) ≡ (a - c) + (b - d)
+    //  (a + -c) + (b + -d) ≡ (a - c) + (b - d)
     additive_group_lemmas::lemma_add_congruence::<T>(
         a.add(c.neg()), a.sub(c),
         b.add(d.neg()), b.sub(d),
@@ -590,16 +590,16 @@ pub proof fn lemma_sub_sum_distributes<T: Ring>(a: T, b: T, c: T, d: T)
     );
 }
 
-// ---------------------------------------------------------------------------
-// Cross linearity lemmas
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Cross linearity lemmas
+//  ---------------------------------------------------------------------------
 
-/// cross(a, b + c) ≡ cross(a, b) + cross(a, c)
+///  cross(a, b + c) ≡ cross(a, b) + cross(a, c)
 pub proof fn lemma_cross_distributes_right<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     ensures
         cross(a, b.add(c)).eqv(cross(a, b).add(cross(a, c))),
 {
-    // x component: a.y*(b.z+c.z) - a.z*(b.y+c.y) ≡ (a.y*b.z - a.z*b.y) + (a.y*c.z - a.z*c.y)
+    //  x component: a.y*(b.z+c.z) - a.z*(b.y+c.y) ≡ (a.y*b.z - a.z*b.y) + (a.y*c.z - a.z*c.y)
     T::axiom_mul_distributes_left(a.y, b.z, c.z);
     T::axiom_mul_distributes_left(a.z, b.y, c.y);
     additive_group_lemmas::lemma_sub_congruence::<T>(
@@ -613,7 +613,7 @@ pub proof fn lemma_cross_distributes_right<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: V
         a.y.mul(b.z).sub(a.z.mul(b.y)).add(a.y.mul(c.z).sub(a.z.mul(c.y))),
     );
 
-    // y component: a.z*(b.x+c.x) - a.x*(b.z+c.z) ≡ (a.z*b.x - a.x*b.z) + (a.z*c.x - a.x*c.z)
+    //  y component: a.z*(b.x+c.x) - a.x*(b.z+c.z) ≡ (a.z*b.x - a.x*b.z) + (a.z*c.x - a.x*c.z)
     T::axiom_mul_distributes_left(a.z, b.x, c.x);
     T::axiom_mul_distributes_left(a.x, b.z, c.z);
     additive_group_lemmas::lemma_sub_congruence::<T>(
@@ -627,7 +627,7 @@ pub proof fn lemma_cross_distributes_right<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: V
         a.z.mul(b.x).sub(a.x.mul(b.z)).add(a.z.mul(c.x).sub(a.x.mul(c.z))),
     );
 
-    // z component: a.x*(b.y+c.y) - a.y*(b.x+c.x) ≡ (a.x*b.y - a.y*b.x) + (a.x*c.y - a.y*c.x)
+    //  z component: a.x*(b.y+c.y) - a.y*(b.x+c.x) ≡ (a.x*b.y - a.y*b.x) + (a.x*c.y - a.y*c.x)
     T::axiom_mul_distributes_left(a.x, b.y, c.y);
     T::axiom_mul_distributes_left(a.y, b.x, c.x);
     additive_group_lemmas::lemma_sub_congruence::<T>(
@@ -642,12 +642,12 @@ pub proof fn lemma_cross_distributes_right<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: V
     );
 }
 
-/// cross(a + b, c) ≡ cross(a, c) + cross(b, c)
+///  cross(a + b, c) ≡ cross(a, c) + cross(b, c)
 pub proof fn lemma_cross_distributes_left<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     ensures
         cross(a.add(b), c).eqv(cross(a, c).add(cross(b, c))),
 {
-    // x component: (a.y+b.y)*c.z - (a.z+b.z)*c.y ≡ (a.y*c.z - a.z*c.y) + (b.y*c.z - b.z*c.y)
+    //  x component: (a.y+b.y)*c.z - (a.z+b.z)*c.y ≡ (a.y*c.z - a.z*c.y) + (b.y*c.z - b.z*c.y)
     ring_lemmas::lemma_mul_distributes_right::<T>(a.y, b.y, c.z);
     ring_lemmas::lemma_mul_distributes_right::<T>(a.z, b.z, c.y);
     additive_group_lemmas::lemma_sub_congruence::<T>(
@@ -661,7 +661,7 @@ pub proof fn lemma_cross_distributes_left<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Ve
         a.y.mul(c.z).sub(a.z.mul(c.y)).add(b.y.mul(c.z).sub(b.z.mul(c.y))),
     );
 
-    // y component: (a.z+b.z)*c.x - (a.x+b.x)*c.z ≡ (a.z*c.x - a.x*c.z) + (b.z*c.x - b.x*c.z)
+    //  y component: (a.z+b.z)*c.x - (a.x+b.x)*c.z ≡ (a.z*c.x - a.x*c.z) + (b.z*c.x - b.x*c.z)
     ring_lemmas::lemma_mul_distributes_right::<T>(a.z, b.z, c.x);
     ring_lemmas::lemma_mul_distributes_right::<T>(a.x, b.x, c.z);
     additive_group_lemmas::lemma_sub_congruence::<T>(
@@ -675,7 +675,7 @@ pub proof fn lemma_cross_distributes_left<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Ve
         a.z.mul(c.x).sub(a.x.mul(c.z)).add(b.z.mul(c.x).sub(b.x.mul(c.z))),
     );
 
-    // z component: (a.x+b.x)*c.y - (a.y+b.y)*c.x ≡ (a.x*c.y - a.y*c.x) + (b.x*c.y - b.y*c.x)
+    //  z component: (a.x+b.x)*c.y - (a.y+b.y)*c.x ≡ (a.x*c.y - a.y*c.x) + (b.x*c.y - b.y*c.x)
     ring_lemmas::lemma_mul_distributes_right::<T>(a.x, b.x, c.y);
     ring_lemmas::lemma_mul_distributes_right::<T>(a.y, b.y, c.x);
     additive_group_lemmas::lemma_sub_congruence::<T>(
@@ -690,12 +690,12 @@ pub proof fn lemma_cross_distributes_left<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Ve
     );
 }
 
-/// cross(scale(s, a), b) ≡ scale(s, cross(a, b))
+///  cross(scale(s, a), b) ≡ scale(s, cross(a, b))
 pub proof fn lemma_cross_scale<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
     ensures
         cross(scale(s, a), b).eqv(scale(s, cross(a, b))),
 {
-    // x: (s*a.y)*b.z - (s*a.z)*b.y ≡ s*(a.y*b.z - a.z*b.y)
+    //  x: (s*a.y)*b.z - (s*a.z)*b.y ≡ s*(a.y*b.z - a.z*b.y)
     T::axiom_mul_associative(s, a.y, b.z);
     T::axiom_mul_associative(s, a.z, b.y);
     additive_group_lemmas::lemma_sub_congruence::<T>(
@@ -713,7 +713,7 @@ pub proof fn lemma_cross_scale<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
         s.mul(a.y.mul(b.z).sub(a.z.mul(b.y))),
     );
 
-    // y: (s*a.z)*b.x - (s*a.x)*b.z ≡ s*(a.z*b.x - a.x*b.z)
+    //  y: (s*a.z)*b.x - (s*a.x)*b.z ≡ s*(a.z*b.x - a.x*b.z)
     T::axiom_mul_associative(s, a.z, b.x);
     T::axiom_mul_associative(s, a.x, b.z);
     additive_group_lemmas::lemma_sub_congruence::<T>(
@@ -731,7 +731,7 @@ pub proof fn lemma_cross_scale<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
         s.mul(a.z.mul(b.x).sub(a.x.mul(b.z))),
     );
 
-    // z: (s*a.x)*b.y - (s*a.y)*b.x ≡ s*(a.x*b.y - a.y*b.x)
+    //  z: (s*a.x)*b.y - (s*a.y)*b.x ≡ s*(a.x*b.y - a.y*b.x)
     T::axiom_mul_associative(s, a.x, b.y);
     T::axiom_mul_associative(s, a.y, b.x);
     additive_group_lemmas::lemma_sub_congruence::<T>(
@@ -750,26 +750,26 @@ pub proof fn lemma_cross_scale<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-// ---------------------------------------------------------------------------
-// Helper: (a * b) * c ≡ (a * c) * b (swap last two factors)
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Helper: (a * b) * c ≡ (a * c) * b (swap last two factors)
+//  ---------------------------------------------------------------------------
 
 pub proof fn lemma_mul_right_swap<T: Ring>(a: T, b: T, c: T)
     ensures
         a.mul(b).mul(c).eqv(a.mul(c).mul(b)),
 {
-    // (a*b)*c ≡ a*(b*c)
+    //  (a*b)*c ≡ a*(b*c)
     T::axiom_mul_associative(a, b, c);
-    // b*c ≡ c*b
+    //  b*c ≡ c*b
     T::axiom_mul_commutative(b, c);
-    // a*(b*c) ≡ a*(c*b)
+    //  a*(b*c) ≡ a*(c*b)
     ring_lemmas::lemma_mul_congruence_right::<T>(a, b.mul(c), c.mul(b));
     T::axiom_eqv_transitive(
         a.mul(b).mul(c),
         a.mul(b.mul(c)),
         a.mul(c.mul(b)),
     );
-    // a*(c*b) ≡ (a*c)*b
+    //  a*(c*b) ≡ (a*c)*b
     T::axiom_mul_associative(a, c, b);
     T::axiom_eqv_symmetric(a.mul(c).mul(b), a.mul(c.mul(b)));
     T::axiom_eqv_transitive(
@@ -779,35 +779,35 @@ pub proof fn lemma_mul_right_swap<T: Ring>(a: T, b: T, c: T)
     );
 }
 
-// ---------------------------------------------------------------------------
-// Cross orthogonality lemmas
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Cross orthogonality lemmas
+//  ---------------------------------------------------------------------------
 
-/// dot(cross(a, b), a) ≡ 0
+///  dot(cross(a, b), a) ≡ 0
 pub proof fn lemma_cross_orthogonal_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         dot(cross(a, b), a).eqv(T::zero()),
 {
-    // dot(cross(a,b), a) = (ay*bz - az*by)*ax + (az*bx - ax*bz)*ay + (ax*by - ay*bx)*az
+    //  dot(cross(a,b), a) = (ay*bz - az*by)*ax + (az*bx - ax*bz)*ay + (ax*by - ay*bx)*az
     //
-    // After expanding with sub_mul_right:
-    // = (ay*bz*ax - az*by*ax) + (az*bx*ay - ax*bz*ay) + (ax*by*az - ay*bx*az)
+    //  After expanding with sub_mul_right:
+    //  = (ay*bz*ax - az*by*ax) + (az*bx*ay - ax*bz*ay) + (ax*by*az - ay*bx*az)
     //
-    // The 6 terms cancel pairwise:
-    //   ay*bz*ax ≡ ax*bz*ay  (via right_swap: both ≡ (a_*a_)*b_)
-    //   az*bx*ay ≡ ay*bx*az
-    //   ax*by*az ≡ az*by*ax
+    //  The 6 terms cancel pairwise:
+    //    ay*bz*ax ≡ ax*bz*ay  (via right_swap: both ≡ (a_*a_)*b_)
+    //    az*bx*ay ≡ ay*bx*az
+    //    ax*by*az ≡ az*by*ax
     //
-    // So we get: (T1+ - T1-) + (T2+ - T2-) + (T3+ - T3-)
-    // where T1+ ≡ T2-, T2+ ≡ T3-, T3+ ≡ T1-.
-    // After substitution: (q2-q1) + (q3-q2) + (q1-q3) which telescopes to 0.
+    //  So we get: (T1+ - T1-) + (T2+ - T2-) + (T3+ - T3-)
+    //  where T1+ ≡ T2-, T2+ ≡ T3-, T3+ ≡ T1-.
+    //  After substitution: (q2-q1) + (q3-q2) + (q1-q3) which telescopes to 0.
 
-    // Step 1: Expand each cross component times a_i using sub_mul_right
+    //  Step 1: Expand each cross component times a_i using sub_mul_right
     ring_lemmas::lemma_sub_mul_right::<T>(a.y.mul(b.z), a.z.mul(b.y), a.x);
     ring_lemmas::lemma_sub_mul_right::<T>(a.z.mul(b.x), a.x.mul(b.z), a.y);
     ring_lemmas::lemma_sub_mul_right::<T>(a.x.mul(b.y), a.y.mul(b.x), a.z);
 
-    // Step 2: Propagate through additions
+    //  Step 2: Propagate through additions
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.y.mul(b.z).sub(a.z.mul(b.y)).mul(a.x),
         a.y.mul(b.z).mul(a.x).sub(a.z.mul(b.y).mul(a.x)),
@@ -820,18 +820,18 @@ pub proof fn lemma_cross_orthogonal_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         a.x.mul(b.y).sub(a.y.mul(b.x)).mul(a.z),
         a.x.mul(b.y).mul(a.z).sub(a.y.mul(b.x).mul(a.z)),
     );
-    // dot(cross(a,b), a) ≡ (T1+-T1-) + (T2+-T2-) + (T3+-T3-)
+    //  dot(cross(a,b), a) ≡ (T1+-T1-) + (T2+-T2-) + (T3+-T3-)
 
-    // Step 3: Show the pairwise equivalences using lemma_mul_right_swap
-    // T1+ = ay*bz*ax, T2- = ax*bz*ay: both ≡ (a_*a_)*b_ form
-    // (ay*bz)*ax ≡ (ay*ax)*bz
+    //  Step 3: Show the pairwise equivalences using lemma_mul_right_swap
+    //  T1+ = ay*bz*ax, T2- = ax*bz*ay: both ≡ (a_*a_)*b_ form
+    //  (ay*bz)*ax ≡ (ay*ax)*bz
     lemma_mul_right_swap::<T>(a.y, b.z, a.x);
-    // (ax*bz)*ay ≡ (ax*ay)*bz
+    //  (ax*bz)*ay ≡ (ax*ay)*bz
     lemma_mul_right_swap::<T>(a.x, b.z, a.y);
-    // (ay*ax) ≡ (ax*ay)
+    //  (ay*ax) ≡ (ax*ay)
     T::axiom_mul_commutative(a.y, a.x);
     T::axiom_mul_congruence_left(a.y.mul(a.x), a.x.mul(a.y), b.z);
-    // T1+ ≡ (ay*ax)*bz ≡ (ax*ay)*bz ≡ T2-
+    //  T1+ ≡ (ay*ax)*bz ≡ (ax*ay)*bz ≡ T2-
     T::axiom_eqv_transitive(
         a.y.mul(b.z).mul(a.x),
         a.y.mul(a.x).mul(b.z),
@@ -844,7 +844,7 @@ pub proof fn lemma_cross_orthogonal_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         a.x.mul(b.z).mul(a.y),
     );
 
-    // T2+ = az*bx*ay, T3- = ay*bx*az: both ≡ (a_*a_)*b_
+    //  T2+ = az*bx*ay, T3- = ay*bx*az: both ≡ (a_*a_)*b_
     lemma_mul_right_swap::<T>(a.z, b.x, a.y);
     lemma_mul_right_swap::<T>(a.y, b.x, a.z);
     T::axiom_mul_commutative(a.z, a.y);
@@ -861,7 +861,7 @@ pub proof fn lemma_cross_orthogonal_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         a.y.mul(b.x).mul(a.z),
     );
 
-    // T3+ = ax*by*az, T1- = az*by*ax: both ≡ (a_*a_)*b_
+    //  T3+ = ax*by*az, T1- = az*by*ax: both ≡ (a_*a_)*b_
     lemma_mul_right_swap::<T>(a.x, b.y, a.z);
     lemma_mul_right_swap::<T>(a.z, b.y, a.x);
     T::axiom_mul_commutative(a.x, a.z);
@@ -878,27 +878,27 @@ pub proof fn lemma_cross_orthogonal_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         a.z.mul(b.y).mul(a.x),
     );
 
-    // Step 4: Replace positive terms with their negative-term equivalents
-    // T1+ ≡ T2-, so (T1+ - T1-) ≡ (T2- - T1-)
+    //  Step 4: Replace positive terms with their negative-term equivalents
+    //  T1+ ≡ T2-, so (T1+ - T1-) ≡ (T2- - T1-)
     T::axiom_eqv_reflexive(a.z.mul(b.y).mul(a.x));
     additive_group_lemmas::lemma_sub_congruence::<T>(
         a.y.mul(b.z).mul(a.x), a.x.mul(b.z).mul(a.y),
         a.z.mul(b.y).mul(a.x), a.z.mul(b.y).mul(a.x),
     );
-    // T2+ ≡ T3-, so (T2+ - T2-) ≡ (T3- - T2-)
+    //  T2+ ≡ T3-, so (T2+ - T2-) ≡ (T3- - T2-)
     T::axiom_eqv_reflexive(a.x.mul(b.z).mul(a.y));
     additive_group_lemmas::lemma_sub_congruence::<T>(
         a.z.mul(b.x).mul(a.y), a.y.mul(b.x).mul(a.z),
         a.x.mul(b.z).mul(a.y), a.x.mul(b.z).mul(a.y),
     );
-    // T3+ ≡ T1-, so (T3+ - T3-) ≡ (T1- - T3-)
+    //  T3+ ≡ T1-, so (T3+ - T3-) ≡ (T1- - T3-)
     T::axiom_eqv_reflexive(a.y.mul(b.x).mul(a.z));
     additive_group_lemmas::lemma_sub_congruence::<T>(
         a.x.mul(b.y).mul(a.z), a.z.mul(b.y).mul(a.x),
         a.y.mul(b.x).mul(a.z), a.y.mul(b.x).mul(a.z),
     );
 
-    // Propagate through additions
+    //  Propagate through additions
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.y.mul(b.z).mul(a.x).sub(a.z.mul(b.y).mul(a.x)),
         a.x.mul(b.z).mul(a.y).sub(a.z.mul(b.y).mul(a.x)),
@@ -911,16 +911,16 @@ pub proof fn lemma_cross_orthogonal_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         a.x.mul(b.y).mul(a.z).sub(a.y.mul(b.x).mul(a.z)),
         a.z.mul(b.y).mul(a.x).sub(a.y.mul(b.x).mul(a.z)),
     );
-    // Now: ≡ (T2- - T1-) + (T3- - T2-) + (T1- - T3-)
-    // Let q1 = T1- = az*by*ax, q2 = T2- = ax*bz*ay, q3 = T3- = ay*bx*az
+    //  Now: ≡ (T2- - T1-) + (T3- - T2-) + (T1- - T3-)
+    //  Let q1 = T1- = az*by*ax, q2 = T2- = ax*bz*ay, q3 = T3- = ay*bx*az
 
-    // Step 5: Telescope (q2-q1) + (q3-q2) ≡ q3-q1
-    // First commute: (q2-q1) + (q3-q2) ≡ (q3-q2) + (q2-q1)
+    //  Step 5: Telescope (q2-q1) + (q3-q2) ≡ q3-q1
+    //  First commute: (q2-q1) + (q3-q2) ≡ (q3-q2) + (q2-q1)
     T::axiom_add_commutative(
         a.x.mul(b.z).mul(a.y).sub(a.z.mul(b.y).mul(a.x)),
         a.y.mul(b.x).mul(a.z).sub(a.x.mul(b.z).mul(a.y)),
     );
-    // (q3-q2) + (q2-q1) ≡ q3-q1
+    //  (q3-q2) + (q2-q1) ≡ q3-q1
     additive_group_lemmas::lemma_sub_add_sub::<T>(
         a.y.mul(b.x).mul(a.z),
         a.x.mul(b.z).mul(a.y),
@@ -931,19 +931,19 @@ pub proof fn lemma_cross_orthogonal_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         a.y.mul(b.x).mul(a.z).sub(a.x.mul(b.z).mul(a.y)).add(a.x.mul(b.z).mul(a.y).sub(a.z.mul(b.y).mul(a.x))),
         a.y.mul(b.x).mul(a.z).sub(a.z.mul(b.y).mul(a.x)),
     );
-    // (q3-q1) + (q1-q3) ≡ 0
-    // Propagate: (q3-q1) + (q1-q3) into the outer add
+    //  (q3-q1) + (q1-q3) ≡ 0
+    //  Propagate: (q3-q1) + (q1-q3) into the outer add
     T::axiom_add_congruence_left(
         a.x.mul(b.z).mul(a.y).sub(a.z.mul(b.y).mul(a.x)).add(a.y.mul(b.x).mul(a.z).sub(a.x.mul(b.z).mul(a.y))),
         a.y.mul(b.x).mul(a.z).sub(a.z.mul(b.y).mul(a.x)),
         a.z.mul(b.y).mul(a.x).sub(a.y.mul(b.x).mul(a.z)),
     );
-    // (q3-q1) + (q1-q3): commute then telescope
+    //  (q3-q1) + (q1-q3): commute then telescope
     T::axiom_add_commutative(
         a.y.mul(b.x).mul(a.z).sub(a.z.mul(b.y).mul(a.x)),
         a.z.mul(b.y).mul(a.x).sub(a.y.mul(b.x).mul(a.z)),
     );
-    // (q1-q3) + (q3-q1) ≡ q1-q1 ≡ 0
+    //  (q1-q3) + (q3-q1) ≡ q1-q1 ≡ 0
     additive_group_lemmas::lemma_sub_add_sub::<T>(
         a.z.mul(b.y).mul(a.x),
         a.y.mul(b.x).mul(a.z),
@@ -961,12 +961,12 @@ pub proof fn lemma_cross_orthogonal_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         T::zero(),
     );
 
-    // Step 6: Chain everything together
-    // dot(cross(a,b), a)
-    //   ≡ (T1+-T1-) + (T2+-T2-) + (T3+-T3-)     [step 2]
-    //   ≡ (q2-q1) + (q3-q2) + (q1-q3)            [step 4]
-    //   ≡ (q3-q1) + (q1-q3)                        [step 5, with congruence]
-    //   ≡ 0                                         [step 5 final]
+    //  Step 6: Chain everything together
+    //  dot(cross(a,b), a)
+    //    ≡ (T1+-T1-) + (T2+-T2-) + (T3+-T3-)     [step 2]
+    //    ≡ (q2-q1) + (q3-q2) + (q1-q3)            [step 4]
+    //    ≡ (q3-q1) + (q1-q3)                        [step 5, with congruence]
+    //    ≡ 0                                         [step 5 final]
     T::axiom_eqv_transitive(
         dot(cross(a, b), a),
         a.y.mul(b.z).mul(a.x).sub(a.z.mul(b.y).mul(a.x)).add(a.z.mul(b.x).mul(a.y).sub(a.x.mul(b.z).mul(a.y))).add(a.x.mul(b.y).mul(a.z).sub(a.y.mul(b.x).mul(a.z))),
@@ -984,26 +984,26 @@ pub proof fn lemma_cross_orthogonal_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// dot(cross(a, b), b) ≡ 0
+///  dot(cross(a, b), b) ≡ 0
 pub proof fn lemma_cross_orthogonal_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         dot(cross(a, b), b).eqv(T::zero()),
 {
-    // dot(cross(a,b), b) = (ay*bz - az*by)*bx + (az*bx - ax*bz)*by + (ax*by - ay*bx)*bz
+    //  dot(cross(a,b), b) = (ay*bz - az*by)*bx + (az*bx - ax*bz)*by + (ax*by - ay*bx)*bz
     //
-    // The 6 terms after expanding:
-    //   T1+ = ay*bz*bx, T1- = az*by*bx
-    //   T2+ = az*bx*by, T2- = ax*bz*by
-    //   T3+ = ax*by*bz, T3- = ay*bx*bz
+    //  The 6 terms after expanding:
+    //    T1+ = ay*bz*bx, T1- = az*by*bx
+    //    T2+ = az*bx*by, T2- = ax*bz*by
+    //    T3+ = ax*by*bz, T3- = ay*bx*bz
     //
-    // T1+ ≡ T3- (both ≡ ay*(bx*bz)), T2+ ≡ T1- (both ≡ az*(bx*by)), T3+ ≡ T2- (both ≡ ax*(by*bz))
+    //  T1+ ≡ T3- (both ≡ ay*(bx*bz)), T2+ ≡ T1- (both ≡ az*(bx*by)), T3+ ≡ T2- (both ≡ ax*(by*bz))
 
-    // Step 1: Expand
+    //  Step 1: Expand
     ring_lemmas::lemma_sub_mul_right::<T>(a.y.mul(b.z), a.z.mul(b.y), b.x);
     ring_lemmas::lemma_sub_mul_right::<T>(a.z.mul(b.x), a.x.mul(b.z), b.y);
     ring_lemmas::lemma_sub_mul_right::<T>(a.x.mul(b.y), a.y.mul(b.x), b.z);
 
-    // Step 2: Propagate
+    //  Step 2: Propagate
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.y.mul(b.z).sub(a.z.mul(b.y)).mul(b.x),
         a.y.mul(b.z).mul(b.x).sub(a.z.mul(b.y).mul(b.x)),
@@ -1017,26 +1017,26 @@ pub proof fn lemma_cross_orthogonal_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         a.x.mul(b.y).mul(b.z).sub(a.y.mul(b.x).mul(b.z)),
     );
 
-    // Step 3: Show pairwise equivalences
-    // T1+ = (ay*bz)*bx ≡ ay*(bx*bz) and T3- = (ay*bx)*bz ≡ ay*(bx*bz)
+    //  Step 3: Show pairwise equivalences
+    //  T1+ = (ay*bz)*bx ≡ ay*(bx*bz) and T3- = (ay*bx)*bz ≡ ay*(bx*bz)
     lemma_mul_right_swap::<T>(a.y, b.z, b.x);
     lemma_mul_right_swap::<T>(a.y, b.x, b.z);
     T::axiom_mul_commutative(b.z, b.x);
     ring_lemmas::lemma_mul_congruence_right::<T>(a.y, b.z.mul(b.x), b.x.mul(b.z));
-    // (ay*bz)*bx ≡ ay*(bz*bx) (from right_swap, but we got ay*bx*bz)
-    // Actually lemma_mul_right_swap(ay, bz, bx) gives: (ay*bz)*bx ≡ (ay*bx)*bz = T3-
-    // So T1+ ≡ T3- directly!
-    // Wait, lemma_mul_right_swap(a, b, c) gives a.mul(b).mul(c) ≡ a.mul(c).mul(b)
-    // So lemma_mul_right_swap(ay, bz, bx) gives (ay*bz)*bx ≡ (ay*bx)*bz ✓
+    //  (ay*bz)*bx ≡ ay*(bz*bx) (from right_swap, but we got ay*bx*bz)
+    //  Actually lemma_mul_right_swap(ay, bz, bx) gives: (ay*bz)*bx ≡ (ay*bx)*bz = T3-
+    //  So T1+ ≡ T3- directly!
+    //  Wait, lemma_mul_right_swap(a, b, c) gives a.mul(b).mul(c) ≡ a.mul(c).mul(b)
+    //  So lemma_mul_right_swap(ay, bz, bx) gives (ay*bz)*bx ≡ (ay*bx)*bz ✓
 
-    // T2+ = (az*bx)*by ≡ (az*by)*bx = T1-
+    //  T2+ = (az*bx)*by ≡ (az*by)*bx = T1-
     lemma_mul_right_swap::<T>(a.z, b.x, b.y);
 
-    // T3+ = (ax*by)*bz ≡ (ax*bz)*by = T2-
+    //  T3+ = (ax*by)*bz ≡ (ax*bz)*by = T2-
     lemma_mul_right_swap::<T>(a.x, b.y, b.z);
 
-    // Step 4: Replace using sub_congruence
-    // Need reflexive for the unchanged side
+    //  Step 4: Replace using sub_congruence
+    //  Need reflexive for the unchanged side
     T::axiom_eqv_reflexive(a.z.mul(b.y).mul(b.x));
     additive_group_lemmas::lemma_sub_congruence::<T>(
         a.y.mul(b.z).mul(b.x), a.y.mul(b.x).mul(b.z),
@@ -1053,7 +1053,7 @@ pub proof fn lemma_cross_orthogonal_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         a.y.mul(b.x).mul(b.z), a.y.mul(b.x).mul(b.z),
     );
 
-    // Propagate
+    //  Propagate
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.y.mul(b.z).mul(b.x).sub(a.z.mul(b.y).mul(b.x)),
         a.y.mul(b.x).mul(b.z).sub(a.z.mul(b.y).mul(b.x)),
@@ -1066,23 +1066,23 @@ pub proof fn lemma_cross_orthogonal_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         a.x.mul(b.y).mul(b.z).sub(a.y.mul(b.x).mul(b.z)),
         a.x.mul(b.z).mul(b.y).sub(a.y.mul(b.x).mul(b.z)),
     );
-    // Now: ≡ (q3-q1) + (q1-q2) + (q2-q3)
-    // where q1 = az*by*bx, q2 = ax*bz*by, q3 = ay*bx*bz
+    //  Now: ≡ (q3-q1) + (q1-q2) + (q2-q3)
+    //  where q1 = az*by*bx, q2 = ax*bz*by, q3 = ay*bx*bz
 
-    // Step 5: Telescope
-    // (q3-q1) + (q1-q2) ≡ q3-q2 via sub_add_sub(q3, q1, q2)
+    //  Step 5: Telescope
+    //  (q3-q1) + (q1-q2) ≡ q3-q2 via sub_add_sub(q3, q1, q2)
     additive_group_lemmas::lemma_sub_add_sub::<T>(
         a.y.mul(b.x).mul(b.z),
         a.z.mul(b.y).mul(b.x),
         a.x.mul(b.z).mul(b.y),
     );
-    // (q3-q2) + (q2-q3): telescope
+    //  (q3-q2) + (q2-q3): telescope
     T::axiom_add_congruence_left(
         a.y.mul(b.x).mul(b.z).sub(a.z.mul(b.y).mul(b.x)).add(a.z.mul(b.y).mul(b.x).sub(a.x.mul(b.z).mul(b.y))),
         a.y.mul(b.x).mul(b.z).sub(a.x.mul(b.z).mul(b.y)),
         a.x.mul(b.z).mul(b.y).sub(a.y.mul(b.x).mul(b.z)),
     );
-    // (q3-q2) + (q2-q3): commute then telescope
+    //  (q3-q2) + (q2-q3): commute then telescope
     T::axiom_add_commutative(
         a.y.mul(b.x).mul(b.z).sub(a.x.mul(b.z).mul(b.y)),
         a.x.mul(b.z).mul(b.y).sub(a.y.mul(b.x).mul(b.z)),
@@ -1104,7 +1104,7 @@ pub proof fn lemma_cross_orthogonal_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         T::zero(),
     );
 
-    // Step 6: Chain everything
+    //  Step 6: Chain everything
     T::axiom_eqv_transitive(
         dot(cross(a, b), b),
         a.y.mul(b.z).mul(b.x).sub(a.z.mul(b.y).mul(b.x)).add(a.z.mul(b.x).mul(b.y).sub(a.x.mul(b.z).mul(b.y))).add(a.x.mul(b.y).mul(b.z).sub(a.y.mul(b.x).mul(b.z))),
@@ -1122,11 +1122,11 @@ pub proof fn lemma_cross_orthogonal_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-// ---------------------------------------------------------------------------
-// Dot congruence and neg
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Dot congruence and neg
+//  ---------------------------------------------------------------------------
 
-/// a1 ≡ a2, b1 ≡ b2 implies dot(a1, b1) ≡ dot(a2, b2)
+///  a1 ≡ a2, b1 ≡ b2 implies dot(a1, b1) ≡ dot(a2, b2)
 pub proof fn lemma_dot_congruence<T: Ring>(a1: Vec3<T>, a2: Vec3<T>, b1: Vec3<T>, b2: Vec3<T>)
     requires
         a1.eqv(a2),
@@ -1149,7 +1149,7 @@ pub proof fn lemma_dot_congruence<T: Ring>(a1: Vec3<T>, a2: Vec3<T>, b1: Vec3<T>
     );
 }
 
-/// dot(a, -b) ≡ -dot(a, b)
+///  dot(a, -b) ≡ -dot(a, b)
 pub proof fn lemma_dot_neg_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         dot(a, b.neg()).eqv(dot(a, b).neg()),
@@ -1157,7 +1157,7 @@ pub proof fn lemma_dot_neg_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ring_lemmas::lemma_mul_neg_right::<T>(a.x, b.x);
     ring_lemmas::lemma_mul_neg_right::<T>(a.y, b.y);
     ring_lemmas::lemma_mul_neg_right::<T>(a.z, b.z);
-    // LHS ≡ -(ax*bx) + -(ay*by) + -(az*bz)
+    //  LHS ≡ -(ax*bx) + -(ay*by) + -(az*bz)
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.x.mul(b.x.neg()), a.x.mul(b.x).neg(),
         a.y.mul(b.y.neg()), a.y.mul(b.y).neg(),
@@ -1168,19 +1168,19 @@ pub proof fn lemma_dot_neg_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         a.z.mul(b.z.neg()),
         a.z.mul(b.z).neg(),
     );
-    // -(ax*bx) + -(ay*by) ≡ -(ax*bx + ay*by)
+    //  -(ax*bx) + -(ay*by) ≡ -(ax*bx + ay*by)
     additive_group_lemmas::lemma_neg_add::<T>(a.x.mul(b.x), a.y.mul(b.y));
     T::axiom_eqv_symmetric(
         a.x.mul(b.x).add(a.y.mul(b.y)).neg(),
         a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()),
     );
-    // -(ax*bx + ay*by) + -(az*bz) ≡ -((ax*bx + ay*by) + az*bz)
+    //  -(ax*bx + ay*by) + -(az*bz) ≡ -((ax*bx + ay*by) + az*bz)
     additive_group_lemmas::lemma_neg_add::<T>(a.x.mul(b.x).add(a.y.mul(b.y)), a.z.mul(b.z));
     T::axiom_eqv_symmetric(
         a.x.mul(b.x).add(a.y.mul(b.y)).add(a.z.mul(b.z)).neg(),
         a.x.mul(b.x).add(a.y.mul(b.y)).neg().add(a.z.mul(b.z).neg()),
     );
-    // Propagate: LHS ≡ -(xy) + -(yz) + -(xz) ≡ -(xy+yz) + -(xz) ≡ -(xy+yz+xz)
+    //  Propagate: LHS ≡ -(xy) + -(yz) + -(xz) ≡ -(xy+yz) + -(xz) ≡ -(xy+yz+xz)
     T::axiom_add_congruence_left(
         a.x.mul(b.x).neg().add(a.y.mul(b.y).neg()),
         a.x.mul(b.x).add(a.y.mul(b.y)).neg(),
@@ -1198,11 +1198,11 @@ pub proof fn lemma_dot_neg_right<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-// ---------------------------------------------------------------------------
-// Norm-squared lemmas
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Norm-squared lemmas
+//  ---------------------------------------------------------------------------
 
-/// a ≡ b implies norm_sq(a) ≡ norm_sq(b)
+///  a ≡ b implies norm_sq(a) ≡ norm_sq(b)
 pub proof fn lemma_norm_sq_congruence<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     requires
         a.eqv(b),
@@ -1212,7 +1212,7 @@ pub proof fn lemma_norm_sq_congruence<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     lemma_dot_congruence(a, b, a, b);
 }
 
-/// norm_sq(scale(s, v)) ≡ s*s * norm_sq(v)
+///  norm_sq(scale(s, v)) ≡ s*s * norm_sq(v)
 pub proof fn lemma_norm_sq_scale<T: Ring>(s: T, v: Vec3<T>)
     ensures
         norm_sq(scale(s, v)).eqv(s.mul(s).mul(norm_sq(v))),
@@ -1234,7 +1234,7 @@ pub proof fn lemma_norm_sq_scale<T: Ring>(s: T, v: Vec3<T>)
     );
 }
 
-/// 0 ≤ norm_sq(v)
+///  0 ≤ norm_sq(v)
 pub proof fn lemma_norm_sq_nonneg<T: OrderedRing>(v: Vec3<T>)
     ensures
         T::zero().le(norm_sq(v)),
@@ -1242,7 +1242,7 @@ pub proof fn lemma_norm_sq_nonneg<T: OrderedRing>(v: Vec3<T>)
     inequalities::lemma_sum_squares_nonneg_3d::<T>(v.x, v.y, v.z);
 }
 
-/// norm_sq(v) ≡ 0 implies v ≡ zero (for OrderedField)
+///  norm_sq(v) ≡ 0 implies v ≡ zero (for OrderedField)
 pub proof fn lemma_norm_sq_zero_implies_zero<T: OrderedField>(v: Vec3<T>)
     requires
         norm_sq(v).eqv(T::zero()),
@@ -1252,7 +1252,7 @@ pub proof fn lemma_norm_sq_zero_implies_zero<T: OrderedField>(v: Vec3<T>)
     inequalities::lemma_sum_squares_zero_3d::<T>(v.x, v.y, v.z);
 }
 
-/// v ≡ zero implies norm_sq(v) ≡ 0
+///  v ≡ zero implies norm_sq(v) ≡ 0
 pub proof fn lemma_norm_sq_zero_of_zero<T: Ring>(v: Vec3<T>)
     requires
         v.eqv(Vec3 { x: T::zero(), y: T::zero(), z: T::zero() }),
@@ -1265,42 +1265,42 @@ pub proof fn lemma_norm_sq_zero_of_zero<T: Ring>(v: Vec3<T>)
     T::axiom_eqv_transitive(norm_sq(v), dot(z, z), T::zero());
 }
 
-// ---------------------------------------------------------------------------
-// Triple product lemmas
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Triple product lemmas
+//  ---------------------------------------------------------------------------
 
-/// triple(a, b, b) ≡ 0
+///  triple(a, b, b) ≡ 0
 pub proof fn lemma_triple_self_zero_23<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         triple(a, b, b).eqv(T::zero()),
 {
-    // cross(b, b) ≡ zero
+    //  cross(b, b) ≡ zero
     lemma_cross_self_zero(b);
     let z = Vec3 { x: T::zero(), y: T::zero(), z: T::zero() };
-    // dot(a, cross(b,b)) ≡ dot(cross(b,b), a) ≡ dot(zero, a) ≡ 0
+    //  dot(a, cross(b,b)) ≡ dot(cross(b,b), a) ≡ dot(zero, a) ≡ 0
     lemma_dot_commutative(a, cross(b, b));
-    // dot(cross(b,b), a): cross(b,b) ≡ zero, a ≡ a (need Vec3 reflexive)
-    // Use scale_congruence trick: just use dot_zero_left + congruence chain
-    // cross(b,b).eqv(z) so dot(cross(b,b), a) ≡ dot(z, a) via left congruence
+    //  dot(cross(b,b), a): cross(b,b) ≡ zero, a ≡ a (need Vec3 reflexive)
+    //  Use scale_congruence trick: just use dot_zero_left + congruence chain
+    //  cross(b,b).eqv(z) so dot(cross(b,b), a) ≡ dot(z, a) via left congruence
     lemma_dot_scale_left::<T>(T::one(), cross(b, b), a);
-    // dot(scale(1, cross(b,b)), a) ≡ 1 * dot(cross(b,b), a)
-    // scale(1, cross(b,b)) ≡ cross(b,b)
+    //  dot(scale(1, cross(b,b)), a) ≡ 1 * dot(cross(b,b), a)
+    //  scale(1, cross(b,b)) ≡ cross(b,b)
     lemma_scale_identity(cross(b, b));
-    // Actually, simpler: dot(cross(b,b), a). We know cross(b,b) ≡ z.
-    // Use the congruence on individual components to propagate.
-    // dot(cross(b,b), a) = cross(b,b).x * a.x + cross(b,b).y * a.y + cross(b,b).z * a.z
-    // cross(b,b) ≡ z means each component is eqv to 0
-    // So each product ≡ 0, and the sum ≡ 0.
-    // This is just lemma_dot_zero_left applied to a, but with cross(b,b) instead of z.
-    // Let me just chain: dot(a, cross(b,b)) ≡ dot(cross(b,b), a) and then use congruence.
-    // Actually dot_congruence needs both sides eqv'd. Let me use a simpler approach.
-    // dot_scale_right with s=0: dot(a, scale(0, b')) ≡ 0 * dot(a, b') = 0... complex.
-    // Simplest: dot_distributes_right with c = -cross(b,b):
-    // Actually the SIMPLEST: note that triple(a,b,b) = dot(a, cross(b,b)).
-    // cross(b,b) ≡ zero, so each component of cross(b,b) is eqv to 0.
-    // Use component-level reasoning (like dot_zero_right but substituting cross(b,b) for zero).
-    // cross(b,b).x ≡ 0, cross(b,b).y ≡ 0, cross(b,b).z ≡ 0
-    // a.x * cross(b,b).x ≡ a.x * 0 ≡ 0 (by mul_congruence_right + mul_zero_right)
+    //  Actually, simpler: dot(cross(b,b), a). We know cross(b,b) ≡ z.
+    //  Use the congruence on individual components to propagate.
+    //  dot(cross(b,b), a) = cross(b,b).x * a.x + cross(b,b).y * a.y + cross(b,b).z * a.z
+    //  cross(b,b) ≡ z means each component is eqv to 0
+    //  So each product ≡ 0, and the sum ≡ 0.
+    //  This is just lemma_dot_zero_left applied to a, but with cross(b,b) instead of z.
+    //  Let me just chain: dot(a, cross(b,b)) ≡ dot(cross(b,b), a) and then use congruence.
+    //  Actually dot_congruence needs both sides eqv'd. Let me use a simpler approach.
+    //  dot_scale_right with s=0: dot(a, scale(0, b')) ≡ 0 * dot(a, b') = 0... complex.
+    //  Simplest: dot_distributes_right with c = -cross(b,b):
+    //  Actually the SIMPLEST: note that triple(a,b,b) = dot(a, cross(b,b)).
+    //  cross(b,b) ≡ zero, so each component of cross(b,b) is eqv to 0.
+    //  Use component-level reasoning (like dot_zero_right but substituting cross(b,b) for zero).
+    //  cross(b,b).x ≡ 0, cross(b,b).y ≡ 0, cross(b,b).z ≡ 0
+    //  a.x * cross(b,b).x ≡ a.x * 0 ≡ 0 (by mul_congruence_right + mul_zero_right)
     ring_lemmas::lemma_mul_congruence_right::<T>(a.x, cross(b, b).x, T::zero());
     T::axiom_mul_zero_right(a.x);
     T::axiom_eqv_transitive(a.x.mul(cross(b, b).x), a.x.mul(T::zero()), T::zero());
@@ -1313,9 +1313,9 @@ pub proof fn lemma_triple_self_zero_23<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     T::axiom_mul_zero_right(a.z);
     T::axiom_eqv_transitive(a.z.mul(cross(b, b).z), a.z.mul(T::zero()), T::zero());
 
-    // 0 + 0 ≡ 0
+    //  0 + 0 ≡ 0
     T::axiom_add_zero_right(T::zero());
-    // ax*cx + ay*cy ≡ 0 + 0 ≡ 0
+    //  ax*cx + ay*cy ≡ 0 + 0 ≡ 0
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.x.mul(cross(b, b).x), T::zero(),
         a.y.mul(cross(b, b).y), T::zero(),
@@ -1325,7 +1325,7 @@ pub proof fn lemma_triple_self_zero_23<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         T::zero().add(T::zero()),
         T::zero(),
     );
-    // (ax*cx + ay*cy) + az*cz ≡ 0 + 0 ≡ 0
+    //  (ax*cx + ay*cy) + az*cz ≡ 0 + 0 ≡ 0
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a.x.mul(cross(b, b).x).add(a.y.mul(cross(b, b).y)), T::zero(),
         a.z.mul(cross(b, b).z), T::zero(),
@@ -1337,33 +1337,33 @@ pub proof fn lemma_triple_self_zero_23<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// triple(a, a, b) ≡ 0
+///  triple(a, a, b) ≡ 0
 pub proof fn lemma_triple_self_zero_12<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         triple(a, a, b).eqv(T::zero()),
 {
-    // triple(a, a, b) = dot(a, cross(a, b))
-    // dot(cross(a, b), a) ≡ 0  [cross_orthogonal_left]
+    //  triple(a, a, b) = dot(a, cross(a, b))
+    //  dot(cross(a, b), a) ≡ 0  [cross_orthogonal_left]
     lemma_cross_orthogonal_left(a, b);
-    // dot(a, cross(a, b)) ≡ dot(cross(a, b), a) ≡ 0
+    //  dot(a, cross(a, b)) ≡ dot(cross(a, b), a) ≡ 0
     lemma_dot_commutative(a, cross(a, b));
     T::axiom_eqv_transitive(triple(a, a, b), dot(cross(a, b), a), T::zero());
 }
 
-/// triple(a, b, a) ≡ 0
+///  triple(a, b, a) ≡ 0
 pub proof fn lemma_triple_self_zero_13<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         triple(a, b, a).eqv(T::zero()),
 {
-    // triple(a, b, a) = dot(a, cross(b, a))
-    // dot(cross(b, a), a) = dot(cross(b, a), a)... hmm, need orthogonal_right
-    // cross_orthogonal_right(b, a): dot(cross(b, a), a) ≡ 0
+    //  triple(a, b, a) = dot(a, cross(b, a))
+    //  dot(cross(b, a), a) = dot(cross(b, a), a)... hmm, need orthogonal_right
+    //  cross_orthogonal_right(b, a): dot(cross(b, a), a) ≡ 0
     lemma_cross_orthogonal_right(b, a);
     lemma_dot_commutative(a, cross(b, a));
     T::axiom_eqv_transitive(triple(a, b, a), dot(cross(b, a), a), T::zero());
 }
 
-/// triple(a + a2, b, c) ≡ triple(a, b, c) + triple(a2, b, c)
+///  triple(a + a2, b, c) ≡ triple(a, b, c) + triple(a2, b, c)
 pub proof fn lemma_triple_linear_first<T: Ring>(a: Vec3<T>, a2: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     ensures
         triple(a.add(a2), b, c).eqv(triple(a, b, c).add(triple(a2, b, c))),
@@ -1371,38 +1371,38 @@ pub proof fn lemma_triple_linear_first<T: Ring>(a: Vec3<T>, a2: Vec3<T>, b: Vec3
     lemma_dot_distributes_left(a, a2, cross(b, c));
 }
 
-/// triple(a, b, c) ≡ -triple(b, a, c) (swap first two)
+///  triple(a, b, c) ≡ -triple(b, a, c) (swap first two)
 pub proof fn lemma_triple_swap_12<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     ensures
         triple(a, b, c).eqv(triple(b, a, c).neg()),
 {
-    // Strategy from VerusCAD: use linearity + self-zero on (a+b)
-    // triple(a+b, a+b, c) ≡ 0  [self_zero_12]
+    //  Strategy from VerusCAD: use linearity + self-zero on (a+b)
+    //  triple(a+b, a+b, c) ≡ 0  [self_zero_12]
     lemma_triple_self_zero_12(a.add(b), c);
-    // triple(a+b, a+b, c) ≡ triple(a, a+b, c) + triple(b, a+b, c)  [linear_first]
+    //  triple(a+b, a+b, c) ≡ triple(a, a+b, c) + triple(b, a+b, c)  [linear_first]
     lemma_triple_linear_first(a, b, a.add(b), c);
-    // So triple(a, a+b, c) + triple(b, a+b, c) ≡ 0
+    //  So triple(a, a+b, c) + triple(b, a+b, c) ≡ 0
 
-    // Expand triple(a, a+b, c):
-    // cross(a+b, c) ≡ cross(a, c) + cross(b, c)  [cross_distributes_left]
-    // dot(a, cross(a+b, c)) ≡ dot(a, cross(a,c) + cross(b,c))
-    //   ≡ dot(a, cross(a,c)) + dot(a, cross(b,c))  [dot_distributes_right]
-    //   = triple(a,a,c) + triple(a,b,c)
-    //   ≡ 0 + triple(a,b,c) ≡ triple(a,b,c)
+    //  Expand triple(a, a+b, c):
+    //  cross(a+b, c) ≡ cross(a, c) + cross(b, c)  [cross_distributes_left]
+    //  dot(a, cross(a+b, c)) ≡ dot(a, cross(a,c) + cross(b,c))
+    //    ≡ dot(a, cross(a,c)) + dot(a, cross(b,c))  [dot_distributes_right]
+    //    = triple(a,a,c) + triple(a,b,c)
+    //    ≡ 0 + triple(a,b,c) ≡ triple(a,b,c)
 
-    // Show triple(a, a+b, c) ≡ triple(a, b, c)
-    // cross(a+b, c) ≡ cross(a, c) + cross(b, c)
+    //  Show triple(a, a+b, c) ≡ triple(a, b, c)
+    //  cross(a+b, c) ≡ cross(a, c) + cross(b, c)
     lemma_cross_distributes_left(a, b, c);
     <Vec3<T> as Equivalence>::axiom_eqv_reflexive(a);
     lemma_dot_congruence(a, a, cross(a.add(b), c), cross(a, c).add(cross(b, c)));
-    // dot(a, cross(a,c)+cross(b,c)) ≡ dot(a, cross(a,c)) + dot(a, cross(b,c))
+    //  dot(a, cross(a,c)+cross(b,c)) ≡ dot(a, cross(a,c)) + dot(a, cross(b,c))
     lemma_dot_distributes_right(a, cross(a, c), cross(b, c));
     T::axiom_eqv_transitive(
         triple(a, a.add(b), c),
         dot(a, cross(a, c).add(cross(b, c))),
         triple(a, a, c).add(triple(a, b, c)),
     );
-    // triple(a,a,c) ≡ 0
+    //  triple(a,a,c) ≡ 0
     lemma_triple_self_zero_12(a, c);
     additive_group_lemmas::lemma_add_zero_left::<T>(triple(a, b, c));
     T::axiom_add_congruence_left(triple(a, a, c), T::zero(), triple(a, b, c));
@@ -1417,7 +1417,7 @@ pub proof fn lemma_triple_swap_12<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
         triple(a, b, c),
     );
 
-    // Similarly, show triple(b, a+b, c) ≡ triple(b, a, c)
+    //  Similarly, show triple(b, a+b, c) ≡ triple(b, a, c)
     <Vec3<T> as Equivalence>::axiom_eqv_reflexive(b);
     lemma_dot_congruence(b, b, cross(a.add(b), c), cross(a, c).add(cross(b, c)));
     lemma_dot_distributes_right(b, cross(a, c), cross(b, c));
@@ -1427,7 +1427,7 @@ pub proof fn lemma_triple_swap_12<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
         triple(b, a, c).add(triple(b, b, c)),
     );
     lemma_triple_self_zero_23::<T>(b, b);
-    // Wait, triple(b, b, c) = dot(b, cross(b, c)) ≡ 0 by self_zero_12
+    //  Wait, triple(b, b, c) = dot(b, cross(b, c)) ≡ 0 by self_zero_12
     lemma_triple_self_zero_12(b, c);
     T::axiom_add_zero_right(triple(b, a, c));
     additive_group_lemmas::lemma_add_congruence_right::<T>(
@@ -1446,19 +1446,19 @@ pub proof fn lemma_triple_swap_12<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
         triple(b, a, c),
     );
 
-    // From linear_first: triple(a,a+b,c) + triple(b,a+b,c) ≡ triple(a+b,a+b,c) [reversed]
+    //  From linear_first: triple(a,a+b,c) + triple(b,a+b,c) ≡ triple(a+b,a+b,c) [reversed]
     T::axiom_eqv_symmetric(
         triple(a.add(b), a.add(b), c),
         triple(a, a.add(b), c).add(triple(b, a.add(b), c)),
     );
-    // triple(a+b,a+b,c) ≡ 0
-    // So triple(a,a+b,c) + triple(b,a+b,c) ≡ 0
+    //  triple(a+b,a+b,c) ≡ 0
+    //  So triple(a,a+b,c) + triple(b,a+b,c) ≡ 0
     T::axiom_eqv_transitive(
         triple(a, a.add(b), c).add(triple(b, a.add(b), c)),
         triple(a.add(b), a.add(b), c),
         T::zero(),
     );
-    // By congruence: triple(a,b,c) + triple(b,a,c) ≡ triple(a,a+b,c) + triple(b,a+b,c) ≡ 0
+    //  By congruence: triple(a,b,c) + triple(b,a,c) ≡ triple(a,a+b,c) + triple(b,a+b,c) ≡ 0
     T::axiom_eqv_symmetric(triple(a, a.add(b), c), triple(a, b, c));
     T::axiom_eqv_symmetric(triple(b, a.add(b), c), triple(b, a, c));
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
@@ -1471,11 +1471,11 @@ pub proof fn lemma_triple_swap_12<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
         T::zero(),
     );
 
-    // triple(a,b,c) + triple(b,a,c) ≡ 0
-    // Commute: triple(b,a,c) + triple(a,b,c) ≡ 0
+    //  triple(a,b,c) + triple(b,a,c) ≡ 0
+    //  Commute: triple(b,a,c) + triple(a,b,c) ≡ 0
     T::axiom_add_commutative(triple(a, b, c), triple(b, a, c));
-    // add_commutative gives: (a,b,c)+(b,a,c) ≡ (b,a,c)+(a,b,c)
-    // We need: (b,a,c)+(a,b,c) ≡ (a,b,c)+(b,a,c), so flip it
+    //  add_commutative gives: (a,b,c)+(b,a,c) ≡ (b,a,c)+(a,b,c)
+    //  We need: (b,a,c)+(a,b,c) ≡ (a,b,c)+(b,a,c), so flip it
     T::axiom_eqv_symmetric(
         triple(a, b, c).add(triple(b, a, c)),
         triple(b, a, c).add(triple(a, b, c)),
@@ -1485,21 +1485,21 @@ pub proof fn lemma_triple_swap_12<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
         triple(a, b, c).add(triple(b, a, c)),
         T::zero(),
     );
-    // lemma_neg_unique(triple(b,a,c), triple(a,b,c)): ensures triple(a,b,c) ≡ -(triple(b,a,c))
+    //  lemma_neg_unique(triple(b,a,c), triple(a,b,c)): ensures triple(a,b,c) ≡ -(triple(b,a,c))
     additive_group_lemmas::lemma_neg_unique::<T>(triple(b, a, c), triple(a, b, c));
 }
 
-/// triple(a, c, b) ≡ -triple(a, b, c) (swap last two)
+///  triple(a, c, b) ≡ -triple(a, b, c) (swap last two)
 pub proof fn lemma_triple_swap_23<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     ensures
         triple(a, c, b).eqv(triple(a, b, c).neg()),
 {
-    // cross(c, b) ≡ -cross(b, c)  [cross_anticommutative]
+    //  cross(c, b) ≡ -cross(b, c)  [cross_anticommutative]
     lemma_cross_anticommutative(c, b);
-    // dot(a, cross(c, b)) ≡ dot(a, -cross(b, c))
+    //  dot(a, cross(c, b)) ≡ dot(a, -cross(b, c))
     <Vec3<T> as Equivalence>::axiom_eqv_reflexive(a);
     lemma_dot_congruence(a, a, cross(c, b), cross(b, c).neg());
-    // dot(a, -cross(b, c)) ≡ -dot(a, cross(b, c))  [dot_neg_right]
+    //  dot(a, -cross(b, c)) ≡ -dot(a, cross(b, c))  [dot_neg_right]
     lemma_dot_neg_right(a, cross(b, c));
     T::axiom_eqv_transitive(
         triple(a, c, b),
@@ -1508,21 +1508,21 @@ pub proof fn lemma_triple_swap_23<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     );
 }
 
-/// triple(a, b, c) ≡ triple(b, c, a) (cyclic permutation)
+///  triple(a, b, c) ≡ triple(b, c, a) (cyclic permutation)
 pub proof fn lemma_triple_cyclic<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     ensures
         triple(a, b, c).eqv(triple(b, c, a)),
 {
-    // triple(a,b,c) ≡ -triple(b,a,c)  [swap_12]
+    //  triple(a,b,c) ≡ -triple(b,a,c)  [swap_12]
     lemma_triple_swap_12(a, b, c);
-    // -triple(b,a,c) ≡ -(-triple(b,c,a))  [swap_23 inside neg]
+    //  -triple(b,a,c) ≡ -(-triple(b,c,a))  [swap_23 inside neg]
     lemma_triple_swap_23(b, a, c);
-    // triple(b,a,c) ≡ -triple(b,c,a) ... wait, swap_23 gives:
-    // triple(b,c,a) ≡ -triple(b,a,c)... no:
-    // swap_23(b,a,c): triple(b,c,a) ≡ -triple(b,a,c)
-    // So triple(b,a,c) ≡ ... we need the reverse
-    // From swap_23(b,a,c): triple(b,c,a) ≡ -triple(b,a,c)
-    // neg both sides: -triple(b,c,a) ≡ --triple(b,a,c) ≡ triple(b,a,c)
+    //  triple(b,a,c) ≡ -triple(b,c,a) ... wait, swap_23 gives:
+    //  triple(b,c,a) ≡ -triple(b,a,c)... no:
+    //  swap_23(b,a,c): triple(b,c,a) ≡ -triple(b,a,c)
+    //  So triple(b,a,c) ≡ ... we need the reverse
+    //  From swap_23(b,a,c): triple(b,c,a) ≡ -triple(b,a,c)
+    //  neg both sides: -triple(b,c,a) ≡ --triple(b,a,c) ≡ triple(b,a,c)
     T::axiom_neg_congruence(triple(b, c, a), triple(b, a, c).neg());
     additive_group_lemmas::lemma_neg_involution::<T>(triple(b, a, c));
     T::axiom_eqv_transitive(
@@ -1530,32 +1530,32 @@ pub proof fn lemma_triple_cyclic<T: Ring>(a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
         triple(b, a, c).neg().neg(),
         triple(b, a, c),
     );
-    // So triple(b,a,c) ≡ -triple(b,c,a) reversed: triple(b,a,c) ≡ -(-(-triple(b,c,a)))...
-    // Actually: triple(a,b,c) ≡ -triple(b,a,c), and -triple(b,c,a) ≡ triple(b,a,c)
-    // So: triple(a,b,c) ≡ -triple(b,a,c) and -triple(b,c,a) ≡ triple(b,a,c)
-    // neg the second: triple(b,a,c) ≡ -triple(b,c,a) reversed gives -triple(b,c,a) ≡ triple(b,a,c)
-    // Wait let me re-derive:
+    //  So triple(b,a,c) ≡ -triple(b,c,a) reversed: triple(b,a,c) ≡ -(-(-triple(b,c,a)))...
+    //  Actually: triple(a,b,c) ≡ -triple(b,a,c), and -triple(b,c,a) ≡ triple(b,a,c)
+    //  So: triple(a,b,c) ≡ -triple(b,a,c) and -triple(b,c,a) ≡ triple(b,a,c)
+    //  neg the second: triple(b,a,c) ≡ -triple(b,c,a) reversed gives -triple(b,c,a) ≡ triple(b,a,c)
+    //  Wait let me re-derive:
 
-    // triple(a,b,c) ≡ -triple(b,a,c)  ... (1) from swap_12
-    // triple(b,c,a) ≡ -triple(b,a,c)  ... from swap_23(b,a,c)
-    // Wait: swap_23 says triple(a, c, b) ≡ -triple(a, b, c)
-    // So swap_23(b, a, c): triple(b, c, a) ≡ -triple(b, a, c)  ← this is what we want!
+    //  triple(a,b,c) ≡ -triple(b,a,c)  ... (1) from swap_12
+    //  triple(b,c,a) ≡ -triple(b,a,c)  ... from swap_23(b,a,c)
+    //  Wait: swap_23 says triple(a, c, b) ≡ -triple(a, b, c)
+    //  So swap_23(b, a, c): triple(b, c, a) ≡ -triple(b, a, c)  ← this is what we want!
 
-    // From (1): triple(a,b,c) ≡ -triple(b,a,c)
-    // From swap_23(b,a,c): triple(b,c,a) ≡ -triple(b,a,c)
-    // Both ≡ -triple(b,a,c), so triple(a,b,c) ≡ triple(b,c,a)
+    //  From (1): triple(a,b,c) ≡ -triple(b,a,c)
+    //  From swap_23(b,a,c): triple(b,c,a) ≡ -triple(b,a,c)
+    //  Both ≡ -triple(b,a,c), so triple(a,b,c) ≡ triple(b,c,a)
 
-    // triple(b,c,a) ≡ -triple(b,a,c) [swap_23(b,a,c)]
+    //  triple(b,c,a) ≡ -triple(b,a,c) [swap_23(b,a,c)]
     T::axiom_eqv_symmetric(triple(b, c, a), triple(b, a, c).neg());
-    // -triple(b,a,c) ≡ triple(b,c,a), and triple(a,b,c) ≡ -triple(b,a,c)
+    //  -triple(b,a,c) ≡ triple(b,c,a), and triple(a,b,c) ≡ -triple(b,a,c)
     T::axiom_eqv_transitive(triple(a, b, c), triple(b, a, c).neg(), triple(b, c, a));
 }
 
-// ---------------------------------------------------------------------------
-// Triple product: scale and linearity in all arguments
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Triple product: scale and linearity in all arguments
+//  ---------------------------------------------------------------------------
 
-/// triple(scale(s, a), b, c) ≡ s * triple(a, b, c)
+///  triple(scale(s, a), b, c) ≡ s * triple(a, b, c)
 pub proof fn lemma_triple_scale_first<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     ensures
         triple(scale(s, a), b, c).eqv(s.mul(triple(a, b, c))),
@@ -1563,29 +1563,29 @@ pub proof fn lemma_triple_scale_first<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>, c: 
     lemma_dot_scale_left(s, a, cross(b, c));
 }
 
-/// triple(a, b1 + b2, c) ≡ triple(a, b1, c) + triple(a, b2, c)
+///  triple(a, b1 + b2, c) ≡ triple(a, b1, c) + triple(a, b2, c)
 pub proof fn lemma_triple_linear_second<T: Ring>(a: Vec3<T>, b1: Vec3<T>, b2: Vec3<T>, c: Vec3<T>)
     ensures
         triple(a, b1.add(b2), c).eqv(triple(a, b1, c).add(triple(a, b2, c))),
 {
-    // triple(a, b1+b2, c) ≡ triple(b1+b2, c, a) [cyclic]
+    //  triple(a, b1+b2, c) ≡ triple(b1+b2, c, a) [cyclic]
     lemma_triple_cyclic(a, b1.add(b2), c);
-    // = triple(b1, c, a) + triple(b2, c, a) [linear_first]
+    //  = triple(b1, c, a) + triple(b2, c, a) [linear_first]
     lemma_triple_linear_first(b1, b2, c, a);
     T::axiom_eqv_transitive(
         triple(a, b1.add(b2), c),
         triple(b1.add(b2), c, a),
         triple(b1, c, a).add(triple(b2, c, a)),
     );
-    // triple(b1, c, a) ≡ triple(a, b1, c) [cyclic]
+    //  triple(b1, c, a) ≡ triple(a, b1, c) [cyclic]
     lemma_triple_cyclic(b1, c, a);
     lemma_triple_cyclic(c, a, b1);
     T::axiom_eqv_transitive(triple(b1, c, a), triple(c, a, b1), triple(a, b1, c));
-    // triple(b2, c, a) ≡ triple(a, b2, c) [cyclic]
+    //  triple(b2, c, a) ≡ triple(a, b2, c) [cyclic]
     lemma_triple_cyclic(b2, c, a);
     lemma_triple_cyclic(c, a, b2);
     T::axiom_eqv_transitive(triple(b2, c, a), triple(c, a, b2), triple(a, b2, c));
-    // combine
+    //  combine
     additive_group_lemmas::lemma_add_congruence::<T>(
         triple(b1, c, a), triple(a, b1, c),
         triple(b2, c, a), triple(a, b2, c),
@@ -1597,21 +1597,21 @@ pub proof fn lemma_triple_linear_second<T: Ring>(a: Vec3<T>, b1: Vec3<T>, b2: Ve
     );
 }
 
-/// triple(a, scale(s, b), c) ≡ s * triple(a, b, c)
+///  triple(a, scale(s, b), c) ≡ s * triple(a, b, c)
 pub proof fn lemma_triple_scale_second<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     ensures
         triple(a, scale(s, b), c).eqv(s.mul(triple(a, b, c))),
 {
-    // triple(a, scale(s,b), c) ≡ triple(scale(s,b), c, a) [cyclic]
+    //  triple(a, scale(s,b), c) ≡ triple(scale(s,b), c, a) [cyclic]
     lemma_triple_cyclic(a, scale(s, b), c);
-    // = s * triple(b, c, a) [scale_first]
+    //  = s * triple(b, c, a) [scale_first]
     lemma_triple_scale_first(s, b, c, a);
     T::axiom_eqv_transitive(
         triple(a, scale(s, b), c),
         triple(scale(s, b), c, a),
         s.mul(triple(b, c, a)),
     );
-    // triple(b, c, a) ≡ triple(a, b, c) [cyclic twice]
+    //  triple(b, c, a) ≡ triple(a, b, c) [cyclic twice]
     lemma_triple_cyclic(b, c, a);
     lemma_triple_cyclic(c, a, b);
     T::axiom_eqv_transitive(triple(b, c, a), triple(c, a, b), triple(a, b, c));
@@ -1623,29 +1623,29 @@ pub proof fn lemma_triple_scale_second<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>, c:
     );
 }
 
-/// triple(a, b, c1 + c2) ≡ triple(a, b, c1) + triple(a, b, c2)
+///  triple(a, b, c1 + c2) ≡ triple(a, b, c1) + triple(a, b, c2)
 pub proof fn lemma_triple_linear_third<T: Ring>(a: Vec3<T>, b: Vec3<T>, c1: Vec3<T>, c2: Vec3<T>)
     ensures
         triple(a, b, c1.add(c2)).eqv(triple(a, b, c1).add(triple(a, b, c2))),
 {
-    // triple(a, b, c1+c2) ≡ triple(b, c1+c2, a) [cyclic]
+    //  triple(a, b, c1+c2) ≡ triple(b, c1+c2, a) [cyclic]
     lemma_triple_cyclic(a, b, c1.add(c2));
-    // = triple(b, c1, a) + triple(b, c2, a) [linear_second]
+    //  = triple(b, c1, a) + triple(b, c2, a) [linear_second]
     lemma_triple_linear_second(b, c1, c2, a);
     T::axiom_eqv_transitive(
         triple(a, b, c1.add(c2)),
         triple(b, c1.add(c2), a),
         triple(b, c1, a).add(triple(b, c2, a)),
     );
-    // triple(b, c1, a) ≡ triple(a, b, c1) [cyclic twice]
+    //  triple(b, c1, a) ≡ triple(a, b, c1) [cyclic twice]
     lemma_triple_cyclic(b, c1, a);
     lemma_triple_cyclic(c1, a, b);
     T::axiom_eqv_transitive(triple(b, c1, a), triple(c1, a, b), triple(a, b, c1));
-    // triple(b, c2, a) ≡ triple(a, b, c2) [cyclic twice]
+    //  triple(b, c2, a) ≡ triple(a, b, c2) [cyclic twice]
     lemma_triple_cyclic(b, c2, a);
     lemma_triple_cyclic(c2, a, b);
     T::axiom_eqv_transitive(triple(b, c2, a), triple(c2, a, b), triple(a, b, c2));
-    // combine
+    //  combine
     additive_group_lemmas::lemma_add_congruence::<T>(
         triple(b, c1, a), triple(a, b, c1),
         triple(b, c2, a), triple(a, b, c2),
@@ -1657,21 +1657,21 @@ pub proof fn lemma_triple_linear_third<T: Ring>(a: Vec3<T>, b: Vec3<T>, c1: Vec3
     );
 }
 
-/// triple(a, b, scale(s, c)) ≡ s * triple(a, b, c)
+///  triple(a, b, scale(s, c)) ≡ s * triple(a, b, c)
 pub proof fn lemma_triple_scale_third<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>, c: Vec3<T>)
     ensures
         triple(a, b, scale(s, c)).eqv(s.mul(triple(a, b, c))),
 {
-    // triple(a, b, scale(s,c)) ≡ triple(b, scale(s,c), a) [cyclic]
+    //  triple(a, b, scale(s,c)) ≡ triple(b, scale(s,c), a) [cyclic]
     lemma_triple_cyclic(a, b, scale(s, c));
-    // = s * triple(b, c, a) [scale_second]
+    //  = s * triple(b, c, a) [scale_second]
     lemma_triple_scale_second(s, b, c, a);
     T::axiom_eqv_transitive(
         triple(a, b, scale(s, c)),
         triple(b, scale(s, c), a),
         s.mul(triple(b, c, a)),
     );
-    // triple(b, c, a) ≡ triple(a, b, c) [cyclic twice]
+    //  triple(b, c, a) ≡ triple(a, b, c) [cyclic twice]
     lemma_triple_cyclic(b, c, a);
     lemma_triple_cyclic(c, a, b);
     T::axiom_eqv_transitive(triple(b, c, a), triple(c, a, b), triple(a, b, c));
@@ -1683,8 +1683,8 @@ pub proof fn lemma_triple_scale_third<T: Ring>(s: T, a: Vec3<T>, b: Vec3<T>, c: 
     );
 }
 
-/// Triple product congruence in third argument:
-/// if c1 ≡ c2 then triple(a, b, c1) ≡ triple(a, b, c2).
+///  Triple product congruence in third argument:
+///  if c1 ≡ c2 then triple(a, b, c1) ≡ triple(a, b, c2).
 pub proof fn lemma_triple_congruence_third<T: Ring>(
     a: Vec3<T>, b: Vec3<T>, c1: Vec3<T>, c2: Vec3<T>,
 )
@@ -1702,14 +1702,14 @@ pub proof fn lemma_triple_congruence_third<T: Ring>(
     lemma_dot_congruence::<T>(a, a, cross(b, c1), cross(b, c2));
 }
 
-/// triple(a, b, c.neg()) ≡ triple(a, b, c).neg()
+///  triple(a, b, c.neg()) ≡ triple(a, b, c).neg()
 pub proof fn lemma_triple_neg_third<T: Ring>(
     a: Vec3<T>, b: Vec3<T>, c: Vec3<T>,
 )
     ensures
         triple(a, b, c.neg()).eqv(triple(a, b, c).neg()),
 {
-    // Double cyclic: triple(a,b,c.neg()) ≡ triple(c.neg(),a,b)
+    //  Double cyclic: triple(a,b,c.neg()) ≡ triple(c.neg(),a,b)
     lemma_triple_cyclic::<T>(a, b, c.neg());
     lemma_triple_cyclic::<T>(b, c.neg(), a);
     T::axiom_eqv_transitive(
@@ -1717,21 +1717,21 @@ pub proof fn lemma_triple_neg_third<T: Ring>(
         triple(b, c.neg(), a),
         triple(c.neg(), a, b),
     );
-    // dot_commutative: dot(c.neg(), cross(a,b)) ≡ dot(cross(a,b), c.neg())
+    //  dot_commutative: dot(c.neg(), cross(a,b)) ≡ dot(cross(a,b), c.neg())
     lemma_dot_commutative::<T>(c.neg(), cross(a, b));
     T::axiom_eqv_transitive(
         triple(a, b, c.neg()),
         triple(c.neg(), a, b),
         dot(cross(a, b), c.neg()),
     );
-    // dot_neg_right: dot(cross(a,b), c.neg()) ≡ dot(cross(a,b), c).neg()
+    //  dot_neg_right: dot(cross(a,b), c.neg()) ≡ dot(cross(a,b), c).neg()
     lemma_dot_neg_right::<T>(cross(a, b), c);
     T::axiom_eqv_transitive(
         triple(a, b, c.neg()),
         dot(cross(a, b), c.neg()),
         dot(cross(a, b), c).neg(),
     );
-    // dot_commutative + neg_congruence
+    //  dot_commutative + neg_congruence
     lemma_dot_commutative::<T>(cross(a, b), c);
     T::axiom_neg_congruence(dot(cross(a, b), c), dot(c, cross(a, b)));
     T::axiom_eqv_transitive(
@@ -1739,7 +1739,7 @@ pub proof fn lemma_triple_neg_third<T: Ring>(
         dot(cross(a, b), c).neg(),
         triple(c, a, b).neg(),
     );
-    // cyclic + neg_congruence
+    //  cyclic + neg_congruence
     lemma_triple_cyclic::<T>(c, a, b);
     T::axiom_neg_congruence(triple(c, a, b), triple(a, b, c));
     T::axiom_eqv_transitive(
@@ -1749,11 +1749,11 @@ pub proof fn lemma_triple_neg_third<T: Ring>(
     );
 }
 
-// ---------------------------------------------------------------------------
-// Lagrange identity helpers (private)
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Lagrange identity helpers (private)
+//  ---------------------------------------------------------------------------
 
-/// (x*y)*(x*y) ≡ (x*x)*(y*y)
+///  (x*y)*(x*y) ≡ (x*x)*(y*y)
 pub proof fn lemma_square_mul<T: Ring>(x: T, y: T)
     ensures
         x.mul(y).mul(x.mul(y)).eqv(x.mul(x).mul(y.mul(y))),
@@ -1781,7 +1781,7 @@ pub proof fn lemma_square_mul<T: Ring>(x: T, y: T)
     );
 }
 
-/// (a*c)*(b*d) ≡ (a*d)*(b*c)
+///  (a*c)*(b*d) ≡ (a*d)*(b*c)
 pub proof fn lemma_mul_four_commute<T: Ring>(a: T, b: T, c: T, d: T)
     ensures
         a.mul(c).mul(b.mul(d)).eqv(a.mul(d).mul(b.mul(c))),
@@ -1825,7 +1825,7 @@ pub proof fn lemma_mul_four_commute<T: Ring>(a: T, b: T, c: T, d: T)
     );
 }
 
-/// (p*v - q*u)² ≡ p²v² - 2(pu)(qv) + q²u²
+///  (p*v - q*u)² ≡ p²v² - 2(pu)(qv) + q²u²
 pub proof fn lemma_pair_expansion<T: Ring>(p: T, q: T, u: T, v: T)
     ensures
         p.mul(v).sub(q.mul(u)).mul(p.mul(v).sub(q.mul(u))).eqv(
@@ -1840,18 +1840,18 @@ pub proof fn lemma_pair_expansion<T: Ring>(p: T, q: T, u: T, v: T)
     let qv = q.mul(v);
     let two = T::one().add(T::one());
 
-    // (pv-qu)² ≡ (pv)² - 2(pv)(qu) + (qu)²
+    //  (pv-qu)² ≡ (pv)² - 2(pv)(qu) + (qu)²
     ring_lemmas::lemma_square_sub_expand::<T>(pv, qu);
 
-    // Convert squared products via square_mul
-    lemma_square_mul::<T>(p, v); // (pv)² ≡ p²v²
-    lemma_square_mul::<T>(q, u); // (qu)² ≡ q²u²
+    //  Convert squared products via square_mul
+    lemma_square_mul::<T>(p, v); //  (pv)² ≡ p²v²
+    lemma_square_mul::<T>(q, u); //  (qu)² ≡ q²u²
 
-    // Convert cross term via four_commute: (pv)(qu) ≡ (pu)(qv)
+    //  Convert cross term via four_commute: (pv)(qu) ≡ (pu)(qv)
     lemma_mul_four_commute::<T>(p, q, v, u);
     ring_lemmas::lemma_mul_congruence_right::<T>(two, pv.mul(qu), pu.mul(qv));
 
-    // Chain: (pv)²-2(pv)(qu)+(qu)² ≡ p²v²-2(pu)(qv)+q²u²
+    //  Chain: (pv)²-2(pv)(qu)+(qu)² ≡ p²v²-2(pu)(qv)+q²u²
     additive_group_lemmas::lemma_sub_congruence::<T>(
         pv.mul(pv), p.mul(p).mul(v.mul(v)),
         two.mul(pv.mul(qu)), two.mul(pu.mul(qv)),
@@ -1870,14 +1870,14 @@ pub proof fn lemma_pair_expansion<T: Ring>(p: T, q: T, u: T, v: T)
 }
 
 
-// ---------------------------------------------------------------------------
-// 2D Lagrange identity (helper)
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  2D Lagrange identity (helper)
+//  ---------------------------------------------------------------------------
 
-/// 2D Lagrange identity: (pv-qu)² ≡ (p²+q²)(u²+v²) - (pu+qv)²
+///  2D Lagrange identity: (pv-qu)² ≡ (p²+q²)(u²+v²) - (pu+qv)²
 ///
-/// Proved via the additive form: (pv-qu)² + (pu+qv)² ≡ (p²+q²)(u²+v²),
-/// then converted to the subtraction form.
+///  Proved via the additive form: (pv-qu)² + (pu+qv)² ≡ (p²+q²)(u²+v²),
+///  then converted to the subtraction form.
 pub proof fn lemma_lagrange_2d<T: Ring>(p: T, q: T, u: T, v: T)
     ensures
         p.mul(v).sub(q.mul(u)).mul(p.mul(v).sub(q.mul(u))).eqv(
@@ -1890,13 +1890,13 @@ pub proof fn lemma_lagrange_2d<T: Ring>(p: T, q: T, u: T, v: T)
     let pu = p.mul(u); let qv = q.mul(v);
     let pv = p.mul(v); let qu = q.mul(u);
     let two = T::one().add(T::one());
-    let x = two.mul(pu.mul(qv)); // 2(pu)(qv)
+    let x = two.mul(pu.mul(qv)); //  2(pu)(qv)
 
-    // ── A: (pv-qu)² via pair_expansion ──
+    //  ── A: (pv-qu)² via pair_expansion ──
     lemma_pair_expansion::<T>(p, q, u, v);
     let pair_form = pp.mul(vv).sub(x).add(qq.mul(uu));
 
-    // ── B: (pu+qv)² via square_expand + square_mul ──
+    //  ── B: (pu+qv)² via square_expand + square_mul ──
     ring_lemmas::lemma_square_expand::<T>(pu, qv);
     lemma_square_mul::<T>(p, u);
     lemma_square_mul::<T>(q, v);
@@ -1915,13 +1915,13 @@ pub proof fn lemma_lagrange_2d<T: Ring>(p: T, q: T, u: T, v: T)
     );
     let dot_form = pp.mul(uu).add(x).add(qq.mul(vv));
 
-    // ── C: Sum = pair_form + dot_form ──
-    // Rearrange via rearrange_2x2:
+    //  ── C: Sum = pair_form + dot_form ──
+    //  Rearrange via rearrange_2x2:
     additive_group_lemmas::lemma_add_rearrange_2x2::<T>(
         pp.mul(vv).sub(x), qq.mul(uu),
         pp.mul(uu).add(x), qq.mul(vv),
     );
-    // Inner cancellation: (p²v² - X) + (p²u² + X) ≡ p²v² + p²u²
+    //  Inner cancellation: (p²v² - X) + (p²u² + X) ≡ p²v² + p²u²
     T::axiom_sub_is_add_neg(pp.mul(vv), x);
     T::axiom_add_congruence_left(
         pp.mul(vv).sub(x), pp.mul(vv).add(x.neg()),
@@ -1952,7 +1952,7 @@ pub proof fn lemma_lagrange_2d<T: Ring>(p: T, q: T, u: T, v: T)
         pp.mul(vv).add(pp.mul(uu)),
     );
 
-    // ── D: Factor back to product form ──
+    //  ── D: Factor back to product form ──
     T::axiom_add_commutative(pp.mul(vv), pp.mul(uu));
     T::axiom_mul_distributes_left(pp, uu, vv);
     T::axiom_eqv_symmetric(pp.mul(uu.add(vv)), pp.mul(uu).add(pp.mul(vv)));
@@ -1964,14 +1964,14 @@ pub proof fn lemma_lagrange_2d<T: Ring>(p: T, q: T, u: T, v: T)
     T::axiom_mul_distributes_left(qq, uu, vv);
     T::axiom_eqv_symmetric(qq.mul(uu.add(vv)), qq.mul(uu).add(qq.mul(vv)));
 
-    // Chain: sub_form ≡ pp*(vv)+pp*(uu) ≡ pp*(uu+vv)
+    //  Chain: sub_form ≡ pp*(vv)+pp*(uu) ≡ pp*(uu+vv)
     T::axiom_eqv_transitive(
         pp.mul(vv).sub(x).add(pp.mul(uu).add(x)),
         pp.mul(vv).add(pp.mul(uu)),
         pp.mul(uu.add(vv)),
     );
 
-    // Build full sum
+    //  Build full sum
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         pp.mul(vv).sub(x).add(pp.mul(uu).add(x)),
         pp.mul(uu.add(vv)),
@@ -1984,7 +1984,7 @@ pub proof fn lemma_lagrange_2d<T: Ring>(p: T, q: T, u: T, v: T)
         pp.mul(uu.add(vv)).add(qq.mul(uu.add(vv))),
     );
 
-    // p²(u²+v²) + q²(u²+v²) ≡ (p²+q²)(u²+v²)
+    //  p²(u²+v²) + q²(u²+v²) ≡ (p²+q²)(u²+v²)
     ring_lemmas::lemma_mul_distributes_right::<T>(pp, qq, uu.add(vv));
     T::axiom_eqv_symmetric(
         pp.add(qq).mul(uu.add(vv)),
@@ -1998,7 +1998,7 @@ pub proof fn lemma_lagrange_2d<T: Ring>(p: T, q: T, u: T, v: T)
     let product = pp.add(qq).mul(uu.add(vv));
     let dot_sq = pu.add(qv).mul(pu.add(qv));
 
-    // ── E: Convert additive to subtraction form ──
+    //  ── E: Convert additive to subtraction form ──
     additive_group_lemmas::lemma_add_then_sub_cancel::<T>(pair_form, dot_form);
     T::axiom_eqv_symmetric(pair_form, pair_form.add(dot_form).sub(dot_form));
     T::axiom_eqv_reflexive(dot_form);
@@ -2023,14 +2023,14 @@ pub proof fn lemma_lagrange_2d<T: Ring>(p: T, q: T, u: T, v: T)
     T::axiom_eqv_transitive(pv.sub(qu).mul(pv.sub(qu)), pair_form, product.sub(dot_sq));
 }
 
-// ---------------------------------------------------------------------------
-// Lagrange identity
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Lagrange identity
+//  ---------------------------------------------------------------------------
 
-/// Lagrange identity: ‖a × b‖² ≡ ‖a‖²·‖b‖² − (a · b)²
+///  Lagrange identity: ‖a × b‖² ≡ ‖a‖²·‖b‖² − (a · b)²
 ///
-/// Uses dimensional reduction: the 3D identity reduces to the 2D Lagrange
-/// identity (for the cz component) plus pair_expansion (for cx, cy).
+///  Uses dimensional reduction: the 3D identity reduces to the 2D Lagrange
+///  identity (for the cz component) plus pair_expansion (for cx, cy).
 pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         norm_sq(cross(a, b)).eqv(
@@ -2041,8 +2041,8 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     let bx = b.x; let by = b.y; let bz = b.z;
     let two = T::one().add(T::one());
 
-    // K = ax²+ay², k = az², L = bx²+by², l = bz²
-    // M = ax*bx+ay*by, m = az*bz
+    //  K = ax²+ay², k = az², L = bx²+by², l = bz²
+    //  M = ax*bx+ay*by, m = az*bz
     let k = az.mul(az);
     let l = bz.mul(bz);
     let big_m = ax.mul(bx).add(ay.mul(by));
@@ -2050,11 +2050,11 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     let big_k = ax.mul(ax).add(ay.mul(ay));
     let big_l = bx.mul(bx).add(by.mul(by));
 
-    // ── Step 1: 2D Lagrange for cz ──
-    // cz² ≡ K*L - M²
+    //  ── Step 1: 2D Lagrange for cz ──
+    //  cz² ≡ K*L - M²
     lemma_lagrange_2d::<T>(ax, ay, bx, by);
 
-    // ── Step 2: Expand (K+k)(L+l) ≡ (KL+Kl)+(kL+kl) ──
+    //  ── Step 2: Expand (K+k)(L+l) ≡ (KL+Kl)+(kL+kl) ──
     ring_lemmas::lemma_mul_distributes_right::<T>(big_k, k, big_l.add(l));
     T::axiom_mul_distributes_left(big_k, big_l, l);
     T::axiom_mul_distributes_left(k, big_l, l);
@@ -2068,10 +2068,10 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         big_k.mul(big_l).add(big_k.mul(l)).add(k.mul(big_l).add(k.mul(l))),
     );
 
-    // ── Step 3: Expand (M+m)² ≡ (M²+2Mm)+m² ──
+    //  ── Step 3: Expand (M+m)² ≡ (M²+2Mm)+m² ──
     ring_lemmas::lemma_square_expand::<T>(big_m, m);
 
-    // ── Step 4: Subtract (K+k)(L+l) - (M+m)² ──
+    //  ── Step 4: Subtract (K+k)(L+l) - (M+m)² ──
     let product_exp = big_k.mul(big_l).add(big_k.mul(l)).add(k.mul(big_l).add(k.mul(l)));
     let dot_sq_exp = big_m.mul(big_m).add(two.mul(big_m.mul(m))).add(m.mul(m));
     let product_val = big_k.add(k).mul(big_l.add(l));
@@ -2082,7 +2082,7 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         dot_sq_val, dot_sq_exp,
     );
 
-    // sub_sum_distributes: ≡ ((KL+Kl)-(M²+2Mm)) + ((kL+kl)-m²)
+    //  sub_sum_distributes: ≡ ((KL+Kl)-(M²+2Mm)) + ((kL+kl)-m²)
     lemma_sub_sum_distributes::<T>(
         big_k.mul(big_l).add(big_k.mul(l)),
         k.mul(big_l).add(k.mul(l)),
@@ -2096,10 +2096,10 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
             .add(k.mul(big_l).add(k.mul(l)).sub(m.mul(m))),
     );
 
-    // ── Step 5: (kL+kl)-m² ≡ kL ──
-    lemma_square_mul::<T>(az, bz); // m² ≡ kl
+    //  ── Step 5: (kL+kl)-m² ≡ kL ──
+    lemma_square_mul::<T>(az, bz); //  m² ≡ kl
     T::axiom_eqv_symmetric(m.mul(m), k.mul(l));
-    // (kL+kl) - m²: since m² ≡ kl, this ≡ (kL+kl) - kl ≡ kL
+    //  (kL+kl) - m²: since m² ≡ kl, this ≡ (kL+kl) - kl ≡ kL
     T::axiom_sub_is_add_neg(k.mul(big_l).add(k.mul(l)), m.mul(m));
     additive_group_lemmas::lemma_neg_congruence::<T>(m.mul(m), k.mul(l));
     additive_group_lemmas::lemma_add_congruence_right::<T>(
@@ -2133,20 +2133,20 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         k.mul(big_l),
     );
 
-    // ── Step 6: (KL+Kl)-(M²+2Mm) ≡ (KL-M²)+(Kl-2Mm) ──
+    //  ── Step 6: (KL+Kl)-(M²+2Mm) ≡ (KL-M²)+(Kl-2Mm) ──
     lemma_sub_sum_distributes::<T>(
         big_k.mul(big_l), big_k.mul(l),
         big_m.mul(big_m), two.mul(big_m.mul(m)),
     );
 
-    // ── Step 7: KL-M² ≡ cz² ──
+    //  ── Step 7: KL-M² ≡ cz² ──
     let cz_sq = ax.mul(by).sub(ay.mul(bx)).mul(ax.mul(by).sub(ay.mul(bx)));
     T::axiom_eqv_symmetric(cz_sq, big_k.mul(big_l).sub(big_m.mul(big_m)));
 
-    // ── Step 8: Distribute Kl and 2Mm ──
-    // Kl = (ax²+ay²)*bz² ≡ ax²bz² + ay²bz²
+    //  ── Step 8: Distribute Kl and 2Mm ──
+    //  Kl = (ax²+ay²)*bz² ≡ ax²bz² + ay²bz²
     ring_lemmas::lemma_mul_distributes_right::<T>(ax.mul(ax), ay.mul(ay), l);
-    // 2Mm: (M)*m ≡ (axbx)(m) + (ayby)(m), then 2*(...) distributes
+    //  2Mm: (M)*m ≡ (axbx)(m) + (ayby)(m), then 2*(...) distributes
     ring_lemmas::lemma_mul_distributes_right::<T>(ax.mul(bx), ay.mul(by), m);
     ring_lemmas::lemma_mul_congruence_right::<T>(
         two, big_m.mul(m),
@@ -2159,14 +2159,14 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         two.mul(ax.mul(bx).mul(m)).add(two.mul(ay.mul(by).mul(m))),
     );
 
-    // Kl-2Mm ≡ (ax²bz²+ay²bz²) - (2(axbx)m+2(ayby)m)
+    //  Kl-2Mm ≡ (ax²bz²+ay²bz²) - (2(axbx)m+2(ayby)m)
     let kl_minus_2mm = big_k.mul(l).sub(two.mul(big_m.mul(m)));
     additive_group_lemmas::lemma_sub_congruence::<T>(
         big_k.mul(l), ax.mul(ax).mul(l).add(ay.mul(ay).mul(l)),
         two.mul(big_m.mul(m)),
         two.mul(ax.mul(bx).mul(m)).add(two.mul(ay.mul(by).mul(m))),
     );
-    // ≡ (ax²bz²-2(axbx)m) + (ay²bz²-2(ayby)m)
+    //  ≡ (ax²bz²-2(axbx)m) + (ay²bz²-2(ayby)m)
     lemma_sub_sum_distributes::<T>(
         ax.mul(ax).mul(l), ay.mul(ay).mul(l),
         two.mul(ax.mul(bx).mul(m)), two.mul(ay.mul(by).mul(m)),
@@ -2177,37 +2177,37 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         .add(ay.mul(ay).mul(l).sub(two.mul(ay.mul(by).mul(m))));
     T::axiom_eqv_transitive(kl_minus_2mm, kl_2mm_dist, kl_2mm_split);
 
-    // ── Step 9: kL ≡ az²bx² + az²by² ──
+    //  ── Step 9: kL ≡ az²bx² + az²by² ──
     T::axiom_mul_distributes_left(k, bx.mul(bx), by.mul(by));
 
-    // ── Step 10: Chain RHS ≡ cz²+(A₁+B₁)+(A₂+B₂) ──
+    //  ── Step 10: Chain RHS ≡ cz²+(A₁+B₁)+(A₂+B₂) ──
     let a1 = ax.mul(ax).mul(l).sub(two.mul(ax.mul(bx).mul(m)));
     let a2 = ay.mul(ay).mul(l).sub(two.mul(ay.mul(by).mul(m)));
     let b1 = k.mul(bx.mul(bx));
     let b2 = k.mul(by.mul(by));
 
-    // RHS = product_val - dot_sq_val
+    //  RHS = product_val - dot_sq_val
     let rhs = product_val.sub(dot_sq_val);
 
-    // step_b: rhs ≡ ((KL+Kl)-(M²+2Mm)) + ((kL+kl)-m²)
+    //  step_b: rhs ≡ ((KL+Kl)-(M²+2Mm)) + ((kL+kl)-m²)
     let first_part = big_k.mul(big_l).add(big_k.mul(l))
         .sub(big_m.mul(big_m).add(two.mul(big_m.mul(m))));
     let second_part = k.mul(big_l).add(k.mul(l)).sub(m.mul(m));
     let step_b = first_part.add(second_part);
 
-    // step_c: replace second_part with kL
+    //  step_c: replace second_part with kL
     let step_c = first_part.add(k.mul(big_l));
     additive_group_lemmas::lemma_add_congruence_right::<T>(
         first_part, second_part, k.mul(big_l),
     );
     T::axiom_eqv_transitive(rhs, step_b, step_c);
 
-    // step_d: first_part ≡ (KL-M²)+(Kl-2Mm) from step 6
+    //  step_d: first_part ≡ (KL-M²)+(Kl-2Mm) from step 6
     let step_d = big_k.mul(big_l).sub(big_m.mul(big_m)).add(kl_minus_2mm);
     T::axiom_add_congruence_left(first_part, step_d, k.mul(big_l));
     T::axiom_eqv_transitive(rhs, step_c, step_d.add(k.mul(big_l)));
 
-    // Replace KL-M² with cz²
+    //  Replace KL-M² with cz²
     T::axiom_add_congruence_left(
         big_k.mul(big_l).sub(big_m.mul(big_m)), cz_sq, kl_minus_2mm,
     );
@@ -2219,7 +2219,7 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     T::axiom_eqv_transitive(rhs, step_d.add(k.mul(big_l)),
         cz_sq.add(kl_minus_2mm).add(k.mul(big_l)));
 
-    // Replace kl_minus_2mm with split form
+    //  Replace kl_minus_2mm with split form
     additive_group_lemmas::lemma_add_congruence_right::<T>(
         cz_sq, kl_minus_2mm, kl_2mm_split,
     );
@@ -2231,13 +2231,13 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         cz_sq.add(kl_minus_2mm).add(k.mul(big_l)),
         cz_sq.add(kl_2mm_split).add(k.mul(big_l)));
 
-    // Reassociate: (cz²+split)+kL ≡ cz²+(split+kL)
+    //  Reassociate: (cz²+split)+kL ≡ cz²+(split+kL)
     T::axiom_add_associative(cz_sq, kl_2mm_split, k.mul(big_l));
     T::axiom_eqv_transitive(rhs,
         cz_sq.add(kl_2mm_split).add(k.mul(big_l)),
         cz_sq.add(kl_2mm_split.add(k.mul(big_l))));
 
-    // split+kL: replace kL with b1+b2, then rearrange
+    //  split+kL: replace kL with b1+b2, then rearrange
     additive_group_lemmas::lemma_add_congruence_right::<T>(
         kl_2mm_split, k.mul(big_l), b1.add(b2),
     );
@@ -2256,16 +2256,16 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         cz_sq.add(kl_2mm_split.add(k.mul(big_l))),
         cz_sq.add(a1.add(b1).add(a2.add(b2))));
 
-    // ── Step 11: A₁+B₁ ≡ cy², A₂+B₂ ≡ cx² ──
+    //  ── Step 11: A₁+B₁ ≡ cy², A₂+B₂ ≡ cx² ──
 
-    // cy = az*bx - ax*bz
-    // pair_expansion(ax,az,bx,bz): (ax*bz-az*bx)² ≡ ax²bz²-2(axbx)(azbz)+az²bx²
+    //  cy = az*bx - ax*bz
+    //  pair_expansion(ax,az,bx,bz): (ax*bz-az*bx)² ≡ ax²bz²-2(axbx)(azbz)+az²bx²
     lemma_pair_expansion::<T>(ax, az, bx, bz);
     let cy_def = az.mul(bx).sub(ax.mul(bz));
     let cy_swap = ax.mul(bz).sub(az.mul(bx));
-    // cy_def ≡ -cy_swap via sub_antisymmetric
+    //  cy_def ≡ -cy_swap via sub_antisymmetric
     additive_group_lemmas::lemma_sub_antisymmetric::<T>(az.mul(bx), ax.mul(bz));
-    // cy² = cy_def*cy_def ≡ (-cy_swap)*(-cy_swap) ≡ cy_swap*cy_swap
+    //  cy² = cy_def*cy_def ≡ (-cy_swap)*(-cy_swap) ≡ cy_swap*cy_swap
     T::axiom_mul_congruence_left(cy_def, cy_swap.neg(), cy_def);
     ring_lemmas::lemma_mul_congruence_right::<T>(cy_swap.neg(), cy_def, cy_swap.neg());
     T::axiom_eqv_transitive(
@@ -2275,29 +2275,29 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     T::axiom_eqv_transitive(
         cy_def.mul(cy_def), cy_swap.neg().mul(cy_swap.neg()), cy_swap.mul(cy_swap),
     );
-    // cy_swap² ≡ pair_expansion result = a1+b1
+    //  cy_swap² ≡ pair_expansion result = a1+b1
     let cy_pair = ax.mul(ax).mul(bz.mul(bz))
         .sub(two.mul(ax.mul(bx).mul(az.mul(bz))))
         .add(az.mul(az).mul(bx.mul(bx)));
     T::axiom_eqv_transitive(cy_def.mul(cy_def), cy_swap.mul(cy_swap), cy_pair);
-    // cy_pair = a1.add(b1) definitionally ✓
+    //  cy_pair = a1.add(b1) definitionally ✓
     T::axiom_eqv_symmetric(cy_def.mul(cy_def), cy_pair);
 
-    // cx = ay*bz - az*by
-    // pair_expansion(ay,az,by,bz): (ay*bz-az*by)² ≡ ay²bz²-2(ayby)(azbz)+az²by²
+    //  cx = ay*bz - az*by
+    //  pair_expansion(ay,az,by,bz): (ay*bz-az*by)² ≡ ay²bz²-2(ayby)(azbz)+az²by²
     lemma_pair_expansion::<T>(ay, az, by, bz);
     let cx_def = ay.mul(bz).sub(az.mul(by));
     let cx_pair = ay.mul(ay).mul(bz.mul(bz))
         .sub(two.mul(ay.mul(by).mul(az.mul(bz))))
         .add(az.mul(az).mul(by.mul(by)));
-    // cx² ≡ cx_pair = a2+b2 definitionally ✓
+    //  cx² ≡ cx_pair = a2+b2 definitionally ✓
     T::axiom_eqv_symmetric(cx_def.mul(cx_def), cx_pair);
 
-    // ── Step 12: Chain to norm_sq(cross) ──
+    //  ── Step 12: Chain to norm_sq(cross) ──
     let cx_sq = cx_def.mul(cx_def);
     let cy_sq = cy_def.mul(cy_def);
 
-    // (A₁+B₁)+(A₂+B₂) ≡ cy²+cx²
+    //  (A₁+B₁)+(A₂+B₂) ≡ cy²+cx²
     additive_commutative_monoid_lemmas::lemma_add_congruence::<T>(
         a1.add(b1), cy_sq, a2.add(b2), cx_sq,
     );
@@ -2308,7 +2308,7 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         cz_sq.add(a1.add(b1).add(a2.add(b2))),
         cz_sq.add(cy_sq.add(cx_sq)));
 
-    // cz²+(cy²+cx²) ≡ cz²+(cx²+cy²) ≡ (cx²+cy²)+cz²
+    //  cz²+(cy²+cx²) ≡ cz²+(cx²+cy²) ≡ (cx²+cy²)+cz²
     T::axiom_add_commutative(cy_sq, cx_sq);
     additive_group_lemmas::lemma_add_congruence_right::<T>(
         cz_sq, cy_sq.add(cx_sq), cx_sq.add(cy_sq),
@@ -2318,20 +2318,20 @@ pub proof fn lemma_lagrange_identity<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     T::axiom_eqv_symmetric(cx_sq.add(cy_sq).add(cz_sq), cz_sq.add(cx_sq.add(cy_sq)));
     T::axiom_eqv_transitive(rhs, cz_sq.add(cx_sq.add(cy_sq)), cx_sq.add(cy_sq).add(cz_sq));
 
-    // norm_sq(cross(a,b)) = cx².add(cy²).add(cz²) ≡ rhs
+    //  norm_sq(cross(a,b)) = cx².add(cy²).add(cz²) ≡ rhs
     T::axiom_eqv_symmetric(rhs, cx_sq.add(cy_sq).add(cz_sq));
 }
 
-// ---------------------------------------------------------------------------
-// Lerp
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Lerp
+//  ---------------------------------------------------------------------------
 
-/// lerp(a, b, 0) ≡ a
+///  lerp(a, b, 0) ≡ a
 pub proof fn lemma_lerp_zero<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         lerp(a, b, T::zero()).eqv(a),
 {
-    // 1 - 0 ≡ 1
+    //  1 - 0 ≡ 1
     T::axiom_sub_is_add_neg(T::one(), T::zero());
     additive_group_lemmas::lemma_neg_zero::<T>();
     additive_group_lemmas::lemma_add_congruence_right::<T>(
@@ -2345,7 +2345,7 @@ pub proof fn lemma_lerp_zero<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         T::one().sub(T::zero()), T::one().add(T::zero()), T::one(),
     );
 
-    // (1-0)*v.c ≡ v.c for each component
+    //  (1-0)*v.c ≡ v.c for each component
     T::axiom_mul_congruence_left(T::one().sub(T::zero()), T::one(), a.x);
     T::axiom_mul_congruence_left(T::one().sub(T::zero()), T::one(), a.y);
     T::axiom_mul_congruence_left(T::one().sub(T::zero()), T::one(), a.z);
@@ -2356,12 +2356,12 @@ pub proof fn lemma_lerp_zero<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     T::axiom_eqv_transitive(T::one().sub(T::zero()).mul(a.y), T::one().mul(a.y), a.y);
     T::axiom_eqv_transitive(T::one().sub(T::zero()).mul(a.z), T::one().mul(a.z), a.z);
 
-    // 0*b.c ≡ 0 for each component
+    //  0*b.c ≡ 0 for each component
     ring_lemmas::lemma_mul_zero_left::<T>(b.x);
     ring_lemmas::lemma_mul_zero_left::<T>(b.y);
     ring_lemmas::lemma_mul_zero_left::<T>(b.z);
 
-    // (1-0)*a.c + 0*b.c ≡ a.c + 0
+    //  (1-0)*a.c + 0*b.c ≡ a.c + 0
     additive_group_lemmas::lemma_add_congruence::<T>(
         T::one().sub(T::zero()).mul(a.x), a.x, T::zero().mul(b.x), T::zero(),
     );
@@ -2372,7 +2372,7 @@ pub proof fn lemma_lerp_zero<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         T::one().sub(T::zero()).mul(a.z), a.z, T::zero().mul(b.z), T::zero(),
     );
 
-    // a.c + 0 ≡ a.c, chain
+    //  a.c + 0 ≡ a.c, chain
     T::axiom_add_zero_right(a.x);
     T::axiom_add_zero_right(a.y);
     T::axiom_add_zero_right(a.z);
@@ -2387,15 +2387,15 @@ pub proof fn lemma_lerp_zero<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// lerp(a, b, 1) ≡ b
+///  lerp(a, b, 1) ≡ b
 pub proof fn lemma_lerp_one<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         lerp(a, b, T::one()).eqv(b),
 {
-    // 1 - 1 ≡ 0
+    //  1 - 1 ≡ 0
     additive_group_lemmas::lemma_sub_self::<T>(T::one());
 
-    // (1-1)*a.c ≡ 0
+    //  (1-1)*a.c ≡ 0
     T::axiom_mul_congruence_left(T::one().sub(T::one()), T::zero(), a.x);
     T::axiom_mul_congruence_left(T::one().sub(T::one()), T::zero(), a.y);
     T::axiom_mul_congruence_left(T::one().sub(T::one()), T::zero(), a.z);
@@ -2406,12 +2406,12 @@ pub proof fn lemma_lerp_one<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     T::axiom_eqv_transitive(T::one().sub(T::one()).mul(a.y), T::zero().mul(a.y), T::zero());
     T::axiom_eqv_transitive(T::one().sub(T::one()).mul(a.z), T::zero().mul(a.z), T::zero());
 
-    // 1*b.c ≡ b.c
+    //  1*b.c ≡ b.c
     ring_lemmas::lemma_mul_one_left::<T>(b.x);
     ring_lemmas::lemma_mul_one_left::<T>(b.y);
     ring_lemmas::lemma_mul_one_left::<T>(b.z);
 
-    // (1-1)*a.c + 1*b.c ≡ 0 + b.c
+    //  (1-1)*a.c + 1*b.c ≡ 0 + b.c
     additive_group_lemmas::lemma_add_congruence::<T>(
         T::one().sub(T::one()).mul(a.x), T::zero(), T::one().mul(b.x), b.x,
     );
@@ -2422,7 +2422,7 @@ pub proof fn lemma_lerp_one<T: Ring>(a: Vec3<T>, b: Vec3<T>)
         T::one().sub(T::one()).mul(a.z), T::zero(), T::one().mul(b.z), b.z,
     );
 
-    // 0 + b.c ≡ b.c, chain
+    //  0 + b.c ≡ b.c, chain
     additive_group_lemmas::lemma_add_zero_left::<T>(b.x);
     additive_group_lemmas::lemma_add_zero_left::<T>(b.y);
     additive_group_lemmas::lemma_add_zero_left::<T>(b.z);
@@ -2437,22 +2437,22 @@ pub proof fn lemma_lerp_one<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// lerp(a, a, t) ≡ a
+///  lerp(a, a, t) ≡ a
 pub proof fn lemma_lerp_self<T: Ring>(a: Vec3<T>, t: T)
     ensures
         lerp(a, a, t).eqv(a),
 {
-    // scale(1-t, a) + scale(t, a) ≡ scale((1-t)+t, a)
+    //  scale(1-t, a) + scale(t, a) ≡ scale((1-t)+t, a)
     lemma_scale_add_distributes(T::one().sub(t), t, a);
     Vec3::<T>::axiom_eqv_symmetric(
         scale(T::one().sub(t).add(t), a),
         scale(T::one().sub(t), a).add(scale(t, a)),
     );
 
-    // (1-t)+t ≡ 1
+    //  (1-t)+t ≡ 1
     additive_group_lemmas::lemma_sub_then_add_cancel::<T>(T::one(), t);
 
-    // scale((1-t)+t, a) ≡ scale(1, a) ≡ a
+    //  scale((1-t)+t, a) ≡ scale(1, a) ≡ a
     T::axiom_mul_congruence_left(T::one().sub(t).add(t), T::one(), a.x);
     T::axiom_mul_congruence_left(T::one().sub(t).add(t), T::one(), a.y);
     T::axiom_mul_congruence_left(T::one().sub(t).add(t), T::one(), a.z);
@@ -2463,7 +2463,7 @@ pub proof fn lemma_lerp_self<T: Ring>(a: Vec3<T>, t: T)
     T::axiom_eqv_transitive(T::one().sub(t).add(t).mul(a.y), T::one().mul(a.y), a.y);
     T::axiom_eqv_transitive(T::one().sub(t).add(t).mul(a.z), T::one().mul(a.z), a.z);
 
-    // Chain: lerp(a, a, t) ≡ scale((1-t)+t, a) ≡ a
+    //  Chain: lerp(a, a, t) ≡ scale((1-t)+t, a) ≡ a
     Vec3::<T>::axiom_eqv_transitive(
         lerp(a, a, t),
         scale(T::one().sub(t).add(t), a),
@@ -2471,11 +2471,11 @@ pub proof fn lemma_lerp_self<T: Ring>(a: Vec3<T>, t: T)
     );
 }
 
-// ---------------------------------------------------------------------------
-// Inner product identities
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Inner product identities
+//  ---------------------------------------------------------------------------
 
-/// norm_sq(a+b) ≡ norm_sq(a) + 2·dot(a,b) + norm_sq(b)
+///  norm_sq(a+b) ≡ norm_sq(a) + 2·dot(a,b) + norm_sq(b)
 pub proof fn lemma_norm_sq_add_expand<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         norm_sq(a.add(b)).eqv(
@@ -2541,7 +2541,7 @@ pub proof fn lemma_norm_sq_add_expand<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// Pythagorean theorem: if dot(a,b) ≡ 0, then norm_sq(a+b) ≡ norm_sq(a) + norm_sq(b)
+///  Pythagorean theorem: if dot(a,b) ≡ 0, then norm_sq(a+b) ≡ norm_sq(a) + norm_sq(b)
 pub proof fn lemma_pythagorean<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     requires
         dot(a, b).eqv(T::zero()),
@@ -2574,7 +2574,7 @@ pub proof fn lemma_pythagorean<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// norm_sq(a-b) ≡ norm_sq(a) - 2·dot(a,b) + norm_sq(b)
+///  norm_sq(a-b) ≡ norm_sq(a) - 2·dot(a,b) + norm_sq(b)
 pub proof fn lemma_norm_sq_sub_expand<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         norm_sq(a.sub(b)).eqv(
@@ -2630,7 +2630,7 @@ pub proof fn lemma_norm_sq_sub_expand<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// Parallelogram law: norm_sq(a+b) + norm_sq(a-b) ≡ 2·(norm_sq(a) + norm_sq(b))
+///  Parallelogram law: norm_sq(a+b) + norm_sq(a-b) ≡ 2·(norm_sq(a) + norm_sq(b))
 pub proof fn lemma_parallelogram<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         norm_sq(a.add(b)).add(norm_sq(a.sub(b))).eqv(
@@ -2715,7 +2715,7 @@ pub proof fn lemma_parallelogram<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// Polarization identity: 4·dot(a,b) ≡ norm_sq(a+b) - norm_sq(a-b)
+///  Polarization identity: 4·dot(a,b) ≡ norm_sq(a+b) - norm_sq(a-b)
 pub proof fn lemma_polarization<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         two::<T>().mul(two::<T>()).mul(dot(a, b)).eqv(
@@ -2806,11 +2806,11 @@ pub proof fn lemma_polarization<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-// ---------------------------------------------------------------------------
-// Cauchy-Schwarz inequality
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Cauchy-Schwarz inequality
+//  ---------------------------------------------------------------------------
 
-/// dot(a,b)² <= norm_sq(a) * norm_sq(b)
+///  dot(a,b)² <= norm_sq(a) * norm_sq(b)
 pub proof fn lemma_cauchy_schwarz<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
     ensures
         dot(a, b).mul(dot(a, b)).le(norm_sq(a).mul(norm_sq(b))),
@@ -2819,38 +2819,38 @@ pub proof fn lemma_cauchy_schwarz<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
     let product = norm_sq(a).mul(norm_sq(b));
     let cross_norm = norm_sq(cross(a, b));
 
-    // norm_sq(cross(a,b)) >= 0
+    //  norm_sq(cross(a,b)) >= 0
     lemma_norm_sq_nonneg::<T>(cross(a, b));
 
-    // norm_sq(cross(a,b)) ≡ product - dot_sq  (Lagrange identity)
+    //  norm_sq(cross(a,b)) ≡ product - dot_sq  (Lagrange identity)
     lemma_lagrange_identity::<T>(a, b);
 
-    // 0 ≤ norm_sq(cross(a,b)) ≡ product - dot_sq
+    //  0 ≤ norm_sq(cross(a,b)) ≡ product - dot_sq
     T::axiom_eqv_reflexive(T::zero());
     T::axiom_le_congruence(
         T::zero(), T::zero(),
         cross_norm, product.sub(dot_sq),
     );
 
-    // 0 ≤ product - dot_sq  ⟺  dot_sq ≤ product
+    //  0 ≤ product - dot_sq  ⟺  dot_sq ≤ product
     ordered_ring_lemmas::lemma_le_iff_sub_nonneg::<T>(dot_sq, product);
 }
 
-// ---------------------------------------------------------------------------
-// Projection / rejection
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Projection / rejection
+//  ---------------------------------------------------------------------------
 
-/// Projection of a onto b
+///  Projection of a onto b
 pub open spec fn proj<T: OrderedField>(a: Vec3<T>, b: Vec3<T>) -> Vec3<T> {
     scale(dot(a, b).div(norm_sq(b)), b)
 }
 
-/// Rejection of a from b (component of a orthogonal to b)
+///  Rejection of a from b (component of a orthogonal to b)
 pub open spec fn rej<T: OrderedField>(a: Vec3<T>, b: Vec3<T>) -> Vec3<T> {
     a.sub(proj(a, b))
 }
 
-/// dot(a.neg(), b) ≡ dot(a, b).neg()
+///  dot(a.neg(), b) ≡ dot(a, b).neg()
 pub proof fn lemma_dot_neg_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     ensures
         dot(a.neg(), b).eqv(dot(a, b).neg()),
@@ -2867,7 +2867,7 @@ pub proof fn lemma_dot_neg_left<T: Ring>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// dot(proj(a, b), b) ≡ dot(a, b) when norm_sq(b) ≢ 0
+///  dot(proj(a, b), b) ≡ dot(a, b) when norm_sq(b) ≢ 0
 pub proof fn lemma_dot_proj<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
     requires
         !norm_sq(b).eqv(T::zero()),
@@ -2881,7 +2881,7 @@ pub proof fn lemma_dot_proj<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
     T::axiom_eqv_transitive(dot(proj(a, b), b), d.div(n).mul(n), d);
 }
 
-/// proj(a, b) + rej(a, b) ≡ a
+///  proj(a, b) + rej(a, b) ≡ a
 pub proof fn lemma_proj_rej_decomposition<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
     requires
         !norm_sq(b).eqv(T::zero()),
@@ -2896,7 +2896,7 @@ pub proof fn lemma_proj_rej_decomposition<T: OrderedField>(a: Vec3<T>, b: Vec3<T
     );
 }
 
-/// dot(rej(a, b), b) ≡ 0
+///  dot(rej(a, b), b) ≡ 0
 pub proof fn lemma_rej_orthogonal<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
     requires
         !norm_sq(b).eqv(T::zero()),
@@ -2937,7 +2937,7 @@ pub proof fn lemma_rej_orthogonal<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
     T::axiom_eqv_transitive(dot(a.sub(p), b), d.add(d.neg()), T::zero());
 }
 
-/// norm_sq(a) ≡ norm_sq(proj(a,b)) + norm_sq(rej(a,b))
+///  norm_sq(a) ≡ norm_sq(proj(a,b)) + norm_sq(rej(a,b))
 pub proof fn lemma_proj_rej_pythagorean<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
     requires
         !norm_sq(b).eqv(T::zero()),
@@ -2981,7 +2981,7 @@ pub proof fn lemma_proj_rej_pythagorean<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
     );
 }
 
-/// proj(proj(a, b), b) ≡ proj(a, b)
+///  proj(proj(a, b), b) ≡ proj(a, b)
 pub proof fn lemma_proj_idempotent<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
     requires
         !norm_sq(b).eqv(T::zero()),
@@ -3008,7 +3008,7 @@ pub proof fn lemma_proj_idempotent<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
     T::axiom_mul_congruence_left(dot(p, b).div(n), d.div(n), b.z);
 }
 
-/// proj(a, b) ≡ zero when dot(a, b) ≡ 0
+///  proj(a, b) ≡ zero when dot(a, b) ≡ 0
 pub proof fn lemma_proj_zero_when_orthogonal<T: OrderedField>(a: Vec3<T>, b: Vec3<T>)
     requires
         dot(a, b).eqv(T::zero()),
@@ -3036,9 +3036,9 @@ pub proof fn lemma_proj_zero_when_orthogonal<T: OrderedField>(a: Vec3<T>, b: Vec
     T::axiom_eqv_transitive(d.div(n).mul(b.z), T::zero().mul(b.z), T::zero());
 }
 
-// ---------------------------------------------------------------------------
-// Componentwise min/max
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  Componentwise min/max
+//  ---------------------------------------------------------------------------
 
 pub open spec fn cwise_min<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>) -> Vec3<T> {
     Vec3 {
@@ -3056,7 +3056,7 @@ pub open spec fn cwise_max<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>) -> Vec3<T> {
     }
 }
 
-/// Each component of cwise_min(a, b) ≤ corresponding component of a
+///  Each component of cwise_min(a, b) ≤ corresponding component of a
 pub proof fn lemma_cwise_min_le_left<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
     ensures
         cwise_min(a, b).x.le(a.x),
@@ -3068,7 +3068,7 @@ pub proof fn lemma_cwise_min_le_left<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
     min_max::lemma_min_le_left::<T>(a.z, b.z);
 }
 
-/// Each component of cwise_min(a, b) ≤ corresponding component of b
+///  Each component of cwise_min(a, b) ≤ corresponding component of b
 pub proof fn lemma_cwise_min_le_right<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
     ensures
         cwise_min(a, b).x.le(b.x),
@@ -3080,7 +3080,7 @@ pub proof fn lemma_cwise_min_le_right<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
     min_max::lemma_min_le_right::<T>(a.z, b.z);
 }
 
-/// Each component of a ≤ corresponding component of cwise_max(a, b)
+///  Each component of a ≤ corresponding component of cwise_max(a, b)
 pub proof fn lemma_cwise_max_ge_left<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
     ensures
         a.x.le(cwise_max(a, b).x),
@@ -3092,7 +3092,7 @@ pub proof fn lemma_cwise_max_ge_left<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
     min_max::lemma_max_ge_left::<T>(a.z, b.z);
 }
 
-/// Each component of b ≤ corresponding component of cwise_max(a, b)
+///  Each component of b ≤ corresponding component of cwise_max(a, b)
 pub proof fn lemma_cwise_max_ge_right<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
     ensures
         b.x.le(cwise_max(a, b).x),
@@ -3104,26 +3104,26 @@ pub proof fn lemma_cwise_max_ge_right<T: OrderedRing>(a: Vec3<T>, b: Vec3<T>)
     min_max::lemma_max_ge_right::<T>(a.z, b.z);
 }
 
-/// triple(a.neg(), b, c) ≡ triple(a, b, c).neg()
+///  triple(a.neg(), b, c) ≡ triple(a, b, c).neg()
 pub proof fn lemma_triple_neg_first<T: Ring>(
     a: Vec3<T>, b: Vec3<T>, c: Vec3<T>,
 )
     ensures
         triple(a.neg(), b, c).eqv(triple(a, b, c).neg()),
 {
-    // Step 1: cyclic: triple(a.neg(), b, c) ≡ triple(b, c, a.neg())
+    //  Step 1: cyclic: triple(a.neg(), b, c) ≡ triple(b, c, a.neg())
     lemma_triple_cyclic::<T>(a.neg(), b, c);
-    // Step 2: neg_third: triple(b, c, a.neg()) ≡ triple(b, c, a).neg()
+    //  Step 2: neg_third: triple(b, c, a.neg()) ≡ triple(b, c, a).neg()
     lemma_triple_neg_third::<T>(b, c, a);
     T::axiom_eqv_transitive(
         triple(a.neg(), b, c),
         triple(b, c, a.neg()),
         triple(b, c, a).neg(),
     );
-    // Step 3: cyclic reversed: triple(a, b, c) ≡ triple(b, c, a), so triple(b, c, a) ≡ triple(a, b, c)
+    //  Step 3: cyclic reversed: triple(a, b, c) ≡ triple(b, c, a), so triple(b, c, a) ≡ triple(a, b, c)
     lemma_triple_cyclic::<T>(a, b, c);
     T::axiom_eqv_symmetric(triple(a, b, c), triple(b, c, a));
-    // Step 4: neg_congruence: triple(b, c, a).neg() ≡ triple(a, b, c).neg()
+    //  Step 4: neg_congruence: triple(b, c, a).neg() ≡ triple(a, b, c).neg()
     T::axiom_neg_congruence(triple(b, c, a), triple(a, b, c));
     T::axiom_eqv_transitive(
         triple(a.neg(), b, c),
@@ -3132,18 +3132,18 @@ pub proof fn lemma_triple_neg_first<T: Ring>(
     );
 }
 
-/// triple(a, b.neg(), c) ≡ triple(a, b, c).neg()
+///  triple(a, b.neg(), c) ≡ triple(a, b, c).neg()
 pub proof fn lemma_triple_neg_second<T: Ring>(
     a: Vec3<T>, b: Vec3<T>, c: Vec3<T>,
 )
     ensures
         triple(a, b.neg(), c).eqv(triple(a, b, c).neg()),
 {
-    // swap_12: triple(a, b.neg(), c) ≡ -triple(b.neg(), a, c)
+    //  swap_12: triple(a, b.neg(), c) ≡ -triple(b.neg(), a, c)
     lemma_triple_swap_12::<T>(a, b.neg(), c);
-    // neg_first: triple(b.neg(), a, c) ≡ -triple(b, a, c)
+    //  neg_first: triple(b.neg(), a, c) ≡ -triple(b, a, c)
     lemma_triple_neg_first::<T>(b, a, c);
-    // So -triple(b.neg(), a, c) ≡ -(-triple(b, a, c)) ≡ triple(b, a, c)
+    //  So -triple(b.neg(), a, c) ≡ -(-triple(b, a, c)) ≡ triple(b, a, c)
     T::axiom_neg_congruence(triple(b.neg(), a, c), triple(b, a, c).neg());
     T::axiom_eqv_transitive(
         triple(a, b.neg(), c),
@@ -3156,7 +3156,7 @@ pub proof fn lemma_triple_neg_second<T: Ring>(
         triple(b, a, c).neg().neg(),
         triple(b, a, c),
     );
-    // swap_12: triple(b, a, c) ≡ -triple(a, b, c)
+    //  swap_12: triple(b, a, c) ≡ -triple(a, b, c)
     lemma_triple_swap_12::<T>(b, a, c);
     T::axiom_eqv_transitive(
         triple(a, b.neg(), c),
@@ -3165,8 +3165,8 @@ pub proof fn lemma_triple_neg_second<T: Ring>(
     );
 }
 
-/// Triple product congruence in first argument:
-/// if a1 ≡ a2 then triple(a1, b, c) ≡ triple(a2, b, c).
+///  Triple product congruence in first argument:
+///  if a1 ≡ a2 then triple(a1, b, c) ≡ triple(a2, b, c).
 pub proof fn lemma_triple_congruence_first<T: Ring>(
     a1: Vec3<T>, a2: Vec3<T>, b: Vec3<T>, c: Vec3<T>,
 )
@@ -3174,8 +3174,8 @@ pub proof fn lemma_triple_congruence_first<T: Ring>(
     ensures
         triple(a1, b, c).eqv(triple(a2, b, c)),
 {
-    // cyclic to third position, use congruence_third, cyclic back
-    // triple(a1, b, c) ≡ triple(b, c, a1) [cyclic twice]
+    //  cyclic to third position, use congruence_third, cyclic back
+    //  triple(a1, b, c) ≡ triple(b, c, a1) [cyclic twice]
     lemma_triple_cyclic::<T>(a1, b, c);
     lemma_triple_cyclic::<T>(b, c, a1);
     T::axiom_eqv_transitive(
@@ -3183,18 +3183,18 @@ pub proof fn lemma_triple_congruence_first<T: Ring>(
         triple(b, c, a1),
         triple(c, a1, b),
     );
-    // Hmm, need to go to third position. Use single cyclic:
-    // triple(a1, b, c) ≡ triple(b, c, a1)
-    // triple(a2, b, c) ≡ triple(b, c, a2)
-    // triple(b, c, a1) ≡ triple(b, c, a2) [congruence_third]
+    //  Hmm, need to go to third position. Use single cyclic:
+    //  triple(a1, b, c) ≡ triple(b, c, a1)
+    //  triple(a2, b, c) ≡ triple(b, c, a2)
+    //  triple(b, c, a1) ≡ triple(b, c, a2) [congruence_third]
     lemma_triple_congruence_third::<T>(b, c, a1, a2);
-    // Need: triple(a1, b, c) ≡ triple(b, c, a1) ≡ triple(b, c, a2)
+    //  Need: triple(a1, b, c) ≡ triple(b, c, a1) ≡ triple(b, c, a2)
     T::axiom_eqv_transitive(
         triple(a1, b, c),
         triple(b, c, a1),
         triple(b, c, a2),
     );
-    // And triple(b, c, a2) ≡ triple(a2, b, c) [cyclic reversed]
+    //  And triple(b, c, a2) ≡ triple(a2, b, c) [cyclic reversed]
     lemma_triple_cyclic::<T>(a2, b, c);
     T::axiom_eqv_symmetric(triple(a2, b, c), triple(b, c, a2));
     T::axiom_eqv_transitive(
@@ -3204,8 +3204,8 @@ pub proof fn lemma_triple_congruence_first<T: Ring>(
     );
 }
 
-/// Triple product congruence in second argument:
-/// if b1 ≡ b2 then triple(a, b1, c) ≡ triple(a, b2, c).
+///  Triple product congruence in second argument:
+///  if b1 ≡ b2 then triple(a, b1, c) ≡ triple(a, b2, c).
 pub proof fn lemma_triple_congruence_second<T: Ring>(
     a: Vec3<T>, b1: Vec3<T>, b2: Vec3<T>, c: Vec3<T>,
 )
@@ -3213,16 +3213,16 @@ pub proof fn lemma_triple_congruence_second<T: Ring>(
     ensures
         triple(a, b1, c).eqv(triple(a, b2, c)),
 {
-    // cyclic: triple(a, b1, c) ≡ triple(b1, c, a)
+    //  cyclic: triple(a, b1, c) ≡ triple(b1, c, a)
     lemma_triple_cyclic::<T>(a, b1, c);
-    // congruence_first: triple(b1, c, a) ≡ triple(b2, c, a)
+    //  congruence_first: triple(b1, c, a) ≡ triple(b2, c, a)
     lemma_triple_congruence_first::<T>(b1, b2, c, a);
     T::axiom_eqv_transitive(
         triple(a, b1, c),
         triple(b1, c, a),
         triple(b2, c, a),
     );
-    // cyclic reversed: triple(b2, c, a) ≡ triple(a, b2, c)
+    //  cyclic reversed: triple(b2, c, a) ≡ triple(a, b2, c)
     lemma_triple_cyclic::<T>(a, b2, c);
     T::axiom_eqv_symmetric(triple(a, b2, c), triple(b2, c, a));
     T::axiom_eqv_transitive(
@@ -3232,4 +3232,4 @@ pub proof fn lemma_triple_congruence_second<T: Ring>(
     );
 }
 
-} // verus!
+} //  verus!

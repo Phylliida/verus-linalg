@@ -96,4 +96,4 @@ impl<T: Ring> AdditiveGroup for Vec2<T> {
     }
 }
 
-} // verus!
+} //  verus!

@@ -23,9 +23,9 @@ use verus_algebra::traits::*;
 #[cfg(verus_keep_ghost)]
 verus! {
 
-// ---------------------------------------------------------------------------
-// RuntimeMat2x2
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  RuntimeMat2x2
+//  ---------------------------------------------------------------------------
 
 pub struct RuntimeMat2x2 {
     pub row0: RuntimeVec2,
@@ -62,11 +62,11 @@ impl RuntimeMat2x2 {
         RuntimeMat2x2 { row0, row1, model: Ghost(model) }
     }
 
-    // -----------------------------------------------------------------------
-    // Algebraic operations
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Algebraic operations
+    //  -----------------------------------------------------------------------
 
-    /// Matrix addition
+    ///  Matrix addition
     pub fn add_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -81,7 +81,7 @@ impl RuntimeMat2x2 {
         RuntimeMat2x2 { row0, row1, model: Ghost(model) }
     }
 
-    /// Matrix subtraction
+    ///  Matrix subtraction
     pub fn sub_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -96,7 +96,7 @@ impl RuntimeMat2x2 {
         RuntimeMat2x2 { row0, row1, model: Ghost(model) }
     }
 
-    /// Matrix negation
+    ///  Matrix negation
     pub fn neg_exec(&self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -110,7 +110,7 @@ impl RuntimeMat2x2 {
         RuntimeMat2x2 { row0, row1, model: Ghost(model) }
     }
 
-    /// Zero matrix
+    ///  Zero matrix
     pub fn zero_exec() -> (out: Self)
         ensures
             out.wf_spec(),
@@ -122,11 +122,11 @@ impl RuntimeMat2x2 {
         RuntimeMat2x2 { row0, row1, model: Ghost(model) }
     }
 
-    // -----------------------------------------------------------------------
-    // Ops
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Ops
+    //  -----------------------------------------------------------------------
 
-    /// Identity matrix
+    ///  Identity matrix
     pub fn identity_exec() -> (out: Self)
         ensures
             out.wf_spec(),
@@ -138,7 +138,7 @@ impl RuntimeMat2x2 {
         RuntimeMat2x2 { row0, row1, model: Ghost(model) }
     }
 
-    /// Matrix-vector multiplication: M * v
+    ///  Matrix-vector multiplication: M * v
     pub fn mat_vec_mul_exec(&self, v: &RuntimeVec2) -> (out: RuntimeVec2)
         requires
             self.wf_spec(),
@@ -153,7 +153,7 @@ impl RuntimeMat2x2 {
         RuntimeVec2 { x, y, model: Ghost(model) }
     }
 
-    /// Transpose
+    ///  Transpose
     pub fn transpose_exec(&self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -161,7 +161,7 @@ impl RuntimeMat2x2 {
             out.wf_spec(),
             out@ == transpose::<RationalModel>(self@),
     {
-        // transpose: row0 = (m00, m10), row1 = (m01, m11)
+        //  transpose: row0 = (m00, m10), row1 = (m01, m11)
         let r0x = copy_rational(&self.row0.x);
         let r0y = copy_rational(&self.row1.x);
         let r1x = copy_rational(&self.row0.y);
@@ -172,7 +172,7 @@ impl RuntimeMat2x2 {
         RuntimeMat2x2 { row0, row1, model: Ghost(model) }
     }
 
-    /// Determinant: m00*m11 - m01*m10
+    ///  Determinant: m00*m11 - m01*m10
     pub fn det_exec(&self) -> (out: RuntimeRational)
         requires
             self.wf_spec(),
@@ -185,7 +185,7 @@ impl RuntimeMat2x2 {
         t1.sub(&t2)
     }
 
-    /// Matrix multiplication: A * B
+    ///  Matrix multiplication: A * B
     pub fn mat_mul_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -205,7 +205,7 @@ impl RuntimeMat2x2 {
         RuntimeMat2x2 { row0, row1, model: Ghost(model) }
     }
 
-    /// Adjugate: [[m11, -m01], [-m10, m00]]
+    ///  Adjugate: [[m11, -m01], [-m10, m00]]
     pub fn adjugate_exec(&self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -224,4 +224,4 @@ impl RuntimeMat2x2 {
     }
 }
 
-} // verus!
+} //  verus!

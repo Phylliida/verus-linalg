@@ -17,4 +17,4 @@ impl<T: Ring> Vec2<T> {
     }
 }
 
-} // verus!
+} //  verus!

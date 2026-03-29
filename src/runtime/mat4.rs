@@ -29,9 +29,9 @@ use verus_algebra::traits::*;
 #[cfg(verus_keep_ghost)]
 verus! {
 
-// ---------------------------------------------------------------------------
-// RuntimeMat4x4
-// ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+//  RuntimeMat4x4
+//  ---------------------------------------------------------------------------
 
 pub struct RuntimeMat4x4 {
     pub row0: RuntimeVec4,
@@ -78,11 +78,11 @@ impl RuntimeMat4x4 {
         RuntimeMat4x4 { row0, row1, row2, row3, model: Ghost(model) }
     }
 
-    // -----------------------------------------------------------------------
-    // Ops
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Ops
+    //  -----------------------------------------------------------------------
 
-    /// Identity matrix
+    ///  Identity matrix
     pub fn identity_exec() -> (out: Self)
         ensures
             out.wf_spec(),
@@ -108,7 +108,7 @@ impl RuntimeMat4x4 {
         RuntimeMat4x4 { row0, row1, row2, row3, model: Ghost(model) }
     }
 
-    /// Matrix-vector multiplication: M * v
+    ///  Matrix-vector multiplication: M * v
     pub fn mat_vec_mul_exec(&self, v: &RuntimeVec4) -> (out: RuntimeVec4)
         requires
             self.wf_spec(),
@@ -125,7 +125,7 @@ impl RuntimeMat4x4 {
         RuntimeVec4 { x, y, z, w, model: Ghost(model) }
     }
 
-    /// Transpose
+    ///  Transpose
     pub fn transpose_exec(&self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -153,7 +153,7 @@ impl RuntimeMat4x4 {
         RuntimeMat4x4 { row0, row1, row2, row3, model: Ghost(model) }
     }
 
-    /// Determinant via Laplace expansion along row 0
+    ///  Determinant via Laplace expansion along row 0
     pub fn det_exec(&self) -> (out: RuntimeRational)
         requires
             self.wf_spec(),
@@ -161,31 +161,31 @@ impl RuntimeMat4x4 {
             out.wf_spec(),
             out@ == det::<RationalModel>(self@),
     {
-        // Build RuntimeVec3 for drop_x of rows 1-3
+        //  Build RuntimeVec3 for drop_x of rows 1-3
         let dx1 = RuntimeVec3::new(copy_rational(&self.row1.y), copy_rational(&self.row1.z), copy_rational(&self.row1.w));
         let dx2 = RuntimeVec3::new(copy_rational(&self.row2.y), copy_rational(&self.row2.z), copy_rational(&self.row2.w));
         let dx3 = RuntimeVec3::new(copy_rational(&self.row3.y), copy_rational(&self.row3.z), copy_rational(&self.row3.w));
         let tx = dx1.triple_exec(&dx2, &dx3);
 
-        // Build RuntimeVec3 for drop_y of rows 1-3
+        //  Build RuntimeVec3 for drop_y of rows 1-3
         let dy1 = RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.z), copy_rational(&self.row1.w));
         let dy2 = RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.z), copy_rational(&self.row2.w));
         let dy3 = RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.z), copy_rational(&self.row3.w));
         let ty = dy1.triple_exec(&dy2, &dy3);
 
-        // Build RuntimeVec3 for drop_z of rows 1-3
+        //  Build RuntimeVec3 for drop_z of rows 1-3
         let dz1 = RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.y), copy_rational(&self.row1.w));
         let dz2 = RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.y), copy_rational(&self.row2.w));
         let dz3 = RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.y), copy_rational(&self.row3.w));
         let tz = dz1.triple_exec(&dz2, &dz3);
 
-        // Build RuntimeVec3 for drop_w of rows 1-3
+        //  Build RuntimeVec3 for drop_w of rows 1-3
         let dw1 = RuntimeVec3::new(copy_rational(&self.row1.x), copy_rational(&self.row1.y), copy_rational(&self.row1.z));
         let dw2 = RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.y), copy_rational(&self.row2.z));
         let dw3 = RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.y), copy_rational(&self.row3.z));
         let tw = dw1.triple_exec(&dw2, &dw3);
 
-        // det = r0.x*tx - r0.y*ty + r0.z*tz - r0.w*tw
+        //  det = r0.x*tx - r0.y*ty + r0.z*tz - r0.w*tw
         let c0 = copy_rational(&self.row0.x).mul(&tx);
         let c1 = copy_rational(&self.row0.y).mul(&ty);
         let c2 = copy_rational(&self.row0.z).mul(&tz);
@@ -193,7 +193,7 @@ impl RuntimeMat4x4 {
         c0.sub(&c1).add(&c2).sub(&c3)
     }
 
-    /// Matrix multiplication: A * B
+    ///  Matrix multiplication: A * B
     pub fn mat_mul_exec(&self, rhs: &Self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -226,7 +226,7 @@ impl RuntimeMat4x4 {
         let ghost model = mat_mul::<RationalModel>(self@, rhs@);
         RuntimeMat4x4 { row0, row1, row2, row3, model: Ghost(model) }
     }
-    /// Adjugate: transpose of cofactor matrix
+    ///  Adjugate: transpose of cofactor matrix
     pub fn adjugate_exec(&self) -> (out: Self)
         requires
             self.wf_spec(),
@@ -234,9 +234,9 @@ impl RuntimeMat4x4 {
             out.wf_spec(),
             out@ == adjugate::<RationalModel>(self@),
     {
-        // cofactor_vec(r1, r2, r3) = (+triple(drop_x), -triple(drop_y), +triple(drop_z), -triple(drop_w))
+        //  cofactor_vec(r1, r2, r3) = (+triple(drop_x), -triple(drop_y), +triple(drop_z), -triple(drop_w))
 
-        // cv0 = cofactor_vec(row1, row2, row3)
+        //  cv0 = cofactor_vec(row1, row2, row3)
         let cv0x = RuntimeVec3::new(copy_rational(&self.row1.y), copy_rational(&self.row1.z), copy_rational(&self.row1.w))
             .triple_exec(
                 &RuntimeVec3::new(copy_rational(&self.row2.y), copy_rational(&self.row2.z), copy_rational(&self.row2.w)),
@@ -258,7 +258,7 @@ impl RuntimeMat4x4 {
                 &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.y), copy_rational(&self.row3.z)),
             ).neg();
 
-        // cv1 = cofactor_vec(row0, row2, row3)
+        //  cv1 = cofactor_vec(row0, row2, row3)
         let cv1x = RuntimeVec3::new(copy_rational(&self.row0.y), copy_rational(&self.row0.z), copy_rational(&self.row0.w))
             .triple_exec(
                 &RuntimeVec3::new(copy_rational(&self.row2.y), copy_rational(&self.row2.z), copy_rational(&self.row2.w)),
@@ -280,7 +280,7 @@ impl RuntimeMat4x4 {
                 &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.y), copy_rational(&self.row3.z)),
             ).neg();
 
-        // cv2 = cofactor_vec(row0, row1, row3)
+        //  cv2 = cofactor_vec(row0, row1, row3)
         let cv2x = RuntimeVec3::new(copy_rational(&self.row0.y), copy_rational(&self.row0.z), copy_rational(&self.row0.w))
             .triple_exec(
                 &RuntimeVec3::new(copy_rational(&self.row1.y), copy_rational(&self.row1.z), copy_rational(&self.row1.w)),
@@ -302,7 +302,7 @@ impl RuntimeMat4x4 {
                 &RuntimeVec3::new(copy_rational(&self.row3.x), copy_rational(&self.row3.y), copy_rational(&self.row3.z)),
             ).neg();
 
-        // cv3 = cofactor_vec(row0, row1, row2)
+        //  cv3 = cofactor_vec(row0, row1, row2)
         let cv3x = RuntimeVec3::new(copy_rational(&self.row0.y), copy_rational(&self.row0.z), copy_rational(&self.row0.w))
             .triple_exec(
                 &RuntimeVec3::new(copy_rational(&self.row1.y), copy_rational(&self.row1.z), copy_rational(&self.row1.w)),
@@ -324,7 +324,7 @@ impl RuntimeMat4x4 {
                 &RuntimeVec3::new(copy_rational(&self.row2.x), copy_rational(&self.row2.y), copy_rational(&self.row2.z)),
             ).neg();
 
-        // Transpose of [cv0, -cv1, cv2, -cv3]: negate columns 1,3
+        //  Transpose of [cv0, -cv1, cv2, -cv3]: negate columns 1,3
         let row0 = RuntimeVec4::new(cv0x, cv1x.neg(), cv2x, cv3x.neg());
         let row1 = RuntimeVec4::new(cv0y, cv1y.neg(), cv2y, cv3y.neg());
         let row2 = RuntimeVec4::new(cv0z, cv1z.neg(), cv2z, cv3z.neg());
@@ -334,4 +334,4 @@ impl RuntimeMat4x4 {
     }
 }
 
-} // verus!
+} //  verus!

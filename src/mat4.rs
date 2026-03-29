@@ -17,4 +17,4 @@ pub struct Mat4x4<T: Ring> {
     pub row3: Vec4<T>,
 }
 
-} // verus!
+} //  verus!

@@ -12,4 +12,4 @@ pub struct Mat2x2<T: Ring> {
     pub row1: Vec2<T>,
 }
 
-} // verus!
+} //  verus!

@@ -125,4 +125,4 @@ impl<T: Ring> AdditiveGroup for Quat<T> {
     }
 }
 
-} // verus!
+} //  verus!

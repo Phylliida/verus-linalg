@@ -25,4 +25,4 @@ impl<T: Ring> Quat<T> {
     }
 }
 
-} // verus!
+} //  verus!

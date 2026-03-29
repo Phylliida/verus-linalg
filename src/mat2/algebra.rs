@@ -97,4 +97,4 @@ impl<T: Ring> AdditiveGroup for Mat2x2<T> {
     }
 }
 
-} // verus!
+} //  verus!

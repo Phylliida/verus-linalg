@@ -110,4 +110,4 @@ impl<T: Ring> AdditiveGroup for Vec3<T> {
     }
 }
 
-} // verus!
+} //  verus!
