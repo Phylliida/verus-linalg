@@ -44,7 +44,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeVec4<R, V> {
         RuntimeVec4 { x, y, z, w, model: Ghost(model) }
     }
 
-    pub fn add_exec(&self, rhs: &Self) -> (out: Self)
+    pub fn add(&self, rhs: &Self) -> (out: Self)
         requires self.wf_spec(), rhs.wf_spec(),
         ensures out.wf_spec(), out.model@ == self.model@.add(rhs.model@),
     {
@@ -56,7 +56,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeVec4<R, V> {
         }
     }
 
-    pub fn sub_exec(&self, rhs: &Self) -> (out: Self)
+    pub fn sub(&self, rhs: &Self) -> (out: Self)
         requires self.wf_spec(), rhs.wf_spec(),
         ensures out.wf_spec(), out.model@ == self.model@.sub(rhs.model@),
     {
@@ -68,7 +68,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeVec4<R, V> {
         }
     }
 
-    pub fn neg_exec(&self) -> (out: Self)
+    pub fn neg(&self) -> (out: Self)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model@ == self.model@.neg(),
     {
@@ -80,7 +80,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeVec4<R, V> {
         }
     }
 
-    pub fn scale_exec(s: &R, v: &Self) -> (out: Self)
+    pub fn scale(s: &R, v: &Self) -> (out: Self)
         requires s.wf_spec(), v.wf_spec(),
         ensures out.wf_spec(), out.model@ == scale::<V>(s.model(), v.model@),
     {
@@ -92,7 +92,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeVec4<R, V> {
         }
     }
 
-    pub fn dot_exec(&self, rhs: &Self) -> (out: R)
+    pub fn dot(&self, rhs: &Self) -> (out: R)
         requires self.wf_spec(), rhs.wf_spec(),
         ensures out.wf_spec(), out.model() == dot::<V>(self.model@, rhs.model@),
     {
@@ -100,20 +100,20 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeVec4<R, V> {
             .add(&self.z.mul(&rhs.z)).add(&self.w.mul(&rhs.w))
     }
 
-    pub fn norm_sq_exec(&self) -> (out: R)
+    pub fn norm_sq(&self) -> (out: R)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model() == norm_sq::<V>(self.model@),
     {
-        self.dot_exec(self)
+        self.dot(self)
     }
 
-    pub fn lerp_exec(&self, other: &Self, t: &R) -> (out: Self)
+    pub fn lerp(&self, other: &Self, t: &R) -> (out: Self)
         requires self.wf_spec(), other.wf_spec(), t.wf_spec(),
         ensures out.wf_spec(), out.model@ == lerp::<V>(self.model@, other.model@, t.model()),
     {
         let one = t.one_like();
         let one_minus_t = one.sub(t);
-        Self::scale_exec(&one_minus_t, self).add_exec(&Self::scale_exec(t, other))
+        Self::scale(&one_minus_t, self).add(&Self::scale(t, other))
     }
 }
 

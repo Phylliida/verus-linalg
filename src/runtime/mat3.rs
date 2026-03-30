@@ -41,15 +41,15 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeMat3x3<R, V> {
         RuntimeMat3x3 { row0, row1, row2, model: Ghost(model) }
     }
 
-    pub fn mat_vec_mul_exec(&self, v: &RuntimeVec3<R, V>) -> (out: RuntimeVec3<R, V>)
+    pub fn mat_vec_mul(&self, v: &RuntimeVec3<R, V>) -> (out: RuntimeVec3<R, V>)
         requires self.wf_spec(), v.wf_spec(),
         ensures out.wf_spec(), out.model@ == mat_vec_mul::<V>(self.model@, v.model@),
     {
         let ghost model = mat_vec_mul::<V>(self.model@, v.model@);
-        RuntimeVec3 { x: self.row0.dot_exec(v), y: self.row1.dot_exec(v), z: self.row2.dot_exec(v), model: Ghost(model) }
+        RuntimeVec3 { x: self.row0.dot(v), y: self.row1.dot(v), z: self.row2.dot(v), model: Ghost(model) }
     }
 
-    pub fn transpose_exec(&self) -> (out: Self)
+    pub fn transpose(&self) -> (out: Self)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model@ == transpose::<V>(self.model@),
     {
@@ -60,32 +60,32 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeMat3x3<R, V> {
         RuntimeMat3x3 { row0, row1, row2, model: Ghost(model) }
     }
 
-    pub fn det_exec(&self) -> (out: R)
+    pub fn det(&self) -> (out: R)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model() == det::<V>(self.model@),
     {
-        self.row0.triple_exec(&self.row1, &self.row2)
+        self.row0.triple(&self.row1, &self.row2)
     }
 
-    pub fn mat_mul_exec(&self, rhs: &Self) -> (out: Self)
+    pub fn mat_mul(&self, rhs: &Self) -> (out: Self)
         requires self.wf_spec(), rhs.wf_spec(),
         ensures out.wf_spec(), out.model@ == mat_mul::<V>(self.model@, rhs.model@),
     {
-        let bt = rhs.transpose_exec();
-        let row0 = RuntimeVec3::new(self.row0.dot_exec(&bt.row0), self.row0.dot_exec(&bt.row1), self.row0.dot_exec(&bt.row2));
-        let row1 = RuntimeVec3::new(self.row1.dot_exec(&bt.row0), self.row1.dot_exec(&bt.row1), self.row1.dot_exec(&bt.row2));
-        let row2 = RuntimeVec3::new(self.row2.dot_exec(&bt.row0), self.row2.dot_exec(&bt.row1), self.row2.dot_exec(&bt.row2));
+        let bt = rhs.transpose();
+        let row0 = RuntimeVec3::new(self.row0.dot(&bt.row0), self.row0.dot(&bt.row1), self.row0.dot(&bt.row2));
+        let row1 = RuntimeVec3::new(self.row1.dot(&bt.row0), self.row1.dot(&bt.row1), self.row1.dot(&bt.row2));
+        let row2 = RuntimeVec3::new(self.row2.dot(&bt.row0), self.row2.dot(&bt.row1), self.row2.dot(&bt.row2));
         let ghost model = mat_mul::<V>(self.model@, rhs.model@);
         RuntimeMat3x3 { row0, row1, row2, model: Ghost(model) }
     }
 
-    pub fn adjugate_exec(&self) -> (out: Self)
+    pub fn adjugate(&self) -> (out: Self)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model@ == adjugate::<V>(self.model@),
     {
-        let c12 = self.row1.cross_exec(&self.row2);
-        let c20 = self.row2.cross_exec(&self.row0);
-        let c01 = self.row0.cross_exec(&self.row1);
+        let c12 = self.row1.cross(&self.row2);
+        let c20 = self.row2.cross(&self.row0);
+        let c01 = self.row0.cross(&self.row1);
         let row0 = RuntimeVec3::new(c12.x.copy(), c20.x.copy(), c01.x.copy());
         let row1 = RuntimeVec3::new(c12.y.copy(), c20.y.copy(), c01.y.copy());
         let row2 = RuntimeVec3::new(c12.z.copy(), c20.z.copy(), c01.z.copy());

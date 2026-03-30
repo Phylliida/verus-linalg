@@ -37,41 +37,41 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeMat2x2<R, V> {
         RuntimeMat2x2 { row0, row1, model: Ghost(model) }
     }
 
-    pub fn add_exec(&self, rhs: &Self) -> (out: Self)
+    pub fn add(&self, rhs: &Self) -> (out: Self)
         requires self.wf_spec(), rhs.wf_spec(),
         ensures out.wf_spec(), out.model@ == self.model@.add(rhs.model@),
     {
         let ghost model = self.model@.add(rhs.model@);
-        RuntimeMat2x2 { row0: self.row0.add_exec(&rhs.row0), row1: self.row1.add_exec(&rhs.row1), model: Ghost(model) }
+        RuntimeMat2x2 { row0: self.row0.add(&rhs.row0), row1: self.row1.add(&rhs.row1), model: Ghost(model) }
     }
 
-    pub fn sub_exec(&self, rhs: &Self) -> (out: Self)
+    pub fn sub(&self, rhs: &Self) -> (out: Self)
         requires self.wf_spec(), rhs.wf_spec(),
         ensures out.wf_spec(), out.model@ == self.model@.sub(rhs.model@),
     {
         let ghost model = self.model@.sub(rhs.model@);
-        RuntimeMat2x2 { row0: self.row0.sub_exec(&rhs.row0), row1: self.row1.sub_exec(&rhs.row1), model: Ghost(model) }
+        RuntimeMat2x2 { row0: self.row0.sub(&rhs.row0), row1: self.row1.sub(&rhs.row1), model: Ghost(model) }
     }
 
-    pub fn neg_exec(&self) -> (out: Self)
+    pub fn neg(&self) -> (out: Self)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model@ == self.model@.neg(),
     {
         let ghost model = self.model@.neg();
-        RuntimeMat2x2 { row0: self.row0.neg_exec(), row1: self.row1.neg_exec(), model: Ghost(model) }
+        RuntimeMat2x2 { row0: self.row0.neg(), row1: self.row1.neg(), model: Ghost(model) }
     }
 
-    pub fn mat_vec_mul_exec(&self, v: &RuntimeVec2<R, V>) -> (out: RuntimeVec2<R, V>)
+    pub fn mat_vec_mul(&self, v: &RuntimeVec2<R, V>) -> (out: RuntimeVec2<R, V>)
         requires self.wf_spec(), v.wf_spec(),
         ensures out.wf_spec(), out.model@ == mat_vec_mul::<V>(self.model@, v.model@),
     {
-        let x = self.row0.dot_exec(v);
-        let y = self.row1.dot_exec(v);
+        let x = self.row0.dot(v);
+        let y = self.row1.dot(v);
         let ghost model = mat_vec_mul::<V>(self.model@, v.model@);
         RuntimeVec2 { x, y, model: Ghost(model) }
     }
 
-    pub fn transpose_exec(&self) -> (out: Self)
+    pub fn transpose(&self) -> (out: Self)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model@ == transpose::<V>(self.model@),
     {
@@ -81,25 +81,25 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeMat2x2<R, V> {
         RuntimeMat2x2 { row0, row1, model: Ghost(model) }
     }
 
-    pub fn det_exec(&self) -> (out: R)
+    pub fn det(&self) -> (out: R)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model() == det::<V>(self.model@),
     {
         self.row0.x.mul(&self.row1.y).sub(&self.row0.y.mul(&self.row1.x))
     }
 
-    pub fn mat_mul_exec(&self, rhs: &Self) -> (out: Self)
+    pub fn mat_mul(&self, rhs: &Self) -> (out: Self)
         requires self.wf_spec(), rhs.wf_spec(),
         ensures out.wf_spec(), out.model@ == mat_mul::<V>(self.model@, rhs.model@),
     {
-        let bt = rhs.transpose_exec();
-        let row0 = RuntimeVec2::new(self.row0.dot_exec(&bt.row0), self.row0.dot_exec(&bt.row1));
-        let row1 = RuntimeVec2::new(self.row1.dot_exec(&bt.row0), self.row1.dot_exec(&bt.row1));
+        let bt = rhs.transpose();
+        let row0 = RuntimeVec2::new(self.row0.dot(&bt.row0), self.row0.dot(&bt.row1));
+        let row1 = RuntimeVec2::new(self.row1.dot(&bt.row0), self.row1.dot(&bt.row1));
         let ghost model = mat_mul::<V>(self.model@, rhs.model@);
         RuntimeMat2x2 { row0, row1, model: Ghost(model) }
     }
 
-    pub fn adjugate_exec(&self) -> (out: Self)
+    pub fn adjugate(&self) -> (out: Self)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model@ == adjugate::<V>(self.model@),
     {

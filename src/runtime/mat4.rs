@@ -44,19 +44,19 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeMat4x4<R, V> {
         RuntimeMat4x4 { row0, row1, row2, row3, model: Ghost(model) }
     }
 
-    pub fn mat_vec_mul_exec(&self, v: &RuntimeVec4<R, V>) -> (out: RuntimeVec4<R, V>)
+    pub fn mat_vec_mul(&self, v: &RuntimeVec4<R, V>) -> (out: RuntimeVec4<R, V>)
         requires self.wf_spec(), v.wf_spec(),
         ensures out.wf_spec(), out.model@ == mat_vec_mul::<V>(self.model@, v.model@),
     {
         let ghost model = mat_vec_mul::<V>(self.model@, v.model@);
         RuntimeVec4 {
-            x: self.row0.dot_exec(v), y: self.row1.dot_exec(v),
-            z: self.row2.dot_exec(v), w: self.row3.dot_exec(v),
+            x: self.row0.dot(v), y: self.row1.dot(v),
+            z: self.row2.dot(v), w: self.row3.dot(v),
             model: Ghost(model),
         }
     }
 
-    pub fn transpose_exec(&self) -> (out: Self)
+    pub fn transpose(&self) -> (out: Self)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model@ == transpose::<V>(self.model@),
     {
@@ -75,101 +75,101 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeMat4x4<R, V> {
         RuntimeVec3::new(a.copy(), b.copy(), c.copy())
     }
 
-    pub fn det_exec(&self) -> (out: R)
+    pub fn det(&self) -> (out: R)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model() == det::<V>(self.model@),
     {
         let tx = Self::drop3(&self.row1.y, &self.row1.z, &self.row1.w)
-            .triple_exec(&Self::drop3(&self.row2.y, &self.row2.z, &self.row2.w),
+            .triple(&Self::drop3(&self.row2.y, &self.row2.z, &self.row2.w),
                           &Self::drop3(&self.row3.y, &self.row3.z, &self.row3.w));
         let ty = Self::drop3(&self.row1.x, &self.row1.z, &self.row1.w)
-            .triple_exec(&Self::drop3(&self.row2.x, &self.row2.z, &self.row2.w),
+            .triple(&Self::drop3(&self.row2.x, &self.row2.z, &self.row2.w),
                           &Self::drop3(&self.row3.x, &self.row3.z, &self.row3.w));
         let tz = Self::drop3(&self.row1.x, &self.row1.y, &self.row1.w)
-            .triple_exec(&Self::drop3(&self.row2.x, &self.row2.y, &self.row2.w),
+            .triple(&Self::drop3(&self.row2.x, &self.row2.y, &self.row2.w),
                           &Self::drop3(&self.row3.x, &self.row3.y, &self.row3.w));
         let tw = Self::drop3(&self.row1.x, &self.row1.y, &self.row1.z)
-            .triple_exec(&Self::drop3(&self.row2.x, &self.row2.y, &self.row2.z),
+            .triple(&Self::drop3(&self.row2.x, &self.row2.y, &self.row2.z),
                           &Self::drop3(&self.row3.x, &self.row3.y, &self.row3.z));
         self.row0.x.copy().mul(&tx).sub(&self.row0.y.copy().mul(&ty))
             .add(&self.row0.z.copy().mul(&tz)).sub(&self.row0.w.copy().mul(&tw))
     }
 
-    pub fn mat_mul_exec(&self, rhs: &Self) -> (out: Self)
+    pub fn mat_mul(&self, rhs: &Self) -> (out: Self)
         requires self.wf_spec(), rhs.wf_spec(),
         ensures out.wf_spec(), out.model@ == mat_mul::<V>(self.model@, rhs.model@),
     {
-        let bt = rhs.transpose_exec();
-        let row0 = RuntimeVec4::new(self.row0.dot_exec(&bt.row0), self.row0.dot_exec(&bt.row1),
-            self.row0.dot_exec(&bt.row2), self.row0.dot_exec(&bt.row3));
-        let row1 = RuntimeVec4::new(self.row1.dot_exec(&bt.row0), self.row1.dot_exec(&bt.row1),
-            self.row1.dot_exec(&bt.row2), self.row1.dot_exec(&bt.row3));
-        let row2 = RuntimeVec4::new(self.row2.dot_exec(&bt.row0), self.row2.dot_exec(&bt.row1),
-            self.row2.dot_exec(&bt.row2), self.row2.dot_exec(&bt.row3));
-        let row3 = RuntimeVec4::new(self.row3.dot_exec(&bt.row0), self.row3.dot_exec(&bt.row1),
-            self.row3.dot_exec(&bt.row2), self.row3.dot_exec(&bt.row3));
+        let bt = rhs.transpose();
+        let row0 = RuntimeVec4::new(self.row0.dot(&bt.row0), self.row0.dot(&bt.row1),
+            self.row0.dot(&bt.row2), self.row0.dot(&bt.row3));
+        let row1 = RuntimeVec4::new(self.row1.dot(&bt.row0), self.row1.dot(&bt.row1),
+            self.row1.dot(&bt.row2), self.row1.dot(&bt.row3));
+        let row2 = RuntimeVec4::new(self.row2.dot(&bt.row0), self.row2.dot(&bt.row1),
+            self.row2.dot(&bt.row2), self.row2.dot(&bt.row3));
+        let row3 = RuntimeVec4::new(self.row3.dot(&bt.row0), self.row3.dot(&bt.row1),
+            self.row3.dot(&bt.row2), self.row3.dot(&bt.row3));
         let ghost model = mat_mul::<V>(self.model@, rhs.model@);
         RuntimeMat4x4 { row0, row1, row2, row3, model: Ghost(model) }
     }
 
-    pub fn adjugate_exec(&self) -> (out: Self)
+    pub fn adjugate(&self) -> (out: Self)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model@ == adjugate::<V>(self.model@),
     {
         //  cofactor_vec(ri, rj, rk) components are ± triple of 3-component minors
         //  cv0 from rows 1,2,3
-        let cv0x = Self::drop3(&self.row1.y, &self.row1.z, &self.row1.w).triple_exec(
+        let cv0x = Self::drop3(&self.row1.y, &self.row1.z, &self.row1.w).triple(
             &Self::drop3(&self.row2.y, &self.row2.z, &self.row2.w),
             &Self::drop3(&self.row3.y, &self.row3.z, &self.row3.w));
-        let cv0y = Self::drop3(&self.row1.x, &self.row1.z, &self.row1.w).triple_exec(
+        let cv0y = Self::drop3(&self.row1.x, &self.row1.z, &self.row1.w).triple(
             &Self::drop3(&self.row2.x, &self.row2.z, &self.row2.w),
             &Self::drop3(&self.row3.x, &self.row3.z, &self.row3.w)).neg();
-        let cv0z = Self::drop3(&self.row1.x, &self.row1.y, &self.row1.w).triple_exec(
+        let cv0z = Self::drop3(&self.row1.x, &self.row1.y, &self.row1.w).triple(
             &Self::drop3(&self.row2.x, &self.row2.y, &self.row2.w),
             &Self::drop3(&self.row3.x, &self.row3.y, &self.row3.w));
-        let cv0w = Self::drop3(&self.row1.x, &self.row1.y, &self.row1.z).triple_exec(
+        let cv0w = Self::drop3(&self.row1.x, &self.row1.y, &self.row1.z).triple(
             &Self::drop3(&self.row2.x, &self.row2.y, &self.row2.z),
             &Self::drop3(&self.row3.x, &self.row3.y, &self.row3.z)).neg();
 
         //  cv1 from rows 0,2,3
-        let cv1x = Self::drop3(&self.row0.y, &self.row0.z, &self.row0.w).triple_exec(
+        let cv1x = Self::drop3(&self.row0.y, &self.row0.z, &self.row0.w).triple(
             &Self::drop3(&self.row2.y, &self.row2.z, &self.row2.w),
             &Self::drop3(&self.row3.y, &self.row3.z, &self.row3.w));
-        let cv1y = Self::drop3(&self.row0.x, &self.row0.z, &self.row0.w).triple_exec(
+        let cv1y = Self::drop3(&self.row0.x, &self.row0.z, &self.row0.w).triple(
             &Self::drop3(&self.row2.x, &self.row2.z, &self.row2.w),
             &Self::drop3(&self.row3.x, &self.row3.z, &self.row3.w)).neg();
-        let cv1z = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.w).triple_exec(
+        let cv1z = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.w).triple(
             &Self::drop3(&self.row2.x, &self.row2.y, &self.row2.w),
             &Self::drop3(&self.row3.x, &self.row3.y, &self.row3.w));
-        let cv1w = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.z).triple_exec(
+        let cv1w = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.z).triple(
             &Self::drop3(&self.row2.x, &self.row2.y, &self.row2.z),
             &Self::drop3(&self.row3.x, &self.row3.y, &self.row3.z)).neg();
 
         //  cv2 from rows 0,1,3
-        let cv2x = Self::drop3(&self.row0.y, &self.row0.z, &self.row0.w).triple_exec(
+        let cv2x = Self::drop3(&self.row0.y, &self.row0.z, &self.row0.w).triple(
             &Self::drop3(&self.row1.y, &self.row1.z, &self.row1.w),
             &Self::drop3(&self.row3.y, &self.row3.z, &self.row3.w));
-        let cv2y = Self::drop3(&self.row0.x, &self.row0.z, &self.row0.w).triple_exec(
+        let cv2y = Self::drop3(&self.row0.x, &self.row0.z, &self.row0.w).triple(
             &Self::drop3(&self.row1.x, &self.row1.z, &self.row1.w),
             &Self::drop3(&self.row3.x, &self.row3.z, &self.row3.w)).neg();
-        let cv2z = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.w).triple_exec(
+        let cv2z = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.w).triple(
             &Self::drop3(&self.row1.x, &self.row1.y, &self.row1.w),
             &Self::drop3(&self.row3.x, &self.row3.y, &self.row3.w));
-        let cv2w = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.z).triple_exec(
+        let cv2w = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.z).triple(
             &Self::drop3(&self.row1.x, &self.row1.y, &self.row1.z),
             &Self::drop3(&self.row3.x, &self.row3.y, &self.row3.z)).neg();
 
         //  cv3 from rows 0,1,2
-        let cv3x = Self::drop3(&self.row0.y, &self.row0.z, &self.row0.w).triple_exec(
+        let cv3x = Self::drop3(&self.row0.y, &self.row0.z, &self.row0.w).triple(
             &Self::drop3(&self.row1.y, &self.row1.z, &self.row1.w),
             &Self::drop3(&self.row2.y, &self.row2.z, &self.row2.w));
-        let cv3y = Self::drop3(&self.row0.x, &self.row0.z, &self.row0.w).triple_exec(
+        let cv3y = Self::drop3(&self.row0.x, &self.row0.z, &self.row0.w).triple(
             &Self::drop3(&self.row1.x, &self.row1.z, &self.row1.w),
             &Self::drop3(&self.row2.x, &self.row2.z, &self.row2.w)).neg();
-        let cv3z = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.w).triple_exec(
+        let cv3z = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.w).triple(
             &Self::drop3(&self.row1.x, &self.row1.y, &self.row1.w),
             &Self::drop3(&self.row2.x, &self.row2.y, &self.row2.w));
-        let cv3w = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.z).triple_exec(
+        let cv3w = Self::drop3(&self.row0.x, &self.row0.y, &self.row0.z).triple(
             &Self::drop3(&self.row1.x, &self.row1.y, &self.row1.z),
             &Self::drop3(&self.row2.x, &self.row2.y, &self.row2.z)).neg();
 

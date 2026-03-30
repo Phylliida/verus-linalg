@@ -41,7 +41,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeQuat<R, V> {
         RuntimeQuat { w, x, y, z, model: Ghost(model) }
     }
 
-    pub fn add_exec(&self, rhs: &Self) -> (out: Self)
+    pub fn add(&self, rhs: &Self) -> (out: Self)
         requires self.wf_spec(), rhs.wf_spec(),
         ensures out.wf_spec(), out.model@ == self.model@.add(rhs.model@),
     {
@@ -50,7 +50,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeQuat<R, V> {
             y: self.y.add(&rhs.y), z: self.z.add(&rhs.z), model: Ghost(model) }
     }
 
-    pub fn sub_exec(&self, rhs: &Self) -> (out: Self)
+    pub fn sub(&self, rhs: &Self) -> (out: Self)
         requires self.wf_spec(), rhs.wf_spec(),
         ensures out.wf_spec(), out.model@ == self.model@.sub(rhs.model@),
     {
@@ -59,7 +59,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeQuat<R, V> {
             y: self.y.sub(&rhs.y), z: self.z.sub(&rhs.z), model: Ghost(model) }
     }
 
-    pub fn neg_exec(&self) -> (out: Self)
+    pub fn neg(&self) -> (out: Self)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model@ == self.model@.neg(),
     {
@@ -68,7 +68,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeQuat<R, V> {
             y: self.y.neg(), z: self.z.neg(), model: Ghost(model) }
     }
 
-    pub fn scale_exec(s: &R, q: &Self) -> (out: Self)
+    pub fn scale(s: &R, q: &Self) -> (out: Self)
         requires s.wf_spec(), q.wf_spec(),
         ensures out.wf_spec(), out.model@ == scale::<V>(s.model(), q.model@),
     {
@@ -77,7 +77,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeQuat<R, V> {
             y: s.mul(&q.y), z: s.mul(&q.z), model: Ghost(model) }
     }
 
-    pub fn mul_exec(&self, rhs: &Self) -> (out: Self)
+    pub fn mul(&self, rhs: &Self) -> (out: Self)
         requires self.wf_spec(), rhs.wf_spec(),
         ensures out.wf_spec(), out.model@ == quat_mul::<V>(self.model@, rhs.model@),
     {
@@ -93,7 +93,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeQuat<R, V> {
         RuntimeQuat { w: rw, x: rx, y: ry, z: rz, model: Ghost(model) }
     }
 
-    pub fn conjugate_exec(&self) -> (out: Self)
+    pub fn conjugate(&self) -> (out: Self)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model@ == conjugate::<V>(self.model@),
     {
@@ -102,7 +102,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeQuat<R, V> {
             y: self.y.neg(), z: self.z.neg(), model: Ghost(model) }
     }
 
-    pub fn norm_sq_exec(&self) -> (out: R)
+    pub fn norm_sq(&self) -> (out: R)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model() == norm_sq::<V>(self.model@),
     {
@@ -110,7 +110,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeQuat<R, V> {
             .add(&self.y.mul(&self.y)).add(&self.z.mul(&self.z))
     }
 
-    pub fn as_vec4_exec(&self) -> (out: RuntimeVec4<R, V>)
+    pub fn as_vec4(&self) -> (out: RuntimeVec4<R, V>)
         requires self.wf_spec(),
         ensures out.wf_spec(), out.model@ == as_vec4::<V>(self.model@),
     {
