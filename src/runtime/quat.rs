@@ -1,277 +1,122 @@
-use verus_rational::RuntimeRational;
-
 #[cfg(verus_keep_ghost)]
 use vstd::prelude::*;
 
 #[cfg(verus_keep_ghost)]
-use super::RationalModel;
-#[cfg(verus_keep_ghost)]
 use super::vec4::RuntimeVec4;
-#[cfg(verus_keep_ghost)]
-use super::copy_rational;
 #[cfg(verus_keep_ghost)]
 use crate::quat::Quat;
 #[cfg(verus_keep_ghost)]
 use crate::quat::ops::{scale, mul as quat_mul, conjugate, norm_sq, one, as_vec4};
-#[cfg(verus_keep_ghost)]
-use crate::vec4::Vec4;
 #[cfg(verus_keep_ghost)]
 use verus_algebra::traits::*;
 
 #[cfg(verus_keep_ghost)]
 verus! {
 
-//  ---------------------------------------------------------------------------
-//  RuntimeQuat
-//  ---------------------------------------------------------------------------
-
-pub struct RuntimeQuat {
-    pub w: RuntimeRational,
-    pub x: RuntimeRational,
-    pub y: RuntimeRational,
-    pub z: RuntimeRational,
-    pub model: Ghost<Quat<RationalModel>>,
+pub struct RuntimeQuat<R, V: Ring> where R: RuntimeRingOps<V> {
+    pub w: R,
+    pub x: R,
+    pub y: R,
+    pub z: R,
+    pub model: Ghost<Quat<V>>,
 }
 
-impl View for RuntimeQuat {
-    type V = Quat<RationalModel>;
-
-    open spec fn view(&self) -> Quat<RationalModel> {
-        self.model@
-    }
-}
-
-impl RuntimeQuat {
+impl<R: RuntimeRingOps<V>, V: Ring> RuntimeQuat<R, V> {
     pub open spec fn wf_spec(&self) -> bool {
-        &&& self.w.wf_spec()
-        &&& self.x.wf_spec()
-        &&& self.y.wf_spec()
-        &&& self.z.wf_spec()
-        &&& self.w@ == self@.w
-        &&& self.x@ == self@.x
-        &&& self.y@ == self@.y
-        &&& self.z@ == self@.z
+        &&& self.w.wf_spec() &&& self.x.wf_spec()
+        &&& self.y.wf_spec() &&& self.z.wf_spec()
+        &&& self.w.model() == self.model@.w
+        &&& self.x.model() == self.model@.x
+        &&& self.y.model() == self.model@.y
+        &&& self.z.model() == self.model@.z
     }
 
-    pub fn new(w: RuntimeRational, x: RuntimeRational, y: RuntimeRational, z: RuntimeRational) -> (out: Self)
-        requires
-            w.wf_spec(),
-            x.wf_spec(),
-            y.wf_spec(),
-            z.wf_spec(),
-        ensures
-            out.wf_spec(),
-            out@.w == w@,
-            out@.x == x@,
-            out@.y == y@,
-            out@.z == z@,
+    pub fn new(w: R, x: R, y: R, z: R) -> (out: Self)
+        requires w.wf_spec(), x.wf_spec(), y.wf_spec(), z.wf_spec(),
+        ensures out.wf_spec(),
+            out.model@.w == w.model(), out.model@.x == x.model(),
+            out.model@.y == y.model(), out.model@.z == z.model(),
     {
-        let ghost model = Quat { w: w@, x: x@, y: y@, z: z@ };
+        let ghost model = Quat { w: w.model(), x: x.model(), y: y.model(), z: z.model() };
         RuntimeQuat { w, x, y, z, model: Ghost(model) }
     }
 
-    pub fn from_ints(w: i64, x: i64, y: i64, z: i64) -> (out: Self)
-        ensures
-            out.wf_spec(),
-    {
-        let rw = RuntimeRational::from_int(w);
-        let rx = RuntimeRational::from_int(x);
-        let ry = RuntimeRational::from_int(y);
-        let rz = RuntimeRational::from_int(z);
-        Self::new(rw, rx, ry, rz)
-    }
-
-    //  -----------------------------------------------------------------------
-    //  Algebraic operations
-    //  -----------------------------------------------------------------------
-
-    ///  Quaternion addition
     pub fn add_exec(&self, rhs: &Self) -> (out: Self)
-        requires
-            self.wf_spec(),
-            rhs.wf_spec(),
-        ensures
-            out.wf_spec(),
-            out@ == self@.add(rhs@),
+        requires self.wf_spec(), rhs.wf_spec(),
+        ensures out.wf_spec(), out.model@ == self.model@.add(rhs.model@),
     {
-        let w = self.w.add(&rhs.w);
-        let x = self.x.add(&rhs.x);
-        let y = self.y.add(&rhs.y);
-        let z = self.z.add(&rhs.z);
-        let ghost model = self@.add(rhs@);
-        RuntimeQuat { w, x, y, z, model: Ghost(model) }
+        let ghost model = self.model@.add(rhs.model@);
+        RuntimeQuat { w: self.w.add(&rhs.w), x: self.x.add(&rhs.x),
+            y: self.y.add(&rhs.y), z: self.z.add(&rhs.z), model: Ghost(model) }
     }
 
-    ///  Quaternion subtraction
     pub fn sub_exec(&self, rhs: &Self) -> (out: Self)
-        requires
-            self.wf_spec(),
-            rhs.wf_spec(),
-        ensures
-            out.wf_spec(),
-            out@ == self@.sub(rhs@),
+        requires self.wf_spec(), rhs.wf_spec(),
+        ensures out.wf_spec(), out.model@ == self.model@.sub(rhs.model@),
     {
-        let w = self.w.sub(&rhs.w);
-        let x = self.x.sub(&rhs.x);
-        let y = self.y.sub(&rhs.y);
-        let z = self.z.sub(&rhs.z);
-        let ghost model = self@.sub(rhs@);
-        RuntimeQuat { w, x, y, z, model: Ghost(model) }
+        let ghost model = self.model@.sub(rhs.model@);
+        RuntimeQuat { w: self.w.sub(&rhs.w), x: self.x.sub(&rhs.x),
+            y: self.y.sub(&rhs.y), z: self.z.sub(&rhs.z), model: Ghost(model) }
     }
 
-    ///  Quaternion negation
     pub fn neg_exec(&self) -> (out: Self)
-        requires
-            self.wf_spec(),
-        ensures
-            out.wf_spec(),
-            out@ == self@.neg(),
+        requires self.wf_spec(),
+        ensures out.wf_spec(), out.model@ == self.model@.neg(),
     {
-        let w = self.w.neg();
-        let x = self.x.neg();
-        let y = self.y.neg();
-        let z = self.z.neg();
-        let ghost model = self@.neg();
-        RuntimeQuat { w, x, y, z, model: Ghost(model) }
+        let ghost model = self.model@.neg();
+        RuntimeQuat { w: self.w.neg(), x: self.x.neg(),
+            y: self.y.neg(), z: self.z.neg(), model: Ghost(model) }
     }
 
-    ///  Zero quaternion
-    pub fn zero_exec() -> (out: Self)
-        ensures
-            out.wf_spec(),
-            out@ == <Quat<RationalModel> as AdditiveCommutativeMonoid>::zero(),
+    pub fn scale_exec(s: &R, q: &Self) -> (out: Self)
+        requires s.wf_spec(), q.wf_spec(),
+        ensures out.wf_spec(), out.model@ == scale::<V>(s.model(), q.model@),
     {
-        let w = RuntimeRational::from_int(0);
-        let x = RuntimeRational::from_int(0);
-        let y = RuntimeRational::from_int(0);
-        let z = RuntimeRational::from_int(0);
-        let ghost model: Quat<RationalModel> = <Quat<RationalModel> as AdditiveCommutativeMonoid>::zero();
-        RuntimeQuat { w, x, y, z, model: Ghost(model) }
+        let ghost model = scale::<V>(s.model(), q.model@);
+        RuntimeQuat { w: s.mul(&q.w), x: s.mul(&q.x),
+            y: s.mul(&q.y), z: s.mul(&q.z), model: Ghost(model) }
     }
 
-    ///  Unit quaternion (1, 0, 0, 0)
-    pub fn one_exec() -> (out: Self)
-        ensures
-            out.wf_spec(),
-            out@ == one::<RationalModel>(),
-    {
-        let w = RuntimeRational::from_int(1);
-        let x = RuntimeRational::from_int(0);
-        let y = RuntimeRational::from_int(0);
-        let z = RuntimeRational::from_int(0);
-        let ghost model = one::<RationalModel>();
-        RuntimeQuat { w, x, y, z, model: Ghost(model) }
-    }
-
-    //  -----------------------------------------------------------------------
-    //  Ops
-    //  -----------------------------------------------------------------------
-
-    ///  Scalar multiplication: s * q
-    pub fn scale_exec(s: &RuntimeRational, q: &Self) -> (out: Self)
-        requires
-            s.wf_spec(),
-            q.wf_spec(),
-        ensures
-            out.wf_spec(),
-            out@ == scale::<RationalModel>(s@, q@),
-    {
-        let w = s.mul(&q.w);
-        let x = s.mul(&q.x);
-        let y = s.mul(&q.y);
-        let z = s.mul(&q.z);
-        let ghost model = scale::<RationalModel>(s@, q@);
-        RuntimeQuat { w, x, y, z, model: Ghost(model) }
-    }
-
-    ///  Hamilton product: a * b
     pub fn mul_exec(&self, rhs: &Self) -> (out: Self)
-        requires
-            self.wf_spec(),
-            rhs.wf_spec(),
-        ensures
-            out.wf_spec(),
-            out@ == quat_mul::<RationalModel>(self@, rhs@),
+        requires self.wf_spec(), rhs.wf_spec(),
+        ensures out.wf_spec(), out.model@ == quat_mul::<V>(self.model@, rhs.model@),
     {
-        //  w = aw*bw - ax*bx - ay*by - az*bz
-        let ww = self.w.mul(&rhs.w);
-        let xx = self.x.mul(&rhs.x);
-        let yy = self.y.mul(&rhs.y);
-        let zz = self.z.mul(&rhs.z);
-        let rw = ww.sub(&xx).sub(&yy).sub(&zz);
-
-        //  x = aw*bx + ax*bw + ay*bz - az*by
-        let wx = self.w.mul(&rhs.x);
-        let xw = self.x.mul(&rhs.w);
-        let yz = self.y.mul(&rhs.z);
-        let zy = self.z.mul(&rhs.y);
-        let rx = wx.add(&xw).add(&yz).sub(&zy);
-
-        //  y = aw*by - ax*bz + ay*bw + az*bx
-        let wy = self.w.mul(&rhs.y);
-        let xz = self.x.mul(&rhs.z);
-        let yw = self.y.mul(&rhs.w);
-        let zx = self.z.mul(&rhs.x);
-        let ry = wy.sub(&xz).add(&yw).add(&zx);
-
-        //  z = aw*bz + ax*by - ay*bx + az*bw
-        let wz = self.w.mul(&rhs.z);
-        let xy = self.x.mul(&rhs.y);
-        let yx = self.y.mul(&rhs.x);
-        let zw = self.z.mul(&rhs.w);
-        let rz = wz.add(&xy).sub(&yx).add(&zw);
-
-        let ghost model = quat_mul::<RationalModel>(self@, rhs@);
+        let rw = self.w.mul(&rhs.w).sub(&self.x.mul(&rhs.x))
+            .sub(&self.y.mul(&rhs.y)).sub(&self.z.mul(&rhs.z));
+        let rx = self.w.mul(&rhs.x).add(&self.x.mul(&rhs.w))
+            .add(&self.y.mul(&rhs.z)).sub(&self.z.mul(&rhs.y));
+        let ry = self.w.mul(&rhs.y).sub(&self.x.mul(&rhs.z))
+            .add(&self.y.mul(&rhs.w)).add(&self.z.mul(&rhs.x));
+        let rz = self.w.mul(&rhs.z).add(&self.x.mul(&rhs.y))
+            .sub(&self.y.mul(&rhs.x)).add(&self.z.mul(&rhs.w));
+        let ghost model = quat_mul::<V>(self.model@, rhs.model@);
         RuntimeQuat { w: rw, x: rx, y: ry, z: rz, model: Ghost(model) }
     }
 
-    ///  Conjugate: (w, -x, -y, -z)
     pub fn conjugate_exec(&self) -> (out: Self)
-        requires
-            self.wf_spec(),
-        ensures
-            out.wf_spec(),
-            out@ == conjugate::<RationalModel>(self@),
+        requires self.wf_spec(),
+        ensures out.wf_spec(), out.model@ == conjugate::<V>(self.model@),
     {
-        let w = copy_rational(&self.w);
-        let x = self.x.neg();
-        let y = self.y.neg();
-        let z = self.z.neg();
-        let ghost model = conjugate::<RationalModel>(self@);
-        RuntimeQuat { w, x, y, z, model: Ghost(model) }
+        let ghost model = conjugate::<V>(self.model@);
+        RuntimeQuat { w: self.w.copy(), x: self.x.neg(),
+            y: self.y.neg(), z: self.z.neg(), model: Ghost(model) }
     }
 
-    ///  Squared norm: w² + x² + y² + z²
-    pub fn norm_sq_exec(&self) -> (out: RuntimeRational)
-        requires
-            self.wf_spec(),
-        ensures
-            out.wf_spec(),
-            out@ == norm_sq::<RationalModel>(self@),
+    pub fn norm_sq_exec(&self) -> (out: R)
+        requires self.wf_spec(),
+        ensures out.wf_spec(), out.model() == norm_sq::<V>(self.model@),
     {
-        let ww = self.w.mul(&self.w);
-        let xx = self.x.mul(&self.x);
-        let yy = self.y.mul(&self.y);
-        let zz = self.z.mul(&self.z);
-        let s1 = ww.add(&xx);
-        let s2 = s1.add(&yy);
-        s2.add(&zz)
+        self.w.mul(&self.w).add(&self.x.mul(&self.x))
+            .add(&self.y.mul(&self.y)).add(&self.z.mul(&self.z))
     }
 
-    ///  Convert to Vec4: (w, x, y, z)
-    pub fn as_vec4_exec(&self) -> (out: RuntimeVec4)
-        requires
-            self.wf_spec(),
-        ensures
-            out.wf_spec(),
-            out@ == as_vec4::<RationalModel>(self@),
+    pub fn as_vec4_exec(&self) -> (out: RuntimeVec4<R, V>)
+        requires self.wf_spec(),
+        ensures out.wf_spec(), out.model@ == as_vec4::<V>(self.model@),
     {
-        let x = copy_rational(&self.w);
-        let y = copy_rational(&self.x);
-        let z = copy_rational(&self.y);
-        let w = copy_rational(&self.z);
-        let ghost model = as_vec4::<RationalModel>(self@);
-        RuntimeVec4 { x, y, z, w, model: Ghost(model) }
+        let ghost model = as_vec4::<V>(self.model@);
+        RuntimeVec4 { x: self.w.copy(), y: self.x.copy(),
+            z: self.y.copy(), w: self.z.copy(), model: Ghost(model) }
     }
 }
 
