@@ -2,6 +2,7 @@ use vstd::prelude::*;
 use verus_algebra::traits::*;
 use crate::vec3::Vec3;
 
+pub mod algebra;
 pub mod ops;
 
 verus! {
