@@ -62,7 +62,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeMat3x3<R, V> {
 
     pub fn det(&self) -> (out: R)
         requires self.wf_spec(),
-        ensures out.wf_spec(), out.model() == det::<V>(self.model@),
+        ensures out.wf_spec(), out@ == det::<V>(self.model@),
     {
         self.row0.triple(&self.row1, &self.row2)
     }

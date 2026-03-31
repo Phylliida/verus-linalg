@@ -21,18 +21,18 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeVec2<R, V> {
     pub open spec fn wf_spec(&self) -> bool {
         &&& self.x.wf_spec()
         &&& self.y.wf_spec()
-        &&& self.x.model() == self.model@.x
-        &&& self.y.model() == self.model@.y
+        &&& self.x@ == self.model@.x
+        &&& self.y@ == self.model@.y
     }
 
     pub fn new(x: R, y: R) -> (out: Self)
         requires x.wf_spec(), y.wf_spec(),
         ensures
             out.wf_spec(),
-            out.model@.x == x.model(),
-            out.model@.y == y.model(),
+            out.model@.x == x@,
+            out.model@.y == y@,
     {
-        let ghost model = Vec2 { x: x.model(), y: y.model() };
+        let ghost model = Vec2 { x: x@, y: y@ };
         RuntimeVec2 { x, y, model: Ghost(model) }
     }
 
@@ -80,24 +80,24 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeVec2<R, V> {
 
     pub fn scale(s: &R, v: &Self) -> (out: Self)
         requires s.wf_spec(), v.wf_spec(),
-        ensures out.wf_spec(), out.model@ == scale::<V>(s.model(), v.model@),
+        ensures out.wf_spec(), out.model@ == scale::<V>(s@, v.model@),
     {
         let x = s.mul(&v.x);
         let y = s.mul(&v.y);
-        let ghost model = scale::<V>(s.model(), v.model@);
+        let ghost model = scale::<V>(s@, v.model@);
         RuntimeVec2 { x, y, model: Ghost(model) }
     }
 
     pub fn dot(&self, rhs: &Self) -> (out: R)
         requires self.wf_spec(), rhs.wf_spec(),
-        ensures out.wf_spec(), out.model() == dot::<V>(self.model@, rhs.model@),
+        ensures out.wf_spec(), out@ == dot::<V>(self.model@, rhs.model@),
     {
         self.x.mul(&rhs.x).add(&self.y.mul(&rhs.y))
     }
 
     pub fn norm_sq(&self) -> (out: R)
         requires self.wf_spec(),
-        ensures out.wf_spec(), out.model() == norm_sq::<V>(self.model@),
+        ensures out.wf_spec(), out@ == norm_sq::<V>(self.model@),
     {
         self.dot(self)
     }
@@ -105,14 +105,14 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeVec2<R, V> {
     ///  Instance scalar multiply: self * s.
     pub fn scaled(&self, s: &R) -> (out: Self)
         requires self.wf_spec(), s.wf_spec(),
-        ensures out.wf_spec(), out.model@ == scale::<V>(s.model(), self.model@),
+        ensures out.wf_spec(), out.model@ == scale::<V>(s@, self.model@),
     {
         Self::scale(s, self)
     }
 
     pub fn lerp(&self, other: &Self, t: &R) -> (out: Self)
         requires self.wf_spec(), other.wf_spec(), t.wf_spec(),
-        ensures out.wf_spec(), out.model@ == lerp::<V>(self.model@, other.model@, t.model()),
+        ensures out.wf_spec(), out.model@ == lerp::<V>(self.model@, other.model@, t@),
     {
         let one = t.one_like();
         let one_minus_t = one.sub(t);

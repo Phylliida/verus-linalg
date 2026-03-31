@@ -83,7 +83,7 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeMat2x2<R, V> {
 
     pub fn det(&self) -> (out: R)
         requires self.wf_spec(),
-        ensures out.wf_spec(), out.model() == det::<V>(self.model@),
+        ensures out.wf_spec(), out@ == det::<V>(self.model@),
     {
         self.row0.x.mul(&self.row1.y).sub(&self.row0.y.mul(&self.row1.x))
     }

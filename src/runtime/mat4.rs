@@ -70,14 +70,14 @@ impl<R: RuntimeRingOps<V>, V: Ring> RuntimeMat4x4<R, V> {
 
     fn drop3(a: &R, b: &R, c: &R) -> (out: RuntimeVec3<R, V>)
         requires a.wf_spec(), b.wf_spec(), c.wf_spec(),
-        ensures out.wf_spec(), out.model@.x == a.model(), out.model@.y == b.model(), out.model@.z == c.model(),
+        ensures out.wf_spec(), out.model@.x == a@, out.model@.y == b@, out.model@.z == c@,
     {
         RuntimeVec3::new(a.copy(), b.copy(), c.copy())
     }
 
     pub fn det(&self) -> (out: R)
         requires self.wf_spec(),
-        ensures out.wf_spec(), out.model() == det::<V>(self.model@),
+        ensures out.wf_spec(), out@ == det::<V>(self.model@),
     {
         let tx = Self::drop3(&self.row1.y, &self.row1.z, &self.row1.w)
             .triple(&Self::drop3(&self.row2.y, &self.row2.z, &self.row2.w),
